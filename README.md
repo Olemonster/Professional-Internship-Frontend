@@ -1,4 +1,4 @@
-﻿# Professional Internship (Frontend)
+# Professional Internship (Frontend)
 
 เว็บแอปบริหารจัดการฝึกงานที่รองรับบทบาท Student / Company / Advisor / Admin ในระบบเดียว ใช้ **React 19 + Vite + Tailwind CSS + Material UI** เพื่อสร้างประสบการณ์ที่รวดเร็วและตอบสนองทุกอุปกรณ์
 
