@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const getToken = () => {
   try {
@@ -320,7 +320,7 @@ const AdminUserManagementPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate
     if (!formData.username || !formData.name || !formData.role) {
       alert('กรุณากรอกข้อมูลให้ครบถ้วน (Username, ชื่อ, ตำแหน่ง)');
@@ -370,10 +370,10 @@ const AdminUserManagementPage = () => {
   };
 
   const getRoleBadge = (role) => {
-    switch(role) {
-      case 'admin': return <span className="status-badge" style={{background: '#805ad5', color: 'white'}}>ผู้ดูแลระบบ</span>;
-      case 'advisor': return <span className="status-badge" style={{background: '#3182ce', color: 'white'}}>อาจารย์</span>;
-      case 'student': return <span className="status-badge" style={{background: '#38a169', color: 'white'}}>นักศึกษา</span>;
+    switch (role) {
+      case 'admin': return <span className="status-badge" style={{ background: '#805ad5', color: 'white' }}>ผู้ดูแลระบบ</span>;
+      case 'advisor': return <span className="status-badge" style={{ background: '#3182ce', color: 'white' }}>อาจารย์</span>;
+      case 'student': return <span className="status-badge" style={{ background: '#38a169', color: 'white' }}>นักศึกษา</span>;
       default: return <span className="status-badge">{role}</span>;
     }
   };
@@ -383,28 +383,28 @@ const AdminUserManagementPage = () => {
   const normalizedSearch = searchKeyword.trim().toLowerCase();
 
   const filteredUsers = users.filter(user => {
-      const userDept = user.department || user.major || '';
-      const matchesDepartment = selectedDepartment === 'all' || userDept === selectedDepartment;
-      const matchesRole = selectedRole === 'all' || user.role === selectedRole;
+    const userDept = user.department || user.major || '';
+    const matchesDepartment = selectedDepartment === 'all' || userDept === selectedDepartment;
+    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
 
-      if (!matchesDepartment || !matchesRole) return false;
+    if (!matchesDepartment || !matchesRole) return false;
 
-      if (!normalizedSearch) return true;
-      const fields = [
-        user.username,
-        user.email,
-        user.name,
-        user.full_name,
-        user.studentId,
-        user.student_code,
-        userDept,
-        user.contactPerson,
-        user.phone
-      ]
-        .filter(Boolean)
-        .map((value) => String(value).toLowerCase());
+    if (!normalizedSearch) return true;
+    const fields = [
+      user.username,
+      user.email,
+      user.name,
+      user.full_name,
+      user.studentId,
+      user.student_code,
+      userDept,
+      user.contactPerson,
+      user.phone
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).toLowerCase());
 
-      return fields.some((field) => field.includes(normalizedSearch));
+    return fields.some((field) => field.includes(normalizedSearch));
   });
 
   const visibleUserIds = filteredUsers.map((user) => String(user.id));
@@ -506,8 +506,8 @@ const AdminUserManagementPage = () => {
             <h1>จัดการผู้ใช้</h1>
             <p>เพิ่ม ลบ แก้ไข ข้อมูลผู้ใช้งานในระบบ</p>
           </div>
-          <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-             <span>สวัสดี, {adminName}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>สวัสดี, {adminName}</span>
           </div>
         </header>
 
@@ -587,8 +587,8 @@ const AdminUserManagementPage = () => {
             )}
           </div>
 
-           <div className="user-management-actions">
-             <div className="filter-group" style={{ flexWrap: 'wrap', gap: 12 }}>
+          <div className="user-management-actions">
+            <div className="filter-group" style={{ flexWrap: 'wrap', gap: 12 }}>
               <TextField
                 select
                 size="small"
@@ -677,12 +677,12 @@ const AdminUserManagementPage = () => {
                         />
                       </TableCell>
                       <TableCell>{user.username || user.email}</TableCell>
-                    <TableCell>{user.name || user.full_name}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>
-                      {user.role === 'student' && user.studentId && <div>รหัส: {user.studentId}</div>}
-                      {user.department && <div style={{fontSize: '0.85em', color: '#666'}}>สาขา: {user.department}</div>}
-                    </TableCell>
+                      <TableCell>{user.name || user.full_name}</TableCell>
+                      <TableCell>{getRoleBadge(user.role)}</TableCell>
+                      <TableCell>
+                        {user.role === 'student' && user.studentId && <div>รหัส: {user.studentId}</div>}
+                        {user.department && <div style={{ fontSize: '0.85em', color: '#666' }}>สาขา: {user.department}</div>}
+                      </TableCell>
                       <TableCell>
                         <div className="user-row-actions">
                           <Button size="small" variant="outlined" className="btn-edit-user" onClick={() => handleOpenModal(user)}>แก้ไข</Button>
