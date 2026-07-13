@@ -212,8 +212,14 @@
   position: relative;
 }
 
-/* Dim overlay removed since there is no text over the image now */
-
+/* Light overlay to make the background image faded/lighter */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.5); /* 50% white overlay */
+  pointer-events: none;
+}
 .hero-content {
   position: relative;
   z-index: 2;
