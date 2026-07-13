@@ -15,6 +15,7 @@ import api from '../../api/axios';
 import './HomePage.css';
 import logo from '../../assets/LASC-SSKRU-1.png';
 import banner from '../../assets/Banner.jpg';
+import sskruBg from '../../assets/SSKRU_BG.png';
 
 const HomePage = () => {
   const [user, setUser] = useState(null);
@@ -283,7 +284,11 @@ const HomePage = () => {
         </Toolbar>
       </AppBar>
 
-      <main className="hero-section">
+      <main className="hero-section" style={{
+        backgroundImage: `url(${sskruBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+      }}>
         <div className="hero-content">
           <div className="hero-buttons">
             {/* Buttons removed */ }
