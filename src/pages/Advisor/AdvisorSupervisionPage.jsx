@@ -26,7 +26,6 @@ import {
     Typography,
 } from '@mui/material';
 import { STAT_EMOJI } from '../../utils/statEmojis';
-import { calculateInternshipProgressByCheckins } from '../../utils/internshipProgress';
 import '../Admin/Dashboard/AdminDashboardPage.css';
 
 const AdvisorSupervisionPage = () => {
@@ -35,21 +34,12 @@ const AdvisorSupervisionPage = () => {
     const [advisorName, setAdvisorName] = useState('');
     const [advisorDept, setAdvisorDept] = useState('');
     const [supervisionRows, setSupervisionRows] = useState([]);
-    const [allCheckins, setAllCheckins] = useState([]);
     const [appointmentDialog, setAppointmentDialog] = useState({
         open: false,
         requestId: null,
         date: '',
         mode: 'Online',
         note: ''
-    });
-    const [reportDialog, setReportDialog] = useState({
-        open: false,
-        requestId: null,
-        progress: '',
-        issues: '',
-        suggestions: '',
-        result: 'ผ่าน'
     });
     const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
@@ -81,16 +71,6 @@ const AdvisorSupervisionPage = () => {
 
         return date >= startOfWeek && date <= endOfWeek;
     };
-
-    const getInternshipProgress = (request) => {
-        return calculateInternshipProgressByCheckins({
-            request,
-            checkins: allCheckins,
-            studentIds: [request.studentId, request.student_code, request.username, request.email],
-            studentNames: [request.studentName, request.details?.student_info?.name]
-        });
-    };
-
     const getSupervisionStatus = (request) => {
         if (request.supervisionReport) return 'นิเทศแล้ว';
 
@@ -137,7 +117,6 @@ const AdvisorSupervisionPage = () => {
         setAdvisorName(user.name || user.full_name || 'อาจารย์ที่ปรึกษา');
         setAdvisorDept(dept);
         loadSupervisionRows(dept);
-        api.get('/checkins').then(res => setAllCheckins(res.data.data || [])).catch(() => {});
     }, [navigate]);
 
     const persistRequests = (updater) => {
@@ -167,85 +146,40 @@ const AdvisorSupervisionPage = () => {
         });
     };
 
-    const saveAppointment = () => {
+    const saveAppointment = async () => {
         if (!appointmentDialog.date) {
             setToast({ open: true, message: 'กรุณาเลือกวันที่นิเทศ', severity: 'warning' });
             return;
         }
 
-        persistRequests((allRequests) =>
-            allRequests.map((request) =>
-                request.id === appointmentDialog.requestId
-                    ? {
-                            ...request,
-                            supervisionAppointment: {
-                                date: appointmentDialog.date,
-                                mode: appointmentDialog.mode,
-                                note: appointmentDialog.note,
-                                updatedAt: new Date().toISOString()
+        try {
+            await api.patch(`/requests/${appointmentDialog.requestId}/appointment`, {
+                date: appointmentDialog.date,
+                mode: appointmentDialog.mode,
+                note: appointmentDialog.note
+            });
+
+            persistRequests((allRequests) =>
+                allRequests.map((request) =>
+                    request.id === appointmentDialog.requestId
+                        ? {
+                                ...request,
+                                supervisionAppointment: {
+                                    date: appointmentDialog.date,
+                                    mode: appointmentDialog.mode,
+                                    note: appointmentDialog.note,
+                                    updatedAt: new Date().toISOString()
+                                }
                             }
-                        }
-                    : request
-            )
-        );
+                        : request
+                )
+            );
 
-        closeAppointmentDialog();
-        setToast({ open: true, message: 'บันทึกนัดนิเทศเรียบร้อย', severity: 'success' });
-    };
-
-    const openReportDialog = (request) => {
-        setReportDialog({
-            open: true,
-            requestId: request.id,
-            progress: String(request.supervisionReport?.progress ?? getInternshipProgress(request)),
-            issues: request.supervisionReport?.issues || '',
-            suggestions: request.supervisionReport?.suggestions || '',
-            result: request.supervisionReport?.result || 'ผ่าน'
-        });
-    };
-
-    const closeReportDialog = () => {
-        setReportDialog({
-            open: false,
-            requestId: null,
-            progress: '',
-            issues: '',
-            suggestions: '',
-            result: 'ผ่าน'
-        });
-    };
-
-    const saveReport = () => {
-        const parsedProgress = Number(reportDialog.progress);
-        if (Number.isNaN(parsedProgress) || parsedProgress < 0 || parsedProgress > 100) {
-            setToast({ open: true, message: 'ความคืบหน้าต้องอยู่ระหว่าง 0-100', severity: 'warning' });
-            return;
+            closeAppointmentDialog();
+            setToast({ open: true, message: 'บันทึกนัดนิเทศเรียบร้อย', severity: 'success' });
+        } catch (error) {
+            setToast({ open: true, message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + (error.response?.data?.message || error.message), severity: 'error' });
         }
-
-        if (!reportDialog.issues.trim() || !reportDialog.suggestions.trim()) {
-            setToast({ open: true, message: 'กรุณากรอกปัญหาและข้อเสนอแนะ', severity: 'warning' });
-            return;
-        }
-
-        persistRequests((allRequests) =>
-            allRequests.map((request) =>
-                request.id === reportDialog.requestId
-                    ? {
-                            ...request,
-                            supervisionReport: {
-                                progress: parsedProgress,
-                                issues: reportDialog.issues.trim(),
-                                suggestions: reportDialog.suggestions.trim(),
-                                result: reportDialog.result,
-                                updatedAt: new Date().toISOString()
-                            }
-                        }
-                    : request
-            )
-        );
-
-        closeReportDialog();
-        setToast({ open: true, message: 'บันทึกผลนิเทศเรียบร้อย', severity: 'success' });
     };
 
     const handleLogout = () => {
@@ -379,7 +313,6 @@ const AdvisorSupervisionPage = () => {
                                     <TableCell>วันที่เริ่ม</TableCell>
                                     <TableCell>สถานะนิเทศ</TableCell>
                                     <TableCell>นัดหมาย</TableCell>
-                                    <TableCell>Progress</TableCell>
                                     <TableCell>Action</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -387,7 +320,6 @@ const AdvisorSupervisionPage = () => {
                                 {supervisionRows.length > 0 ? (
                                     supervisionRows.map((request) => {
                                         const supervisionStatus = getSupervisionStatus(request);
-                                        const progress = request.supervisionReport?.progress ?? getInternshipProgress(request);
                                         const appointmentText = request.supervisionAppointment?.date
                                             ? `${formatDate(request.supervisionAppointment.date)} (${request.supervisionAppointment.mode})`
                                             : '-';
@@ -417,18 +349,14 @@ const AdvisorSupervisionPage = () => {
                                                         )}
                                                     </Stack>
                                                 </TableCell>
-                                                <TableCell sx={{ minWidth: 180 }}>
-                                                    <Stack spacing={0.75}>
-                                                        <Typography variant="caption" color="text.secondary">ฝึกไปแล้ว {progress}%</Typography>
-                                                        <LinearProgress variant="determinate" value={progress} />
-                                                    </Stack>
-                                                </TableCell>
                                                 <TableCell>
                                                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                                                        <Button size="small" variant="outlined" onClick={() => openAppointmentDialog(request)}>
-                                                            กำหนดวันนิเทศ
-                                                        </Button>
-                                                        <Button size="small" variant="contained" onClick={() => openReportDialog(request)}>
+                                                        {!request.supervisionAppointment?.date && (
+                                                            <Button size="small" variant="outlined" onClick={() => openAppointmentDialog(request)}>
+                                                                กำหนดวันนิเทศ
+                                                            </Button>
+                                                        )}
+                                                        <Button size="small" variant="contained" onClick={() => navigate(`/advisor-dashboard/supervision/evaluate/${request.id}`)}>
                                                             บันทึกผลนิเทศ
                                                         </Button>
                                                     </Stack>
@@ -484,52 +412,6 @@ const AdvisorSupervisionPage = () => {
                 <DialogActions>
                     <Button onClick={closeAppointmentDialog}>ยกเลิก</Button>
                     <Button variant="contained" onClick={saveAppointment}>บันทึก</Button>
-                </DialogActions>
-            </Dialog>
-
-            <Dialog open={reportDialog.open} onClose={closeReportDialog} fullWidth maxWidth="sm">
-                <DialogTitle>บันทึกผลนิเทศ</DialogTitle>
-                <DialogContent>
-                    <Stack spacing={2} sx={{ mt: 1 }}>
-                        <TextField
-                            fullWidth
-                            type="number"
-                            label="ความคืบหน้าการฝึกงาน (%)"
-                            value={reportDialog.progress}
-                            onChange={(event) => setReportDialog((prev) => ({ ...prev, progress: event.target.value }))}
-                            inputProps={{ min: 0, max: 100 }}
-                        />
-                        <TextField
-                            fullWidth
-                            multiline
-                            minRows={3}
-                            label="ปัญหาที่พบ"
-                            value={reportDialog.issues}
-                            onChange={(event) => setReportDialog((prev) => ({ ...prev, issues: event.target.value }))}
-                        />
-                        <TextField
-                            fullWidth
-                            multiline
-                            minRows={3}
-                            label="ข้อเสนอแนะ"
-                            value={reportDialog.suggestions}
-                            onChange={(event) => setReportDialog((prev) => ({ ...prev, suggestions: event.target.value }))}
-                        />
-                        <TextField
-                            select
-                            fullWidth
-                            label="สถานะ"
-                            value={reportDialog.result}
-                            onChange={(event) => setReportDialog((prev) => ({ ...prev, result: event.target.value }))}
-                        >
-                            <MenuItem value="ผ่าน">ผ่าน</MenuItem>
-                            <MenuItem value="ต้องติดตาม">ต้องติดตาม</MenuItem>
-                        </TextField>
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={closeReportDialog}>ยกเลิก</Button>
-                    <Button variant="contained" onClick={saveReport}>บันทึก</Button>
                 </DialogActions>
             </Dialog>
 

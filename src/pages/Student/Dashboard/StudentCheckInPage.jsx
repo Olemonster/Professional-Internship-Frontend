@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, MenuItem, Button } from '@mui/material';
 import api from '../../../api/axios';
 import './DashboardPage.css';
@@ -84,11 +85,15 @@ const StudentCheckInPage = () => {
 
       setCurrentRequestStatus(latestRequest?.status || 'ไม่มีคำร้อง');
       const isInternshipStarted = ownRequests.some((request) => request.status === 'ออกฝึกงาน');
+      const isInternshipCompleted = ['ฝึกงานเสร็จแล้ว', 'ประเมินจากสถานประกอบการแล้ว', 'ประเมินจากอาจารย์แล้ว', 'เสร็จสิ้นสมบูรณ์'].includes(latestRequest?.status);
       setCanCheckIn(isInternshipStarted);
 
-      if (!isInternshipStarted) {
+      if (!isInternshipStarted && !isInternshipCompleted) {
         setMessage('ยังไม่สามารถใช้งานรายงานประจำวันได้ กรุณารอให้ผู้ดูแลระบบกดเริ่มฝึกงานก่อน');
         return;
+      }
+      if (isInternshipCompleted) {
+        setMessage('การฝึกงานของคุณเสร็จสมบูรณ์เรียบร้อยแล้ว');
       }
 
       // Load checkins from API
@@ -203,22 +208,41 @@ const StudentCheckInPage = () => {
 
         <div className="content-wrapper">
           {!canCheckIn ? (
-            <div className="checkin-card">
-              <h3>ยังไม่สามารถรายงานประจำวันได้</h3>
-              <p style={{ marginTop: '0.5rem' }}>
-                สถานะคำร้องปัจจุบัน:{' '}
-                <span className="status-badge" style={getRequestStatusStyle(currentRequestStatus)}>
-                  {getRequestStatusDisplay(currentRequestStatus)}
-                </span>
-              </p>
-              <p>หน้านี้จะใช้งานได้เมื่อผู้ดูแลระบบกด “เริ่มฝึกงาน” ให้คุณแล้วเท่านั้น</p>
-              <div className="checkin-actions" style={{ marginTop: '1rem' }}>
-                <Link to="/dashboard/my-requests" className="checkin-submit" style={{ textDecoration: 'none' }}>
-                  ไปที่คำร้องของฉัน
-                </Link>
+            ['ฝึกงานเสร็จแล้ว', 'ประเมินจากสถานประกอบการแล้ว', 'ประเมินจากอาจารย์แล้ว', 'เสร็จสิ้นสมบูรณ์'].includes(currentRequestStatus) ? (
+              <div className="checkin-card">
+                <h3>การฝึกงานเสร็จสิ้นแล้ว</h3>
+                <p style={{ marginTop: '0.5rem' }}>
+                  สถานะคำร้องปัจจุบัน:{' '}
+                  <span className="status-badge" style={getRequestStatusStyle(currentRequestStatus)}>
+                    {getRequestStatusDisplay(currentRequestStatus)}
+                  </span>
+                </p>
+                <p>คุณได้ผ่านการฝึกงานเรียบร้อยแล้ว ไม่จำเป็นต้องรายงานประจำวันอีกต่อไป</p>
+                <div className="checkin-actions" style={{ marginTop: '1rem' }}>
+                  <Link to="/dashboard/my-requests" className="checkin-submit" style={{ textDecoration: 'none' }}>
+                    ไปที่คำร้องของฉัน
+                  </Link>
+                </div>
+                {message && <div className="checkin-message" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' }}>{message}</div>}
               </div>
-              {message && <div className="checkin-message">{message}</div>}
-            </div>
+            ) : (
+              <div className="checkin-card">
+                <h3>ยังไม่สามารถรายงานประจำวันได้</h3>
+                <p style={{ marginTop: '0.5rem' }}>
+                  สถานะคำร้องปัจจุบัน:{' '}
+                  <span className="status-badge" style={getRequestStatusStyle(currentRequestStatus)}>
+                    {getRequestStatusDisplay(currentRequestStatus)}
+                  </span>
+                </p>
+                <p>หน้านี้จะใช้งานได้เมื่อผู้ดูแลระบบกด “เริ่มฝึกงาน” ให้คุณแล้วเท่านั้น</p>
+                <div className="checkin-actions" style={{ marginTop: '1rem' }}>
+                  <Link to="/dashboard/my-requests" className="checkin-submit" style={{ textDecoration: 'none' }}>
+                    ไปที่คำร้องของฉัน
+                  </Link>
+                </div>
+                {message && <div className="checkin-message">{message}</div>}
+              </div>
+            )
           ) : (
             <>
               <div className="checkin-card">

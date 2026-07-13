@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, MenuItem } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, MenuItem, Dialog, DialogContent, DialogActions, Button } from '@mui/material';
 import './AdminDashboardPage.css'; // Reusing admin styles for sidebar
 import './StudentListPage.css';
 
@@ -24,6 +24,7 @@ const StudentListPage = () => {
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [slipModal, setSlipModal] = useState({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null });
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
   const getToken = () => {
@@ -50,20 +51,50 @@ const StudentListPage = () => {
         return;
       }
 
-      // Load students
+      // Load students, requests, and payments
       try {
-        const res = await fetch(`${API_BASE}/users?role=student`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getToken()}`,
-          },
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        };
+        
+        const [usersRes, reqsRes, paysRes] = await Promise.all([
+          fetch(`${API_BASE}/users?role=student`, { headers }),
+          fetch(`${API_BASE}/requests`, { headers }),
+          fetch(`${API_BASE}/payments`, { headers })
+        ]);
+
+        if (!usersRes.ok) throw new Error('ไม่สามารถโหลดรายชื่อนักศึกษาได้');
+
+        const [usersData, reqsData, paysData] = await Promise.all([
+          usersRes.json(),
+          reqsRes.json(),
+          paysRes.json()
+        ]);
+
+        const studentList = usersData.data || [];
+        const requestsList = reqsData.data || [];
+        const paymentsList = paysData.data || [];
+
+        const enrichedStudents = studentList.map(student => {
+          const studentIdStr = String(student.student_code || student.studentId || student.username);
+          
+          const studentReqs = requestsList.filter(r => String(r.studentId) === studentIdStr);
+          const latestReq = studentReqs.length > 0 ? studentReqs[studentReqs.length - 1] : null;
+          
+          const studentPays = paymentsList.filter(p => String(p.studentId) === studentIdStr);
+          const latestPay = studentPays.length > 0 ? studentPays[studentPays.length - 1] : null;
+
+          return {
+            ...student,
+            requestStatus: latestReq ? latestReq.status : 'ยังไม่ยื่นคำร้อง',
+            paymentStatus: latestPay ? latestPay.status : 'ยังไม่ชำระเงิน',
+            paymentSlip: latestPay ? latestPay.slipDataUrl : null,
+            paymentId: latestPay ? latestPay.id : null
+          };
         });
-        if (!res.ok) {
-          throw new Error('ไม่สามารถโหลดรายชื่อนักศึกษาได้');
-        }
-        const data = await res.json();
-        const studentList = data.data || [];
-        setStudents(studentList);
+
+        setStudents(enrichedStudents);
       } catch (error) {
         console.error("Failed to load students", error);
       } finally {
@@ -84,6 +115,40 @@ const StudentListPage = () => {
     const dept = student.major || student.department || '';
     return dept === selectedDepartment;
   });
+
+  const handleDownloadSlip = () => {
+    if (!slipModal.imageUrl) return;
+    const anchor = document.createElement('a');
+    anchor.href = slipModal.imageUrl;
+    anchor.download = `หลักฐานการชำระค่าออกฝึกงาน_${slipModal.studentCode || 'ไม่ทราบรหัส'}.png`;
+    anchor.click();
+  };
+
+  const handleUpdatePaymentStatus = async (action) => {
+    if (!slipModal.paymentId) return;
+    try {
+      const res = await fetch(`${API_BASE}/payments/${slipModal.paymentId}/${action}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        }
+      });
+      if (!res.ok) throw new Error('เกิดข้อผิดพลาดในการอัปเดต');
+      
+      const newStatus = action === 'approve' ? 'approved' : 'rejected';
+      setStudents(prev => prev.map(s => {
+        if (s.paymentId === slipModal.paymentId) {
+          return { ...s, paymentStatus: newStatus };
+        }
+        return s;
+      }));
+      
+      setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null });
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   return (
     <div className="admin-dashboard-container">
@@ -106,9 +171,7 @@ const StudentListPage = () => {
           <Link to="/admin-dashboard/users" className="nav-item">
             <span>จัดการผู้ใช้</span>
           </Link>
-          <Link to="/admin-dashboard/payments" className="nav-item">
-            <span>ตรวจสอบการชำระเงิน</span>
-          </Link>
+          
           <Link to="/admin-dashboard/checkins" className="nav-item">
             <span>รายงานประจำวัน</span>
           </Link>
@@ -117,6 +180,12 @@ const StudentListPage = () => {
           </Link>
           <Link to="/admin-dashboard/reports" className="nav-item">
             <span>รายงาน</span>
+          </Link>
+          <Link to="/admin-dashboard/analytics" className="nav-item">
+            <span>สถิติการประเมิน</span>
+          </Link>
+          <Link to="/admin-dashboard/announcements" className="nav-item">
+            <span>ข่าวประชาสัมพันธ์</span>
           </Link>
           <Link to="/admin-dashboard/profile" className="nav-item">
             <span>โปรไฟล์</span>
@@ -170,7 +239,8 @@ const StudentListPage = () => {
                   <TableCell>สาขา</TableCell>
                   <TableCell>อีเมล</TableCell>
                   <TableCell>เบอร์โทร</TableCell>
-                  <TableCell>สถานะ</TableCell>
+                  <TableCell>สถานะคำร้อง</TableCell>
+                  <TableCell>การชำระเงิน</TableCell>
                   <TableCell>การกระทำ</TableCell>
                 </TableRow>
               </TableHead>
@@ -183,9 +253,32 @@ const StudentListPage = () => {
                       <TableCell>{student.email}</TableCell>
                       <TableCell>{student.phone}</TableCell>
                       <TableCell>
-                        <span className="status-badge" style={{ background: '#d4edda', color: '#155724' }}>
-                          ลงทะเบียนแล้ว
+                        <span className="status-badge" style={{ 
+                          background: student.requestStatus === 'อนุมัติแล้ว' ? '#dcfce7' : student.requestStatus?.includes('ไม่อนุมัติ') ? '#fee2e2' : student.requestStatus === 'ยังไม่ยื่นคำร้อง' ? '#f3f4f6' : '#e0e7ff', 
+                          color: student.requestStatus === 'อนุมัติแล้ว' ? '#166534' : student.requestStatus?.includes('ไม่อนุมัติ') ? '#991b1b' : student.requestStatus === 'ยังไม่ยื่นคำร้อง' ? '#4b5563' : '#3730a3',
+                          fontSize: '12px', padding: '4px 8px', borderRadius: '4px', display: 'inline-block'
+                        }}>
+                          {student.requestStatus}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="status-badge" style={{ 
+                            background: student.paymentStatus === 'approved' ? '#dcfce7' : student.paymentStatus === 'rejected' ? '#fee2e2' : student.paymentStatus === 'pending' ? '#fef3c7' : '#f3f4f6', 
+                            color: student.paymentStatus === 'approved' ? '#166534' : student.paymentStatus === 'rejected' ? '#991b1b' : student.paymentStatus === 'pending' ? '#92400e' : '#4b5563',
+                            fontSize: '12px', padding: '4px 8px', borderRadius: '4px', display: 'inline-block', whiteSpace: 'nowrap'
+                          }}>
+                            {student.paymentStatus === 'approved' ? 'ชำระเงินแล้ว' : student.paymentStatus === 'pending' ? 'รอตรวจสอบ' : student.paymentStatus === 'rejected' ? 'ไม่อนุมัติ' : 'ยังไม่ชำระเงิน'}
+                          </span>
+                          {student.paymentSlip && (
+                            <button 
+                              onClick={() => setSlipModal({ open: true, imageUrl: student.paymentSlip, paymentId: student.paymentId, studentCode: student.student_code, paymentStatus: student.paymentStatus })}
+                              style={{ border: 'none', background: 'none', color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px', padding: 0 }}
+                            >
+                              ดูสลิป
+                            </button>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Link to={`/dashboard/student/${student.student_code || student.username}`} className="btn-view" style={{border: '1px solid #ddd', padding: '6px 10px', borderRadius: 6}}>ดูรายละเอียด</Link>
@@ -193,7 +286,7 @@ const StudentListPage = () => {
                     </TableRow>
                 )) : (
                     <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 2.5 }}>ไม่พบข้อมูลนักศึกษา</TableCell>
+                        <TableCell colSpan={8} align="center" sx={{ py: 2.5 }}>ไม่พบข้อมูลนักศึกษา</TableCell>
                     </TableRow>
                 )}
               </TableBody>
@@ -201,6 +294,28 @@ const StudentListPage = () => {
             )}
           </TableContainer>
         </div>
+
+        <Dialog open={slipModal.open} onClose={() => setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null })} maxWidth="sm" fullWidth>
+          <DialogContent sx={{ textAlign: 'center', p: 3 }}>
+            <img 
+              src={slipModal.imageUrl} 
+              alt="Payment Slip" 
+              style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }} 
+            />
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
+            <Button variant="outlined" color="primary" onClick={handleDownloadSlip}>ดาวน์โหลดสลิป</Button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {slipModal.paymentId && slipModal.paymentStatus !== 'approved' && (
+                <>
+                  <Button variant="contained" color="success" onClick={() => handleUpdatePaymentStatus('approve')} disableElevation>อนุมัติ</Button>
+                  <Button variant="contained" color="error" onClick={() => handleUpdatePaymentStatus('reject')} disableElevation>ไม่อนุมัติ</Button>
+                </>
+              )}
+              <Button onClick={() => setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null })} color="inherit">ปิด</Button>
+            </div>
+          </DialogActions>
+        </Dialog>
       </main>
     </div>
   );

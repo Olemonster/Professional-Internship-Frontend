@@ -9,19 +9,23 @@ import NewRequestPage from './pages/Student/NewRequestPage';
 import AdminDashboardPage from './pages/Admin/Dashboard/AdminDashboardPage';
 import StudentListPage from './pages/Admin/Dashboard/StudentListPage';
 import PaymentProofPage from './pages/Student/Dashboard/PaymentProofPage';
-import AdminPaymentCheckPage from './pages/Admin/Dashboard/AdminPaymentCheckPage';
 import AdminReportsPage from './pages/Admin/Dashboard/AdminReportsPage';
+import AdminEvaluationAnalyticsPage from './pages/Admin/Dashboard/AdminEvaluationAnalyticsPage';
+import AdminAnnouncementsPage from './pages/Admin/Dashboard/AdminAnnouncementsPage';
 import AdminUserManagementPage from './pages/Admin/Dashboard/AdminUserManagementPage';
 import AdminProfilePage from './pages/Admin/Dashboard/AdminProfilePage';
 import AdvisorStudentListPage from './pages/Advisor/AdvisorStudentListPage';
 import AdvisorSupervisionPage from './pages/Advisor/AdvisorSupervisionPage';
 import AdvisorProgressCheckPage from './pages/Advisor/AdvisorProgressCheckPage';
+import AdvisorEvaluationPage from './pages/Advisor/AdvisorEvaluationPage';
 import RequestDetailsPage from './pages/Admin/Shared/RequestDetailsPage';
 import StudentDetailsPage from './pages/Admin/Shared/StudentDetailsPage';
 import StudentCheckInPage from './pages/Student/Dashboard/StudentCheckInPage';
 import AdminCheckInPage from './pages/Admin/Dashboard/AdminCheckInPage';
 import AdminAttendanceOverviewPage from './pages/Admin/Dashboard/AdminAttendanceOverviewPage';
 import PublicRequestPage from './pages/Public/PublicRequestPage';
+import PublicEvaluationPage from './pages/Public/PublicEvaluationPage';
+import AnnouncementDetailPage from './pages/Public/AnnouncementDetailPage';
 import './App.css';
 
 function App() {
@@ -41,16 +45,20 @@ function App() {
         <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin-dashboard/students" element={<StudentListPage />} />
         <Route path="/admin-dashboard/users" element={<AdminUserManagementPage />} />
-        <Route path="/admin-dashboard/payments" element={<AdminPaymentCheckPage />} />
         <Route path="/admin-dashboard/checkins" element={<AdminCheckInPage />} />
         <Route path="/admin-dashboard/attendance-overview" element={<AdminAttendanceOverviewPage />} />
         <Route path="/admin-dashboard/reports" element={<AdminReportsPage />} />
+        <Route path="/admin-dashboard/analytics" element={<AdminEvaluationAnalyticsPage />} />
+        <Route path="/admin-dashboard/announcements" element={<AdminAnnouncementsPage />} />
         <Route path="/admin-dashboard/profile" element={<AdminProfilePage />} />
         <Route path="/advisor-dashboard" element={<AdvisorDashboardPage />} />
         <Route path="/advisor-dashboard/students" element={<AdvisorStudentListPage />} />
         <Route path="/advisor-dashboard/supervision" element={<AdvisorSupervisionPage />} />
+        <Route path="/advisor-dashboard/supervision/evaluate/:id" element={<AdvisorEvaluationPage />} />
         <Route path="/advisor-dashboard/progress" element={<AdvisorProgressCheckPage />} />
         <Route path="/public/request/:id" element={<PublicRequestPage />} />
+        <Route path="/public/evaluate/:id" element={<PublicEvaluationPage />} />
+        <Route path="/news/:id" element={<AnnouncementDetailPage />} />
       </Routes>
     </Router>
   );

@@ -34,6 +34,7 @@ import { BellIcon } from '@heroicons/react/24/solid';
 import { QRCodeSVG } from 'qrcode.react';
 import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './AdminDashboardPage.css';
+import { ClockIcon } from '@heroicons/react/24/outline';
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
@@ -74,7 +75,9 @@ const AdminDashboardPage = () => {
       
       // Load requests from API
       api.get('/requests').then(res => {
-        setAllRequests(res.data.data || []);
+        const requests = res.data.data || [];
+        // Hide 'ฝึกงานเสร็จแล้ว' from Dashboard
+        setAllRequests(requests.filter(req => req.status !== 'ฝึกงานเสร็จแล้ว'));
       }).catch(err => console.error('Failed to load requests:', err));
     } else {
       navigate('/login');
@@ -440,9 +443,6 @@ const AdminDashboardPage = () => {
           <Link to="/admin-dashboard/users" className="nav-item">
             <span>จัดการผู้ใช้</span>
           </Link>
-           <Link to="/admin-dashboard/payments" className="nav-item">
-            <span>ตรวจสอบการชำระเงิน</span>
-          </Link>
           <Link to="/admin-dashboard/checkins" className="nav-item">
             <span>รายงานประจำวัน</span>
           </Link>
@@ -451,6 +451,12 @@ const AdminDashboardPage = () => {
           </Link>
           <Link to="/admin-dashboard/reports" className="nav-item">
             <span>รายงาน</span>
+          </Link>
+          <Link to="/admin-dashboard/analytics" className="nav-item">
+            <span>สถิติการประเมิน</span>
+          </Link>
+          <Link to="/admin-dashboard/announcements" className="nav-item">
+            <span>ข่าวประชาสัมพันธ์</span>
           </Link>
           <Link to="/admin-dashboard/profile" className="nav-item">
             <span>โปรไฟล์</span>
@@ -469,19 +475,6 @@ const AdminDashboardPage = () => {
             <h1>ระบบจัดการคำร้องฝึกงาน</h1>
             <p>จัดการและอนุมัติคำร้องของนักศึกษา</p>
           </div>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/admin-dashboard/reports')}
-            sx={{
-              bgcolor: '#111111',
-              '&:hover': { bgcolor: '#000000' },
-              borderRadius: 2,
-              px: 2,
-              py: 1,
-            }}
-          >
-            ดูรายงานทั้งหมด
-          </Button>
         </header>
 
         <Box
@@ -540,7 +533,7 @@ const AdminDashboardPage = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr' },
+            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
             gap: 2,
             mb: 3,
           }}
@@ -575,13 +568,10 @@ const AdminDashboardPage = () => {
               </Box>
             </Box>
           </Paper>
-
-        </Box>
-
-        <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2, mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-            คำร้องล่าสุด 5 รายการ
-          </Typography>
+          <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2, height: '100%' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+              คำร้องล่าสุด 5 รายการ
+            </Typography>
           <TableContainer component={Box} className="compact-table">
             <Table size="small">
               <TableHead>
@@ -621,6 +611,7 @@ const AdminDashboardPage = () => {
             </Table>
           </TableContainer>
         </Paper>
+        </Box>
 
         <Paper className="content-section" elevation={0} sx={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 2, boxShadow: 'none', p: { xs: 2, md: 3 } }}>
           <div className="section-header">
@@ -689,22 +680,32 @@ const AdminDashboardPage = () => {
                           label={displayStatus}
                           sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 700 }}
                         />
+                        {(request.status === 'ออกฝึกงาน' || request.status === 'ประเมินเสร็จแล้ว' || request.status === 'ฝึกงานเสร็จแล้ว') && (
+                          <div style={{ marginTop: '8px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '4px', fontWeight: 500 }}>
+                            {request.hasCompanyEval ? 
+                              <span style={{ color: '#10b981' }}>✓ บริษัทประเมินแล้ว</span> : 
+                              <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}><ClockIcon style={{width: 16, height: 16}}/> บริษัทกำลังประเมิน</span>}
+                            {request.hasAdvisorEval ? 
+                              <span style={{ color: '#10b981' }}>✓ อาจารย์ประเมินแล้ว</span> : 
+                              <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}><ClockIcon style={{width: 16, height: 16}}/> อาจารย์กำลังประเมิน</span>}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <div className="action-buttons">
+                        <div className="action-buttons" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
                           <button
                             className="btn-delete"
                             onClick={() => handleDelete(request.id)}
-                            style={{ padding: '5px 10px', background: '#ff4d4d', color: '#ffffff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                            style={{ padding: '6px 12px', background: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}
                           >ลบ</button>
                           {(request.status === 'รอผู้ดูแลระบบตรวจสอบ' || request.status === 'รอผู้ดูแลระบบอนุมัติ') && (
                             <>
-                              <button className="btn-approve" onClick={() => handleApprove(request.id)} title="อนุมัติคำร้อง">✓</button>
-                              <button className="btn-reject" onClick={() => handleReject(request.id)} title="ไม่อนุมัติ">✗</button>
+                              <button className="btn-approve" onClick={() => handleApprove(request.id)} title="อนุมัติคำร้อง" style={{ padding: '6px 12px', background: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>✓ อนุมัติ</button>
+                              <button className="btn-reject" onClick={() => handleReject(request.id)} title="ไม่อนุมัติ" style={{ padding: '6px 12px', background: '#f43f5e', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>✗ ปฏิเสธ</button>
                             </>
                           )}
                           {request.status === 'อนุมัติแล้ว' && (
-                            <button className="btn-next-step" onClick={() => handleOpenSemesterModal(request.id)} style={{ padding: '5px 10px', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>เริ่มฝึกงาน</button>
+                            <button className="btn-next-step" onClick={() => handleOpenSemesterModal(request.id)} style={{ padding: '6px 12px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>เริ่มฝึกงาน</button>
                           )}
                           {request.status === 'รอสถานประกอบการตอบรับ' && (
                             <button
@@ -715,7 +716,7 @@ const AdminDashboardPage = () => {
                                   link: `${window.location.origin}/public/request/${request.id}`
                                 });
                               }}
-                              style={{ padding: '5px 10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginLeft: '5px' }}
+                              style={{ padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}
                             >
                               QR Code
                             </button>
@@ -723,7 +724,7 @@ const AdminDashboardPage = () => {
                           {request.status === 'ออกฝึกงาน' && (
                             <span className="muted-action"></span>
                           )}
-                          <Link to={`/dashboard/request/${request.id}`} style={{ padding: '5px 10px', background: '#edf2f7', color: '#4a5568', borderRadius: '4px', textDecoration: 'none', fontSize: '0.9rem', display: 'inline-block', marginLeft: '5px' }}>ดูรายละเอียด</Link>
+                          <Link to={`/dashboard/request/${request.id}`} style={{ padding: '5px 12px', background: '#f8fafc', color: '#475569', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500, border: '1px solid #cbd5e1', display: 'inline-flex', alignItems: 'center' }}>ดูรายละเอียด</Link>
                         </div>
                       </TableCell>
                     </TableRow>

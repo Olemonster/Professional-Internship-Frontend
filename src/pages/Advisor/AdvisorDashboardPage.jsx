@@ -39,12 +39,6 @@ const AdvisorDashboardPage = () => {
     requestId: null,
     reason: ''
   });
-  const [evaluationModal, setEvaluationModal] = useState({
-    open: false,
-    requestId: null,
-    score: '',
-    comment: ''
-  });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   const getDisplayStatus = (status) =>
@@ -128,41 +122,6 @@ const AdvisorDashboardPage = () => {
     setRejectModal({ open: false, requestId: null, reason: '' });
   };
 
-  const handleOpenEvaluation = (requestId) => {
-    setEvaluationModal({ open: true, requestId, score: '', comment: '' });
-  };
-
-  const handleCloseEvaluation = () => {
-    setEvaluationModal({ open: false, requestId: null, score: '', comment: '' });
-  };
-
-  const handleConfirmEvaluation = async () => {
-    const scoreValue = Number(evaluationModal.score);
-    if (!Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-      setToast({ open: true, message: 'กรุณาระบุคะแนน 0-100 ให้ถูกต้อง', severity: 'warning' });
-      return;
-    }
-    if (!evaluationModal.comment.trim()) {
-      setToast({ open: true, message: 'กรุณาระบุคอมเมนต์ผลประเมิน', severity: 'warning' });
-      return;
-    }
-
-    const requestId = evaluationModal.requestId;
-    const formattedComment = `ผลประเมินหลังฝึกงาน\nคะแนน: ${scoreValue}/100\nคอมเมนต์: ${evaluationModal.comment.trim()}`;
-    try {
-      await api.patch(`/requests/${requestId}/status`, {
-        status: 'ประเมินเสร็จแล้ว',
-        advisor_comment: formattedComment,
-      });
-      setAllRequests(allRequests.map(r => String(r.id) === String(requestId)
-        ? { ...r, status: 'ประเมินเสร็จแล้ว', advisor_comment: formattedComment }
-        : r));
-      setToast({ open: true, message: 'บันทึกผลการประเมินหลังฝึกงานแล้ว', severity: 'success' });
-      handleCloseEvaluation();
-    } catch (err) {
-      setToast({ open: true, message: 'อัปเดตล้มเหลว: ' + (err.response?.data?.message || err.message), severity: 'error' });
-    }
-  };
 
   const handleFinishInternship = async (requestId) => {
     try {
@@ -362,11 +321,6 @@ const AdvisorDashboardPage = () => {
                             </Button>
                           </div>
                         )}
-                        {!isPending && isInterning && (
-                          <Button size="small" variant="contained" color="secondary" onClick={() => handleOpenEvaluation(request.id)}>
-                            ประเมินหลังฝึกงาน
-                          </Button>
-                        )}
                         {!isPending && !isInterning && isEvaluated && (
                           <Button size="small" variant="contained" color="success" onClick={() => handleFinishInternship(request.id)}>
                             เสร็จสิ้นการฝึกงาน
@@ -410,36 +364,7 @@ const AdvisorDashboardPage = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={evaluationModal.open} onClose={handleCloseEvaluation} fullWidth maxWidth="sm">
-        <DialogTitle>บันทึกผลประเมินหลังฝึกงาน</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            margin="dense"
-            label="คะแนน (0-100)"
-            type="number"
-            inputProps={{ min: 0, max: 100 }}
-            value={evaluationModal.score}
-            onChange={(event) => setEvaluationModal((prev) => ({ ...prev, score: event.target.value }))}
-          />
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            margin="dense"
-            label="คอมเมนต์ผลประเมิน"
-            value={evaluationModal.comment}
-            onChange={(event) => setEvaluationModal((prev) => ({ ...prev, comment: event.target.value }))}
-            placeholder="สรุปผลการประเมินและข้อเสนอแนะ"
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseEvaluation}>ยกเลิก</Button>
-          <Button variant="contained" color="secondary" onClick={handleConfirmEvaluation}>
-            บันทึกผลประเมิน
-          </Button>
-        </DialogActions>
-      </Dialog>
+
 
       <Snackbar
         open={toast.open}

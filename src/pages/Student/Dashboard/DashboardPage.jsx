@@ -15,15 +15,14 @@ import {
   LinearProgress,
 } from '@mui/material';
 import { STAT_EMOJI } from '../../../utils/statEmojis';
-import { calculateInternshipProgressByCheckins } from '../../../utils/internshipProgress';
 import './ProcessTracker.css';
+import { PencilSquareIcon, EnvelopeIcon, CheckCircleIcon, DocumentTextIcon, CalendarIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [studentName, setStudentName] = useState('');
   const [studentAvatar, setStudentAvatar] = useState(null);
   const [internshipRequests, setInternshipRequests] = useState([]);
-  const [checkins, setCheckins] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // chart refs removed
 
@@ -51,17 +50,13 @@ const DashboardPage = () => {
               setStudentAvatar(user.avatar);
         
               const studentId = user.student_code || user.studentId || user.username;
-              const [requestsRes, checkinsRes] = await Promise.all([
-                api.get(`/requests?studentId=${studentId}`),
-                api.get(`/checkins?studentId=${studentId}`),
-              ]);
+              const requestsRes = await api.get(`/requests?studentId=${studentId}`);
 
               const myRequests = (requestsRes.data.data || []).map(req => ({
                   ...req,
                   companyName: req.company || req.companyName,
               }));
               setInternshipRequests(myRequests);
-              setCheckins(checkinsRes.data.data || []);
             } else {
               navigate('/login');
             }
@@ -113,11 +108,11 @@ const DashboardPage = () => {
   const currentStep = getStepIndex(currentRequest?.status);
 
   const steps = [
-    { title: 'ส่งคำร้อง', icon: '📝︎' },
+    { title: 'ส่งคำร้อง', icon: <PencilSquareIcon style={{width:24, height:24}} /> },
     { title: 'รอตรวจสอบ', icon: '🕓︎' },
-    { title: 'รอตอบรับ', icon: '📨︎' },
-    { title: 'อนุมัติแล้ว', icon: '✅︎' },
-    { title: 'ประเมินหลังฝึกงาน', icon: '🧾︎' },
+    { title: 'รอตอบรับ', icon: <EnvelopeIcon style={{width:24, height:24}} /> },
+    { title: 'อนุมัติแล้ว', icon: <CheckCircleIcon style={{width:24, height:24}} /> },
+    { title: 'ประเมินหลังฝึกงาน', icon: <DocumentTextIcon style={{width:24, height:24}} /> },
     { title: 'เสร็จสิ้น', icon: '🏁︎' }
   ];
 
@@ -188,18 +183,6 @@ const DashboardPage = () => {
       isOverdue: daysLeft < 0,
     };
   }, [currentRequest]);
-
-  const internshipProgress = useMemo(() => {
-    if (!currentRequest) return 0;
-
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return calculateInternshipProgressByCheckins({
-      request: currentRequest,
-      checkins,
-      studentIds: [user.student_code, user.studentId, user.username, user.email],
-      studentNames: [user.full_name, user.name]
-    });
-  }, [currentRequest, checkins]);
 
   const notifications = useMemo(() => {
     const list = [];
@@ -297,6 +280,13 @@ const DashboardPage = () => {
           </div>
         </header>
 
+        {currentRequest?.supervisionAppointment?.date && (
+          <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+            <strong style={{display:'inline-flex', alignItems:'center', gap:'4px'}}><CalendarIcon style={{width:20, height:20}}/> กำหนดการนิเทศ:</strong> อาจารย์ที่ปรึกษาได้กำหนดวันนิเทศงานของคุณในวันที่ <strong>{new Date(currentRequest.supervisionAppointment.date).toLocaleDateString('th-TH')}</strong> รูปแบบ <strong>{currentRequest.supervisionAppointment.mode || '-'}</strong>
+            {currentRequest.supervisionAppointment.note ? ` (หมายเหตุ: ${currentRequest.supervisionAppointment.note})` : ''}
+          </Alert>
+        )}
+
         <Box
           sx={{
             display: 'grid',
@@ -341,7 +331,7 @@ const DashboardPage = () => {
 
         {documentDeadlineInfo && documentDeadlineInfo.isUrgent && (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            ⚠️ ใกล้ครบกำหนดส่งเอกสาร (ภายใน {documentDeadlineInfo.daysLeft} วัน) — กำหนดวันที่ {documentDeadlineInfo.date}
+            <span style={{display:'inline-flex', alignItems:'center', gap:'4px'}}><ExclamationTriangleIcon style={{width:20, height:20}}/> ใกล้ครบกำหนดส่งเอกสาร</span> (ภายใน {documentDeadlineInfo.daysLeft} วัน) — กำหนดวันที่ {documentDeadlineInfo.date}
           </Alert>
         )}
         {documentDeadlineInfo && documentDeadlineInfo.isOverdue && (
@@ -349,23 +339,6 @@ const DashboardPage = () => {
             เลยกำหนดส่งเอกสารแล้ว ({documentDeadlineInfo.date}) กรุณาดำเนินการด่วน
           </Alert>
         )}
-
-        <Paper elevation={0} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <span className="mono-emoji progress-emoji" aria-hidden="true">📈︎</span>
-            ความคืบหน้าการฝึกงาน
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.25, gap: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <span className="mono-emoji progress-emoji-inline" aria-hidden="true">⌛︎</span>
-              ฝึกงานไปแล้ว {internshipProgress}%
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: '#111827' }}>
-              {internshipProgress}%
-            </Typography>
-          </Box>
-          <LinearProgress variant="determinate" value={internshipProgress} sx={{ height: 10, borderRadius: 999 }} />
-        </Paper>
 
         <div className="status-tracker-container">
           <h2> สถานะคำร้องปัจจุบัน</h2>
@@ -408,7 +381,7 @@ const DashboardPage = () => {
             </div>
           ) : (
              <div className="no-request-tracker">
-              <span className="mono-emoji no-request-emoji" aria-hidden="true">🕒︎</span>
+              <ClockIcon className="no-request-emoji" style={{width:48, height:48, margin:"0 auto", display:"block", color:"#9ca3af"}} />
                 <p>คุณยังไม่มีคำร้องที่กำลังดำเนินการ</p>
              </div>
           )}

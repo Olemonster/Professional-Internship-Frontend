@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Paper, Typography, Chip, Divider, Stack, CircularProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Alert } from '@mui/material';
 import api from '../../api/axios';
+import { DocumentTextIcon } from '@heroicons/react/24/outline';
 
 const PublicRequestPage = () => {
   const { id } = useParams();
@@ -242,7 +243,7 @@ const PublicRequestPage = () => {
                         size="small"
                         component="a"
                         href={dispatchLetter.dataUrl}
-                        download={dispatchLetter.fileName || 'dispatch-letter'}
+                        download={`หนังสือส่งตัวนักศึกษา_${request.studentId}${dispatchLetter.fileName && dispatchLetter.fileName.includes('.') ? '.' + dispatchLetter.fileName.split('.').pop() : ''}`}
                         sx={{ borderRadius: 1.5, fontWeight: 600, bgcolor: '#111', '&:hover': { bgcolor: '#000' } }}
                       >
                         ดาวน์โหลด
@@ -388,7 +389,7 @@ const PublicRequestPage = () => {
               size="small"
               component="a"
               href={dispatchLetter.dataUrl}
-              download={dispatchLetter.fileName || 'dispatch-letter'}
+              download={`หนังสือส่งตัวนักศึกษา_${request.studentId}${dispatchLetter.fileName && dispatchLetter.fileName.includes('.') ? '.' + dispatchLetter.fileName.split('.').pop() : ''}`}
               sx={{ borderRadius: 1.5, fontWeight: 600, bgcolor: '#111', '&:hover': { bgcolor: '#000' } }}
             >
               ดาวน์โหลด
@@ -416,7 +417,7 @@ const PublicRequestPage = () => {
                   variant="outlined"
                   component="a"
                   href={dispatchLetter.dataUrl}
-                  download={dispatchLetter.fileName || 'dispatch-letter'}
+                  download={`หนังสือส่งตัวนักศึกษา_${request.studentId}${dispatchLetter.fileName && dispatchLetter.fileName.includes('.') ? '.' + dispatchLetter.fileName.split('.').pop() : ''}`}
                   sx={{ borderRadius: 1.5 }}
                 >
                   ดาวน์โหลดไฟล์แทน

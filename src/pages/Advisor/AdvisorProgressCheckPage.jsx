@@ -21,7 +21,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { calculateInternshipProgressByCheckins } from '../../utils/internshipProgress';
 import '../Admin/Dashboard/AdminDashboardPage.css';
 
 const AdvisorProgressCheckPage = () => {
@@ -140,17 +139,9 @@ const AdvisorProgressCheckPage = () => {
   };
 
   const rows = requests.map((request) => {
-    const progress = calculateInternshipProgressByCheckins({
-      request,
-      checkins,
-      studentIds: [request.studentId, request.student_code, request.username, request.email],
-      studentNames: [request.studentName, request.details?.student_info?.name],
-    });
-
     const requestCheckins = getRequestCheckins(request);
     return {
       ...request,
-      progress,
       checkinCount: requestCheckins.length,
       latestCheckinDate: requestCheckins[0]?.date || '-',
       checkinEntries: requestCheckins,
@@ -234,7 +225,7 @@ const AdvisorProgressCheckPage = () => {
         <header className="admin-header">
           <div>
             <h1>เช็ค Progress นักศึกษา</h1>
-            <p>ติดตามความคืบหน้าการฝึกงานและประวัติรายงานประจำวัน (ดูอย่างเดียว) • {advisorName}</p>
+            <p>ติดตามประวัติรายงานประจำวัน (ดูอย่างเดียว) • {advisorName}</p>
           </div>
           <div className="user-info">
             <span>สาขา: {advisorDept || '-'}</span>
@@ -270,7 +261,6 @@ const AdvisorProgressCheckPage = () => {
                   <TableCell>นักศึกษา</TableCell>
                   <TableCell>บริษัท</TableCell>
                   <TableCell>ช่วงฝึกงาน</TableCell>
-                  <TableCell sx={{ minWidth: 180 }}>ความคืบหน้า</TableCell>
                   <TableCell>จำนวนรายงาน</TableCell>
                   <TableCell>เช็คล่าสุด</TableCell>
                   <TableCell>ดูประวัติ</TableCell>
@@ -297,12 +287,6 @@ const AdvisorProgressCheckPage = () => {
                         {(row.startDate || row.details?.startDate || '-')}
                         {' - '}
                         {(row.endDate || row.details?.endDate || '-')}
-                      </TableCell>
-                      <TableCell>
-                        <Stack spacing={0.7}>
-                          <Typography variant="caption" color="text.secondary">{row.progress}%</Typography>
-                          <LinearProgress variant="determinate" value={row.progress} />
-                        </Stack>
                       </TableCell>
                       <TableCell>{row.checkinCount}</TableCell>
                       <TableCell>{row.latestCheckinDate}</TableCell>

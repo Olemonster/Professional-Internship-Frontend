@@ -249,28 +249,28 @@ const NewRequestPage = () => {
     }));
   };
 
-  const handleAmphureChange = (e) => {
-    const value = e.target.value;
+  const handleAmphureChange = (value) => {
+    const selectedValue = value || '';
     const matched = amphureOptions.find(
-      (a) => a.name_th === value && a.province_id === selectedProvinceId
+      (a) => a.name_th === selectedValue && a.province_id === selectedProvinceId
     );
     setSelectedAmphureId(matched ? matched.id : null);
     setFormData((prev) => ({
       ...prev,
-      homeAmphur: value,
+      homeAmphur: selectedValue,
       homeTambon: '',
       homePostal: ''
     }));
   };
 
-  const handleTambonChange = (e) => {
-    const value = e.target.value;
+  const handleTambonChange = (value) => {
+    const selectedValue = value || '';
     const matched = tambonOptions.find(
-      (t) => t.name_th === value && t.district_id === selectedAmphureId
+      (t) => t.name_th === selectedValue && t.district_id === selectedAmphureId
     );
     setFormData((prev) => ({
       ...prev,
-      homeTambon: value,
+      homeTambon: selectedValue,
       homePostal: matched?.zip_code ? String(matched.zip_code) : ''
     }));
   };
@@ -289,28 +289,28 @@ const NewRequestPage = () => {
     }));
   };
 
-  const handleCompanyAmphureChange = (e) => {
-    const value = e.target.value;
+  const handleCompanyAmphureChange = (value) => {
+    const selectedValue = value || '';
     const matched = amphureOptions.find(
-      (a) => a.name_th === value && a.province_id === selectedCompanyProvinceId
+      (a) => a.name_th === selectedValue && a.province_id === selectedCompanyProvinceId
     );
     setSelectedCompanyAmphureId(matched ? matched.id : null);
     setFormData((prev) => ({
       ...prev,
-      companyAmphur: value,
+      companyAmphur: selectedValue,
       companyTambon: '',
       companyPostal: ''
     }));
   };
 
-  const handleCompanyTambonChange = (e) => {
-    const value = e.target.value;
+  const handleCompanyTambonChange = (value) => {
+    const selectedValue = value || '';
     const matched = tambonOptions.find(
-      (t) => t.name_th === value && t.district_id === selectedCompanyAmphureId
+      (t) => t.name_th === selectedValue && t.district_id === selectedCompanyAmphureId
     );
     setFormData((prev) => ({
       ...prev,
-      companyTambon: value,
+      companyTambon: selectedValue,
       companyPostal: matched?.zip_code ? String(matched.zip_code) : ''
     }));
   };
@@ -333,6 +333,15 @@ const NewRequestPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (hasExistingRequest) return;
+
+    if (formData.studentPhone && formData.studentPhone.length !== 10) {
+      alert('กรุณากรอกเบอร์โทรศัพท์นักศึกษาให้ครบ 10 หลัก');
+      return;
+    }
+    if (formData.supervisorPhone && formData.supervisorPhone.length !== 10) {
+      alert('กรุณากรอกเบอร์โทรหัวหน้าหน่วยงานให้ครบ 10 หลัก');
+      return;
+    }
 
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -749,14 +758,21 @@ const NewRequestPage = () => {
                           />
                         )}
                       />
-                      <TextField select fullWidth size="small" id="homeAmphur" name="homeAmphur" value={formData.homeAmphur} onChange={handleAmphureChange} disabled={!selectedProvinceId}>
-                        <MenuItem value="">เลือกอำเภอ</MenuItem>
-                        {amphureOptions
-                          .filter((amphure) => amphure.province_id === selectedProvinceId)
-                          .map((amphure) => (
-                            <MenuItem key={amphure.id} value={amphure.name_th}>{amphure.name_th}</MenuItem>
-                          ))}
-                      </TextField>
+                      <Autocomplete
+                        fullWidth
+                        size="small"
+                        options={amphureOptions.filter((a) => a.province_id === selectedProvinceId).map((a) => a.name_th)}
+                        value={formData.homeAmphur || ''}
+                        onChange={(_, value) => handleAmphureChange(value)}
+                        disabled={!selectedProvinceId}
+                        autoHighlight
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder="เลือกหรือพิมพ์อำเภอ"
+                          />
+                        )}
+                      />
                     </>
                   )}
                 </div>
@@ -778,14 +794,21 @@ const NewRequestPage = () => {
                     </>
                   ) : (
                     <>
-                      <TextField select fullWidth size="small" id="homeTambon" name="homeTambon" value={formData.homeTambon} onChange={handleTambonChange} disabled={!selectedAmphureId}>
-                        <MenuItem value="">เลือกตำบล</MenuItem>
-                        {tambonOptions
-                          .filter((tambon) => tambon.district_id === selectedAmphureId)
-                          .map((tambon) => (
-                            <MenuItem key={tambon.id} value={tambon.name_th}>{tambon.name_th}</MenuItem>
-                          ))}
-                      </TextField>
+                      <Autocomplete
+                        fullWidth
+                        size="small"
+                        options={tambonOptions.filter((t) => t.district_id === selectedAmphureId).map((t) => t.name_th)}
+                        value={formData.homeTambon || ''}
+                        onChange={(_, value) => handleTambonChange(value)}
+                        disabled={!selectedAmphureId}
+                        autoHighlight
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder="เลือกหรือพิมพ์ตำบล"
+                          />
+                        )}
+                      />
                       <TextField fullWidth size="small" type="text" id="homePostal" name="homePostal" value={formData.homePostal} onChange={handleChange} placeholder="รหัสไปรษณีย์" InputProps={{ readOnly: true }} />
                     </>
                   )}
@@ -926,24 +949,22 @@ const NewRequestPage = () => {
                           />
                         )}
                       />
-                      <TextField
-                        select
+                      <Autocomplete
                         fullWidth
                         size="small"
-                        id="companyAmphur"
-                        name="companyAmphur"
-                        value={formData.companyAmphur}
-                        onChange={handleCompanyAmphureChange}
+                        options={amphureOptions.filter((a) => a.province_id === selectedCompanyProvinceId).map((a) => a.name_th)}
+                        value={formData.companyAmphur || ''}
+                        onChange={(_, value) => handleCompanyAmphureChange(value)}
                         disabled={!selectedCompanyProvinceId}
-                        required
-                      >
-                        <MenuItem value="">เลือกอำเภอ</MenuItem>
-                        {amphureOptions
-                          .filter((amphure) => amphure.province_id === selectedCompanyProvinceId)
-                          .map((amphure) => (
-                            <MenuItem key={amphure.id} value={amphure.name_th}>{amphure.name_th}</MenuItem>
-                          ))}
-                      </TextField>
+                        autoHighlight
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder="เลือกหรือพิมพ์อำเภอ"
+                            required
+                          />
+                        )}
+                      />
                     </>
                   )}
                 </div>
@@ -976,24 +997,22 @@ const NewRequestPage = () => {
                     </>
                   ) : (
                     <>
-                      <TextField
-                        select
+                      <Autocomplete
                         fullWidth
                         size="small"
-                        id="companyTambon"
-                        name="companyTambon"
-                        value={formData.companyTambon}
-                        onChange={handleCompanyTambonChange}
+                        options={tambonOptions.filter((t) => t.district_id === selectedCompanyAmphureId).map((t) => t.name_th)}
+                        value={formData.companyTambon || ''}
+                        onChange={(_, value) => handleCompanyTambonChange(value)}
                         disabled={!selectedCompanyAmphureId}
-                        required
-                      >
-                        <MenuItem value="">เลือกตำบล</MenuItem>
-                        {tambonOptions
-                          .filter((tambon) => tambon.district_id === selectedCompanyAmphureId)
-                          .map((tambon) => (
-                            <MenuItem key={tambon.id} value={tambon.name_th}>{tambon.name_th}</MenuItem>
-                          ))}
-                      </TextField>
+                        autoHighlight
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder="เลือกหรือพิมพ์ตำบล"
+                            required
+                          />
+                        )}
+                      />
                       <TextField
                         fullWidth
                         size="small"

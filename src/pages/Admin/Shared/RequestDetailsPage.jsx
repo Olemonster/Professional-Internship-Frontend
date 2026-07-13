@@ -2,20 +2,30 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Typography, Snackbar, Alert as MuiAlert } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
+import { useReactToPrint } from 'react-to-print';
 import api from '../../../api/axios';
 import './RequestDetailsPage.css';
+import PrintableEvaluationForm from '../../../components/PrintableEvaluationForm';
+import { ChartBarIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
 const RequestDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState(null);
   const [request, setRequest] = useState(null);
-  const [userRole, setUserRole] = useState('');
+  const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [rejectModal, setRejectModal] = useState({ open: false, reason: '' });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
   const [qrModal, setQrModal] = useState({ open: false, link: '' });
   const [dispatchModal, setDispatchModal] = useState({ open: false, file: null, submitting: false, error: '' });
   const dispatchFileInputRef = useRef(null);
+  const printRef = useRef(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Evaluation_${request?.studentId || 'Report'}`,
+  });
 
   useEffect(() => {
     // 1. Get User Role
@@ -28,17 +38,21 @@ const RequestDetailsPage = () => {
     const normalizedRole = String(user.role || '').toLowerCase();
     setUserRole(normalizedRole);
 
-    // 2. Load Request Details from API
-    api.get(`/requests/${id}`).then(res => {
-      if (res.data.data) {
-        setRequest(res.data.data);
+    // 2. Load Request and Evaluation Details from API
+    Promise.all([
+      api.get(`/requests/${id}`),
+      api.get(`/evaluations/request/${id}`).catch(() => ({ data: { data: null } }))
+    ]).then(([reqRes, evalRes]) => {
+      if (reqRes.data.data) {
+        setRequest(reqRes.data.data);
+        setEvaluation(evalRes.data.data);
       } else {
         setToast({ open: true, message: 'ไม่พบข้อมูลคำร้อง', severity: 'error' });
         navigate(-1);
       }
       setLoading(false);
     }).catch(err => {
-      console.error('Failed to load request:', err);
+      console.error('Failed to load data:', err);
       setToast({ open: true, message: 'ไม่พบข้อมูลคำร้อง', severity: 'error' });
       setLoading(false);
       navigate(-1);
@@ -346,11 +360,98 @@ const RequestDetailsPage = () => {
           </div>
         </section>
 
+        {request.supervisionAppointment && (
+          <section className="detail-section">
+            <h3 style={{ color: '#0ea5e9' }}>กำหนดการนิเทศ (โดยอาจารย์ที่ปรึกษา)</h3>
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span className="detail-label">วันที่นิเทศ</span>
+                <span className="detail-value" style={{ fontWeight: 'bold' }}>{request.supervisionAppointment.date ? new Date(request.supervisionAppointment.date).toLocaleDateString('th-TH') : '-'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">รูปแบบ</span>
+                <span className="detail-value">{request.supervisionAppointment.mode || '-'}</span>
+              </div>
+              {request.supervisionAppointment.note && (
+                <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                  <span className="detail-label">หมายเหตุ</span>
+                  <span className="detail-value">{request.supervisionAppointment.note}</span>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {request.rejectReason && (
              <section className="detail-section" style={{ backgroundColor: '#fff5f5', padding: '15px', borderRadius: '8px', border: '1px solid #fed7d7' }}>
                <h3 style={{ color: '#c53030', borderLeftColor: '#c53030' }}>เหตุผลที่ไม่อนุมัติ</h3>
                 <p className="detail-value" style={{ color: '#c53030' }}>{request.rejectReason}</p>
-             </section>
+         </section>
+        )}
+
+        {evaluation && (userRole === 'admin' || userRole === 'advisor') && (
+          <section className="detail-section" style={{ marginTop: '30px', padding: '24px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+               <h3 style={{ color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
+                 <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}><ChartBarIcon style={{width: 20, height: 20}}/> ผลการประเมินจากสถานประกอบการ</span>
+               </h3>
+               <Button variant="outlined" sx={{ borderColor: '#64748b', color: '#475569', '&:hover': { bgcolor: '#f1f5f9' } }} onClick={() => handlePrint()}>
+                 <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}><PrinterIcon style={{width: 20, height: 20}}/> พิมพ์เอกสาร (PDF)</span>
+               </Button>
+            </div>
+            
+            {(() => {
+              let score = 0;
+              let answered = 0;
+              for (let i = 1; i <= 20; i++) {
+                if (evaluation[`q${i}`] !== null && evaluation[`q${i}`] !== undefined) {
+                   score += parseInt(evaluation[`q${i}`]);
+                   answered++;
+                }
+              }
+              const maxScore = answered * 5;
+              const percent = maxScore > 0 ? ((score / maxScore) * 100).toFixed(2) : 0;
+              let gradeColor = '#10b981';
+              if (percent < 50) gradeColor = '#ef4444';
+              else if (percent < 70) gradeColor = '#f59e0b';
+              else if (percent < 80) gradeColor = '#3b82f6';
+
+              return (
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'flex-end' }}>
+                    <span style={{ fontWeight: '600', color: '#475569', fontSize: '1rem' }}>คะแนนรวม (Automated Grading)</span>
+                    <span style={{ fontWeight: '800', color: gradeColor, fontSize: '1.5rem' }}>{score} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>/ {maxScore}</span> ({percent}%)</span>
+                  </div>
+                  <div style={{ height: '12px', backgroundColor: '#e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
+                     <div style={{ height: '100%', width: `${percent}%`, backgroundColor: gradeColor, transition: 'width 1s ease-in-out' }}></div>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            <div className="detail-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
+               <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                  <span className="detail-label" style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>จุดเด่นของนักศึกษา</span>
+                  <span className="detail-value" style={{ display: 'block', lineHeight: 1.5 }}>{evaluation.strengths || '-'}</span>
+               </div>
+               <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                  <span className="detail-label" style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>ข้อควรปรับปรุง</span>
+                  <span className="detail-value" style={{ display: 'block', lineHeight: 1.5 }}>{evaluation.improvements || '-'}</span>
+               </div>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                 <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                    <span className="detail-label" style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>ความสนใจรับเข้าทำงานต่อ</span>
+                    <span className="detail-value" style={{ display: 'block', fontWeight: '700', color: evaluation.hireFuture === 'รับ' ? '#10b981' : (evaluation.hireFuture === 'ไม่รับ' ? '#ef4444' : '#f59e0b') }}>
+                       {evaluation.hireFuture || '-'}
+                    </span>
+                 </div>
+                 <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                    <span className="detail-label" style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>ภาพรวมคุณภาพ</span>
+                    <span className="detail-value" style={{ display: 'block', fontWeight: '600' }}>{evaluation.overallScore || '-'}</span>
+                 </div>
+               </div>
+            </div>
+          </section>
         )}
 
         <footer className="actions-footer">
@@ -506,6 +607,12 @@ const RequestDetailsPage = () => {
           <Button variant="outlined" onClick={handleCloseQrModal}>ปิด</Button>
         </DialogActions>
       </Dialog>
+
+      {(userRole === 'admin' || userRole === 'advisor') && (
+        <div style={{ display: 'none' }}>
+           <PrintableEvaluationForm ref={printRef} request={request} evaluation={evaluation} />
+        </div>
+      )}
     </div>
   );
 };

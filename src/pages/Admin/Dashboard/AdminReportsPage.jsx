@@ -35,6 +35,8 @@ const AdminReportsPage = () => {
   const [endDate, setEndDate] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [companyFilter, setCompanyFilter] = useState('all');
+  const [successDeptFilter, setSuccessDeptFilter] = useState('all');
+  const [successYear, setSuccessYear] = useState('');
   const statusPieRef = useRef(null);
   const departmentBarRef = useRef(null);
 
@@ -68,11 +70,21 @@ const AdminReportsPage = () => {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   };
 
-  const departments = useMemo(() => {
-    const values = new Set();
-    requests.forEach((req) => values.add(req.department || 'ไม่ระบุ'));
-    return ['all', ...Array.from(values).sort((a, b) => a.localeCompare(b, 'th-TH'))];
-  }, [requests]);
+  const departments = [
+    'all',
+    'สาขาวิชาวิทยาการคอมพิวเตอร์',
+    'สาขาวิชาเทคโนโลยีคอมพิวเตอร์และดิจิทัล',
+    'สาขาวิชาสาธารณสุขชุมชน',
+    'สาขาวิชาวิทยาศาสตร์การกีฬา',
+    'สาขาวิชาเทคโนโลยีการเกษตร',
+    'สาขาวิชาเทคโนโลยีและนวัตกรรมอาหาร',
+    'สาขาวิชาอาชีวอนามัยและความปลอดภัย',
+    'สาขาวิชาวิศวกรรมซอฟต์แวร์',
+    'สาขาวิชาวิศวกรรมโลจิสติกส์',
+    'สาขาวิศวกรรมการจัดการอุตสาหกรรมและสิ่งแวดล้อม',
+    'สาขาวิชาการออกแบบผลิตภัณฑ์และนวัตกรรมวัสดุ',
+    'สาขาวิชาเทคโนโลยีโยธาและสถาปัตยกรรม'
+  ];
 
   const companies = useMemo(() => {
     const values = new Set();
@@ -130,18 +142,71 @@ const AdminReportsPage = () => {
   }, [filteredRequests]);
 
   const yearlyStats = useMemo(() => {
-    const map = {};
-    filteredRequests.forEach((req) => {
+    const stats = {};
+    filteredRequests.forEach(req => {
       const date = new Date(req.submittedDate);
-      if (Number.isNaN(date.getTime())) return;
-      const key = String(date.getFullYear());
-      map[key] = (map[key] || 0) + 1;
+      const year = date.getFullYear();
+      if (!Number.isNaN(year)) {
+        stats[year] = (stats[year] || 0) + 1;
+      }
+    });
+    return Object.entries(stats).map(([year, total]) => ({ year, total })).sort((a, b) => b.year - a.year);
+  }, [filteredRequests]);
+
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    requests.forEach(req => {
+      const d = new Date(req.submittedDate);
+      if (!Number.isNaN(d.getTime())) years.add(d.getFullYear());
+    });
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    return sortedYears.length > 0 ? sortedYears : [new Date().getFullYear()];
+  }, [requests]);
+
+  useEffect(() => {
+    if (!successYear && availableYears.length > 0) {
+       setSuccessYear(availableYears[0].toString());
+    }
+  }, [availableYears, successYear]);
+
+  const successfulInterns = useMemo(() => {
+    return requests.filter(req => {
+      if (req.status !== 'ฝึกงานเสร็จแล้ว') return false;
+      
+      const reqDept = req.department || 'ไม่ระบุ';
+      if (successDeptFilter !== 'all' && reqDept !== successDeptFilter) return false;
+      
+      const d = new Date(req.submittedDate);
+      if (successYear && !Number.isNaN(d.getTime())) {
+         if (d.getFullYear().toString() !== successYear) return false;
+      }
+      return true;
+    });
+  }, [requests, successDeptFilter, successYear]);
+
+  const exportToCSV = () => {
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+    csvContent += "รหัสนักศึกษา,ชื่อ-นามสกุล,สาขา,บริษัท,วันที่ยื่น\n";
+    
+    successfulInterns.forEach(req => {
+      const row = [
+        req.studentId || '',
+        req.studentName || '',
+        req.department || '',
+        req.company || '',
+        req.submittedDate ? new Date(req.submittedDate).toLocaleDateString('th-TH') : ''
+      ].map(e => `"${e}"`).join(",");
+      csvContent += row + "\n";
     });
 
-    return Object.keys(map)
-      .sort((a, b) => a.localeCompare(b))
-      .map((year) => ({ year, total: map[year] }));
-  }, [filteredRequests]);
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "successful_interns_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const departmentStats = useMemo(() => {
     const map = {};
@@ -281,10 +346,16 @@ const AdminReportsPage = () => {
           <Link to="/admin-dashboard" className="nav-item"><span>หน้าหลัก</span></Link>
           <Link to="/admin-dashboard/students" className="nav-item"><span>นักศึกษา</span></Link>
           <Link to="/admin-dashboard/users" className="nav-item"><span>จัดการผู้ใช้</span></Link>
-          <Link to="/admin-dashboard/payments" className="nav-item"><span>ตรวจสอบการชำระเงิน</span></Link>
+          
           <Link to="/admin-dashboard/checkins" className="nav-item"><span>รายงานประจำวัน</span></Link>
           <Link to="/admin-dashboard/attendance-overview" className="nav-item"><span>ภาพรวมรายบุคคล</span></Link>
           <Link to="/admin-dashboard/reports" className="nav-item active"><span>รายงาน</span></Link>
+          <Link to="/admin-dashboard/analytics" className="nav-item">
+            <span>สถิติการประเมิน</span>
+          </Link>
+          <Link to="/admin-dashboard/announcements" className="nav-item">
+            <span>ข่าวประชาสัมพันธ์</span>
+          </Link>
           <Link to="/admin-dashboard/profile" className="nav-item"><span>โปรไฟล์</span></Link>
         </nav>
         <div className="sidebar-footer">
@@ -464,56 +535,82 @@ const AdminReportsPage = () => {
           </Paper>
         </Box>
 
-        <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2 }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>ตารางข้อมูลทั้งหมด</Typography>
-            <Chip label={`ทั้งหมด ${filteredRequests.length} รายการ`} />
-          </Stack>
-          <Divider sx={{ mb: 2 }} />
-          <TableContainer sx={{ maxHeight: 520 }}>
-            <Table stickyHeader size="small">
+        <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2, mt: 3, mb: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2, gap: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              สรุปผลนักศึกษาที่ฝึกงานสำเร็จ
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              <TextField
+                select
+                size="small"
+                label="สาขา"
+                value={successDeptFilter}
+                onChange={(e) => setSuccessDeptFilter(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                {departments.map((dept) => (
+                  <MenuItem key={`success-dept-${dept}`} value={dept}>
+                    {dept === 'all' ? 'ทั้งหมด' : dept}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                size="small"
+                label="ปี"
+                value={successYear}
+                onChange={(e) => setSuccessYear(e.target.value)}
+                sx={{ minWidth: 100 }}
+              >
+                {availableYears.map((year) => (
+                  <MenuItem key={`success-year-${year}`} value={year.toString()}>
+                    {year + 543}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={exportToCSV}
+                disabled={successfulInterns.length === 0}
+                sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' }, boxShadow: 'none', height: '40px' }}
+              >
+                Export เป็น CSV
+              </Button>
+            </Box>
+          </Box>
+          <TableContainer>
+            <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>วันที่</TableCell>
                   <TableCell>รหัสนักศึกษา</TableCell>
                   <TableCell>ชื่อ-นามสกุล</TableCell>
                   <TableCell>สาขา</TableCell>
                   <TableCell>บริษัท</TableCell>
-                  <TableCell>ตำแหน่ง</TableCell>
-                  <TableCell>สถานะ</TableCell>
+                  <TableCell>วันที่ยื่น</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredRequests.map((req) => (
-                  <TableRow key={req.id} hover>
+                {successfulInterns.map((req) => (
+                  <TableRow key={req.id}>
+                    <TableCell>{req.studentId}</TableCell>
+                    <TableCell>{req.studentName}</TableCell>
+                    <TableCell>{req.department}</TableCell>
+                    <TableCell>{req.company}</TableCell>
                     <TableCell>{new Date(req.submittedDate).toLocaleDateString('th-TH')}</TableCell>
-                    <TableCell>{req.studentId || '-'}</TableCell>
-                    <TableCell>{req.studentName || '-'}</TableCell>
-                    <TableCell>{req.department || 'ไม่ระบุ'}</TableCell>
-                    <TableCell>{req.company || 'ไม่ระบุ'}</TableCell>
-                    <TableCell>{req.position || '-'}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={req.status || 'ไม่ระบุ'}
-                        sx={{
-                          bgcolor: req.status === 'อนุมัติแล้ว' ? '#dcfce7' : req.status?.includes('ไม่อนุมัติ') ? '#fee2e2' : '#e0e7ff',
-                          color: req.status === 'อนุมัติแล้ว' ? '#166534' : req.status?.includes('ไม่อนุมัติ') ? '#991b1b' : '#3730a3',
-                          fontWeight: 700,
-                        }}
-                      />
-                    </TableCell>
                   </TableRow>
                 ))}
-                {filteredRequests.length === 0 && (
+                {successfulInterns.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</TableCell>
+                    <TableCell colSpan={5} align="center">ไม่มีข้อมูลนักศึกษาที่ฝึกงานสำเร็จ</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
         </Paper>
+
       </main>
     </div>
   );

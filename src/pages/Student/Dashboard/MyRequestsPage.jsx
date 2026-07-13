@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, MenuItem } from '@mui/material';
 import api from '../../../api/axios';
 import './DashboardPage.css'; // Reusing layout styles
-import './MyRequestsPage.css'; // Specific styles for this page
+import './MyRequestsPage.css';
+import { ClockIcon } from '@heroicons/react/24/outline'; // Specific styles for this page
 
 const MyRequestsPage = () => {
   const navigate = useNavigate();
@@ -83,13 +84,21 @@ const MyRequestsPage = () => {
     };
   };
 
+  const handleCopyEvalLink = (reqId) => {
+    const link = `${window.location.origin}/public/evaluate/${reqId}`;
+    navigator.clipboard.writeText(link);
+    alert('คัดลอกลิงก์ประเมินแล้ว นำไปส่งให้บริษัทหรือพี่เลี้ยงได้เลยครับ');
+  };
+
   const getStatusBadge = (status) => {
     const statusStyles = {
       'รออาจารย์ที่ปรึกษาอนุมัติ': { bg: '#fff3cd', color: '#856404' },
       'รอผู้ดูแลระบบอนุมัติ': { bg: '#c3dafe', color: '#434190' },
       'อนุมัติแล้ว': { bg: '#d4edda', color: '#155724' },
       'ไม่อนุมัติ (อาจารย์)': { bg: '#f8d7da', color: '#721c24' },
-      'ไม่อนุมัติ (Admin)': { bg: '#f8d7da', color: '#721c24' }
+      'ไม่อนุมัติ (Admin)': { bg: '#f8d7da', color: '#721c24' },
+      'ออกฝึกงาน': { bg: '#d1ecf1', color: '#0c5460' },
+      'ฝึกงานเสร็จแล้ว': { bg: '#e2e3e5', color: '#383d41' }
     };
     const style = statusStyles[status] || { bg: '#e2e3e5', color: '#383d41' };
     return <span className="status-badge" style={{ backgroundColor: style.bg, color: style.color }}>{status}</span>;
@@ -194,11 +203,30 @@ const MyRequestsPage = () => {
                                       <div>{formatThaiDateTime(req.submittedDate).date}</div>
                                       <div>{formatThaiDateTime(req.submittedDate).time}</div>
                         </TableCell>
-                        <TableCell>{getStatusBadge(req.status)}</TableCell>
                         <TableCell>
-                                      <Link to={`/dashboard/request/${req.id}`} className="btn-view">
-                                        รายละเอียด
-                                      </Link>
+                          {getStatusBadge(req.status)}
+                          {(req.status === 'ออกฝึกงาน' || req.status === 'ประเมินเสร็จแล้ว' || req.status === 'ฝึกงานเสร็จแล้ว') && (
+                            <div style={{ marginTop: '8px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '4px', fontWeight: 500 }}>
+                              {req.hasCompanyEval ? 
+                                <span style={{ color: '#10b981' }}>✓ บริษัทประเมินแล้ว</span> : 
+                                <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}><ClockIcon style={{width: 16, height: 16}}/> บริษัทกำลังประเมิน</span>}
+                              {req.hasAdvisorEval ? 
+                                <span style={{ color: '#10b981' }}>✓ อาจารย์ประเมินแล้ว</span> : 
+                                <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}><ClockIcon style={{width: 16, height: 16}}/> อาจารย์กำลังประเมิน</span>}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                            <Link to={`/dashboard/request/${req.id}`} className="btn-view">
+                              รายละเอียด
+                            </Link>
+                            {(req.status === 'ออกฝึกงาน' || req.status === 'ฝึกงานเสร็จแล้ว' || req.status === 'อนุมัติแล้ว') && (
+                              <button onClick={() => handleCopyEvalLink(req.id)} className="btn-view btn-eval">
+                                ลิงก์ประเมิน
+                              </button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                             ))

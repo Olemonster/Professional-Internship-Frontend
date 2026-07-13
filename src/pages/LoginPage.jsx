@@ -47,11 +47,8 @@ const LoginPage = () => {
       localStorage.setItem('user', JSON.stringify(userData));
       console.log('Login success:', userData);
 
-      switch(user.role) {
-          case 'admin': navigate('/admin-dashboard'); break;
-          case 'advisor': navigate('/advisor-dashboard'); break;
-          default: navigate('/dashboard');
-      }
+      // ไปที่หน้า Home เสมอหลังจาก Login ไม่ว่าจะเป็นสิทธิ์ไหน
+      navigate('/');
 
     } catch (error) {
       console.error('Login error:', error);

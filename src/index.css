@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -5,12 +7,12 @@
 }
 
 :root {
-  --bg: #ffffff;
-  --text: #111111;
-  --muted: #333333;
-  --surface: #ffffff;
-  --surface-muted: #f3f4f6;
-  --border: #e5e7eb;
+  --bg: linear-gradient(135deg, #f4e8ff 0%, #fcfdfd 35%, #fef9c3 100%);
+  --text: #1a237e;
+  --muted: #4c1d95;
+  --surface: rgba(255, 255, 255, 0.8);
+  --surface-muted: rgba(243, 244, 246, 0.7);
+  --border: #e9d5ff;
   --primary: #111111;
   --primary-contrast: #ffffff;
   --danger: #b91c1c;
@@ -20,13 +22,11 @@
 
 body {
   margin: 0;
-  font-family: 'Kanit', 'Sarabun', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-family: 'Sarabun', 'Kanit', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  overflow-y: scroll;
   overflow-x: hidden;
-  scrollbar-gutter: stable;
   background: var(--bg);
   color: var(--text);
 }

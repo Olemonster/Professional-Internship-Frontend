@@ -170,9 +170,7 @@ const AdminAttendanceOverviewPage = () => {
           <Link to="/admin-dashboard/users" className="nav-item">
             <span>จัดการผู้ใช้</span>
           </Link>
-          <Link to="/admin-dashboard/payments" className="nav-item">
-            <span>ตรวจสอบการชำระเงิน</span>
-          </Link>
+          
           <Link to="/admin-dashboard/checkins" className="nav-item">
             <span>รายงานประจำวัน</span>
           </Link>
@@ -181,6 +179,12 @@ const AdminAttendanceOverviewPage = () => {
           </Link>
           <Link to="/admin-dashboard/reports" className="nav-item">
             <span>รายงาน</span>
+          </Link>
+          <Link to="/admin-dashboard/analytics" className="nav-item">
+            <span>สถิติการประเมิน</span>
+          </Link>
+          <Link to="/admin-dashboard/announcements" className="nav-item">
+            <span>ข่าวประชาสัมพันธ์</span>
           </Link>
           <Link to="/admin-dashboard/profile" className="nav-item">
             <span>โปรไฟล์</span>
