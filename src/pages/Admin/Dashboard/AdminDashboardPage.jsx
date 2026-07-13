@@ -802,10 +802,10 @@ const AdminDashboardPage = () => {
 
       {/* QR Code Modal */}
       <Dialog open={qrModal.open} onClose={handleCloseQrModal} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>\u0e2a\u0e48\u0e07\u0e04\u0e33\u0e23\u0e49\u0e2d\u0e07\u0e44\u0e1b\u0e22\u0e31\u0e07\u0e2a\u0e16\u0e32\u0e19\u0e1b\u0e23\u0e30\u0e01\u0e2d\u0e1a\u0e01\u0e32\u0e23\u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22\u0e41\u0e25\u0e49\u0e27</DialogTitle>
+        <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>คำร้องอนุมัติแล้ว</DialogTitle>
         <DialogContent sx={{ textAlign: 'center', py: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            \u0e41\u0e0a\u0e23\u0e4c QR Code \u0e2b\u0e23\u0e37\u0e2d\u0e25\u0e34\u0e07\u0e01\u0e4c\u0e19\u0e35\u0e49\u0e43\u0e2b\u0e49\u0e2a\u0e16\u0e32\u0e19\u0e1b\u0e23\u0e30\u0e01\u0e2d\u0e1a\u0e01\u0e32\u0e23\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e15\u0e2d\u0e1a\u0e23\u0e31\u0e1a\u0e2b\u0e23\u0e37\u0e2d\u0e1b\u0e0f\u0e34\u0e40\u0e2a\u0e18\u0e19\u0e31\u0e01\u0e28\u0e36\u0e01\u0e29\u0e32
+            แชร์ QR Code หรือลิงก์นี้ให้สถานประกอบการเพื่อตอบรับหรือปฏิเสธนักศึกษา
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <Box sx={{ p: 2, bgcolor: '#fff', border: '1px solid #e0e0e0', borderRadius: 2 }}>
