@@ -40,6 +40,11 @@ const PaymentProofPage = () => {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
+      if (selectedFile.size > 20 * 1024 * 1024) {
+        alert('ไฟล์มีขนาดใหญ่เกินไป กรุณาอัปโหลดไฟล์ขนาดไม่เกิน 20MB');
+        e.target.value = '';
+        return;
+      }
       setFile(selectedFile);
       setPreviewUrl(URL.createObjectURL(selectedFile));
       setUploadStatus(null);
@@ -127,7 +132,7 @@ const PaymentProofPage = () => {
         <div className="content-wrapper">
             <div className="payment-proof-card">
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>อัพโหลดใบเสร็จ</Typography>
-                <Typography className="instruction-text" sx={{ color: '#475569', mb: 2 }}>กรุณาแนบไฟล์รูปภาพ (JPG, PNG) ของหลักฐานการชำระเงิน</Typography>
+                <Typography className="instruction-text" sx={{ color: '#475569', mb: 2 }}>กรุณาแนบไฟล์รูปภาพ (JPG, PNG) ของหลักฐานการชำระเงิน (ขนาดไม่เกิน 20MB)</Typography>
                 
                 <form onSubmit={handleUpload} className="upload-form">
                     <div className="file-drop-area">

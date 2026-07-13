@@ -89,6 +89,11 @@ const RequestDetailsPage = () => {
       event.target.value = '';
       return;
     }
+    if (file.size > 20 * 1024 * 1024) {
+      setDispatchModal((prev) => ({ ...prev, error: 'ขนาดไฟล์ต้องไม่เกิน 20MB', file: null }));
+      event.target.value = '';
+      return;
+    }
     setDispatchModal((prev) => ({ ...prev, file, error: '' }));
   };
 
