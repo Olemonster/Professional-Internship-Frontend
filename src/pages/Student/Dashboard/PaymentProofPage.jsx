@@ -63,7 +63,7 @@ const PaymentProofPage = () => {
       await api.post('/payments', {
         studentId: user.student_code || user.studentId || user.username || '65xxxxx',
         studentName: user.full_name || user.name || 'นักศึกษา',
-        date: new Date().toLocaleDateString('th-TH'),
+        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format for MySQL
         department: user.department || user.major || 'ไม่ระบุ',
         slipDataUrl,
         slipFileName: file.name
@@ -73,7 +73,7 @@ const PaymentProofPage = () => {
       setFile(null);
       setPreviewUrl(null);
     } catch (error) {
-        console.error(error);
+        console.error('Upload Error:', error.response?.data || error.message);
         setUploadStatus('error');
     } finally {
         setUploading(false);
