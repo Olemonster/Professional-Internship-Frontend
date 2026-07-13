@@ -283,11 +283,7 @@ const HomePage = () => {
         </Toolbar>
       </AppBar>
 
-      <main className="hero-section" style={{
-        backgroundImage: `url(${banner})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center top',
-      }}>
+      <main className="hero-section">
         <div className="hero-content">
           <div className="hero-buttons">
             {/* Buttons removed */ }
