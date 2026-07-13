@@ -201,8 +201,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 55vh;
-  padding: 1.5rem 4% 2.5rem 4%;
+  min-height: calc(100vh - 91px);
+  padding: 0;
   text-align: center;
 }
 
@@ -212,14 +212,7 @@
   position: relative;
 }
 
-/* dim overlay so text is readable */
-.hero-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(rgba(255,255,255,0.65), rgba(255,255,255,0.65));
-  pointer-events: none;
-}
+/* Dim overlay removed since there is no text over the image now */
 
 .hero-content {
   position: relative;
@@ -420,8 +413,8 @@
   }
 
   .hero-section {
-    min-height: 50vh;
-    padding: 1.25rem 5% 2rem 5%;
+    min-height: calc(100vh - 91px);
+    padding: 0;
   }
 
   .hero-title {
