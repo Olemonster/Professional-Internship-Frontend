@@ -384,13 +384,17 @@ const NewRequestPage = () => {
         studentPhoto: photoData ? { name: studentPhoto.name } : null
       };
 
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const formattedDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
       const requestPayload = {
         studentId: formData.studentId || user.student_code || user.username || 'N/A',
         studentName: formData.studentName || user.full_name || user.name || 'Student',
         department: formData.studentMajor || user.major || '',
         company: formData.companyName,
         position: formData.position,
-        submittedDate: new Date().toISOString(),
+        submittedDate: formattedDate,
         status: 'รออาจารย์ที่ปรึกษาอนุมัติ',
         details,
       };
