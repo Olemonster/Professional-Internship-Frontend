@@ -353,6 +353,19 @@ const RequestDetailsPage = () => {
             ย้อนกลับ
           </Button>
           
+          {normalizedStatus === 'รอสถานประกอบการตอบรับ' && (
+            <Button 
+              variant="contained" 
+              sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' }, color: 'white' }}
+              onClick={() => {
+                const link = `${window.location.origin}/public/request/${id}`;
+                setQrModal({ open: true, link });
+              }}
+            >
+              ดู QR Code
+            </Button>
+          )}
+          
           {canApprove && (
             <>
               <Button variant="contained" color="error" className="btn-reject-lg" onClick={handleReject}>
@@ -445,10 +458,10 @@ const RequestDetailsPage = () => {
 
       {/* QR Code Modal */}
       <Dialog open={qrModal.open} onClose={handleCloseQrModal} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>&#x0e2a;&#x0e48;&#x0e07;&#x0e04;&#x0e33;&#x0e23;&#x0e49;&#x0e2d;&#x0e07;&#x0e44;&#x0e1b;&#x0e22;&#x0e31;&#x0e07;&#x0e2a;&#x0e16;&#x0e32;&#x0e19;&#x0e1b;&#x0e23;&#x0e30;&#x0e01;&#x0e2d;&#x0e1a;&#x0e01;&#x0e32;&#x0e23;&#x0e40;&#x0e23;&#x0e35;&#x0e22;&#x0e1a;&#x0e23;&#x0e49;&#x0e2d;&#x0e22;&#x0e41;&#x0e25;&#x0e49;&#x0e27;</DialogTitle>
+        <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>คำร้องอนุมัติแล้ว</DialogTitle>
         <DialogContent sx={{ textAlign: 'center', py: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            &#x0e41;&#x0e0a;&#x0e23;&#x0e4c; QR Code &#x0e2b;&#x0e23;&#x0e37;&#x0e2d;&#x0e25;&#x0e34;&#x0e07;&#x0e01;&#x0e4c;&#x0e19;&#x0e35;&#x0e49;&#x0e43;&#x0e2b;&#x0e49;&#x0e2a;&#x0e16;&#x0e32;&#x0e19;&#x0e1b;&#x0e23;&#x0e30;&#x0e01;&#x0e2d;&#x0e1a;&#x0e01;&#x0e32;&#x0e23;&#x0e40;&#x0e1e;&#x0e37;&#x0e48;&#x0e2d;&#x0e15;&#x0e2d;&#x0e1a;&#x0e23;&#x0e31;&#x0e1a;&#x0e2b;&#x0e23;&#x0e37;&#x0e2d;&#x0e1b;&#x0e0f;&#x0e34;&#x0e40;&#x0e2a;&#x0e18;&#x0e19;&#x0e31;&#x0e01;&#x0e28;&#x0e36;&#x0e01;&#x0e29;&#x0e32;
+            แชร์ QR Code หรือลิงก์นี้ให้สถานประกอบการเพื่อตอบรับหรือปฏิเสธนักศึกษา
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <Box sx={{ p: 2, bgcolor: '#fff', border: '1px solid #e0e0e0', borderRadius: 2 }}>

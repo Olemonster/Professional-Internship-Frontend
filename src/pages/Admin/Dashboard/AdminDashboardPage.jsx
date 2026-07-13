@@ -701,6 +701,20 @@ const AdminDashboardPage = () => {
                           {request.status === 'อนุมัติแล้ว' && (
                             <button className="btn-next-step" onClick={() => handleOpenSemesterModal(request.id)} style={{ padding: '5px 10px', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>เริ่มฝึกงาน</button>
                           )}
+                          {request.status === 'รอสถานประกอบการตอบรับ' && (
+                            <button
+                              onClick={() => {
+                                setQrModal({
+                                  open: true,
+                                  requestId: request.id,
+                                  link: `${window.location.origin}/public/request/${request.id}`
+                                });
+                              }}
+                              style={{ padding: '5px 10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginLeft: '5px' }}
+                            >
+                              QR Code
+                            </button>
+                          )}
                           {request.status === 'ออกฝึกงาน' && (
                             <span className="muted-action"></span>
                           )}
