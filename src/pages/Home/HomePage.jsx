@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Avatar,
@@ -14,125 +14,37 @@ import {
 import api from '../../api/axios';
 import './HomePage.css';
 import logo from '../../assets/LASC-SSKRU-1.png';
-import banner from '../../assets/Banner.jpg';
 import sskruBg from '../../assets/SSKRU_BG.png';
-import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-  const [companyCatalog, setCompanyCatalog] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const carouselRef = useRef(null);
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
 
-  const companyImagePool = [
-    'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1504639725590-34d0984388bd?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1509395176047-4a66953fd231?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1449247526693-aa049327be54?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=800&auto=format&fit=crop&crop=top',
-    'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=800&auto=format&fit=crop&crop=top',
-  ];
-
-  const getCompanyImage = (key, indexOffset = 0) => {
-    if (!companyImagePool.length) return undefined;
-    const hash = key
-      .split('')
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const index = (hash + indexOffset) % companyImagePool.length;
-    return companyImagePool[index];
-  };
-
-  const normalizeCompanyName = (value) =>
-    String(value || '')
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, ' ');
-
-  const fallbackCompanies = [
-    { name: 'บริษัท ABC', businessType: 'เทคโนโลยีสารสนเทศ', address: 'สงขลา', source: 'รายการแนะนำ' },
-    { name: 'บริษัท NEX Digital', businessType: 'ซอฟต์แวร์และดิจิทัลโซลูชัน', address: 'หาดใหญ่', source: 'รายการแนะนำ' },
-    { name: 'บริษัท Green Agro Tech', businessType: 'เทคโนโลยีการเกษตร', address: 'พัทลุง', source: 'รายการแนะนำ' },
-    { name: 'บริษัท HealthPlus Care', businessType: 'สุขภาพและสาธารณสุข', address: 'สงขลา', source: 'รายการแนะนำ' },
-    { name: 'บริษัท BuildWise Engineering', businessType: 'วิศวกรรมและโครงสร้าง', address: 'นครศรีธรรมราช', source: 'รายการแนะนำ' },
-    { name: 'บริษัท Smart Logistics Hub', businessType: 'โลจิสติกส์และซัพพลายเชน', address: 'สุราษฎร์ธานี', source: 'รายการแนะนำ' },
-  ].map((company, index) => ({
-    ...company,
-    imageUrl: getCompanyImage(normalizeCompanyName(company.name), index),
-  }));
-
-  const formatAddress = (address) => {
-    if (!address) return 'ไม่ระบุที่อยู่';
-    if (typeof address === 'string') return address;
-
-    const parts = [];
-    if (address.house) parts.push(`บ้านเลขที่ ${address.house}`);
-    if (address.moo) parts.push(`หมู่ ${address.moo}`);
-    if (address.tambon) parts.push(`ตำบล ${address.tambon}`);
-    if (address.amphur) parts.push(`อำเภอ ${address.amphur}`);
-    if (address.province) parts.push(`จังหวัด ${address.province}`);
-    if (address.postal) parts.push(`รหัส ${address.postal}`);
-    if (address.detail) parts.push(address.detail);
-
-    return parts.length ? parts.join(' ') : 'ไม่ระบุที่อยู่';
-  };
-
-  const buildCompanyCatalog = async () => {
-    const map = new Map();
-    try {
-      const userStr = localStorage.getItem('user');
-      const token = (() => {
-        try {
-          return userStr ? JSON.parse(userStr)?.token : undefined;
-        } catch {
-          return undefined;
+  const scrollCarousel = (direction) => {
+    if (carouselRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+      const cardNode = carouselRef.current.querySelector('.news-card');
+      const scrollAmount = cardNode ? cardNode.offsetWidth + 24 : 344;
+      
+      if (direction === 'left') {
+        if (scrollLeft <= 10) {
+          carouselRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
+        } else {
+          carouselRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
         }
-      })();
-
-      if (!token) {
-        const publicRes = await api.get('/public/companies', { headers: { Authorization: undefined } });
-        const companies = (publicRes.data.data || []).map((c) => ({
-          ...c,
-          address: typeof c.address === 'object' && c.address !== null ? formatAddress(c.address) : (c.address || '-'),
-        }));
-        setCompanyCatalog(companies.length ? companies : fallbackCompanies);
-        return;
+      } else {
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          carouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          carouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
       }
-
-      const reqsRes = await api.get('/requests').catch(() => ({ data: { data: [] } }));
-      const requests = reqsRes.data.data || [];
-
-      requests.forEach((request) => {
-        const companyName = request.companyName || request.company || request.details?.companyName || '';
-        const key = normalizeCompanyName(companyName);
-        if (!key) return;
-        const existing = map.get(key);
-        if (existing) {
-          if (existing.businessType === 'ไม่ระบุประเภทธุรกิจ' && request.position) {
-            existing.businessType = `ตำแหน่งยอดฮิต: ${request.position}`;
-          }
-          return;
-        }
-        map.set(key, {
-          name: companyName,
-          businessType: request.position ? `ตำแหน่งยอดฮิต: ${request.position}` : 'ไม่ระบุประเภทธุรกิจ',
-          address: formatAddress(request.details?.companyAddress || request.address),
-          source: 'จากคำร้องรุ่นพี่',
-          imageUrl: getCompanyImage(key, 3),
-        });
-      });
-    } catch (err) {
-      console.error('Failed to build company catalog:', err);
-      setCompanyCatalog(fallbackCompanies);
-      return;
     }
-    const result = Array.from(map.values());
-    setCompanyCatalog(result.length > 0 ? result.slice(0, 12) : fallbackCompanies);
   };
 
   useEffect(() => {
@@ -147,28 +59,22 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    buildCompanyCatalog();
-
     // Fetch announcements
     api.get('/public/announcements')
       .then(res => setAnnouncements(res.data.data || []))
       .catch(() => setAnnouncements([]));
-
-    const reloadCatalog = () => buildCompanyCatalog();
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') reloadCatalog();
-    };
-
-    window.addEventListener('focus', reloadCatalog);
-    window.addEventListener('storage', reloadCatalog);
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      window.removeEventListener('focus', reloadCatalog);
-      window.removeEventListener('storage', reloadCatalog);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
   }, []);
+
+  // Autoplay Carousel Effect
+  useEffect(() => {
+    let interval;
+    if (!isCarouselHovered && announcements.length > 0) {
+      interval = setInterval(() => {
+        scrollCarousel('right');
+      }, 3000); // Scroll every 3 seconds
+    }
+    return () => clearInterval(interval);
+  }, [isCarouselHovered, announcements]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -312,8 +218,8 @@ const HomePage = () => {
         </Typography>
       </Box>
 
-      <main className="hero-section" style={{ padding: 0 }}>
-        <img src={sskruBg} alt="SSKRU Background" style={{ width: '100%', height: 'auto', display: 'block' }} />
+      <main className="hero-section" style={{ padding: 0, position: 'relative' }}>
+        <img src={sskruBg} alt="SSKRU Background" style={{ width: '100%', height: '450px', objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }} />
         <div className="hero-content" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="hero-buttons">
             {/* Buttons removed */ }
@@ -323,47 +229,70 @@ const HomePage = () => {
 
       {/* Announcements Section */}
       {announcements.length > 0 && (
-        <section className="features-section">
-          <h2 className="section-title">ประชาสัมพันธ์</h2>
-          <div className="features-grid">
-            {announcements.slice(0, 6).map((news) => (
-              <Link to={`/news/${news.id}`} key={news.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div className="feature-card" style={{ position: 'relative', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', height: '100%' }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
+        <section className="features-section" style={{ background: '#fcfcfc', padding: '4rem 5%' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', maxWidth: '100%', margin: '0 auto 2rem auto' }}>
+            <h2 className="section-title" style={{ margin: 0, textAlign: 'left', fontSize: '1.8rem' }}>ข่าวสารและประกาศ</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <Link to="/news" style={{ color: '#111', fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>ดูข่าวทั้งหมด</Link>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => scrollCarousel('left')} style={{ width: 40, height: 40, borderRadius: 4, border: '1px solid #eaeaea', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <ChevronLeftIcon style={{ width: 20, height: 20, color: '#666' }} />
+                </button>
+                <button onClick={() => scrollCarousel('right')} style={{ width: 40, height: 40, borderRadius: 4, border: '1px solid #eaeaea', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <ChevronRightIcon style={{ width: 20, height: 20, color: '#666' }} />
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            className="news-carousel-container" 
+            ref={carouselRef} 
+            onMouseEnter={() => setIsCarouselHovered(true)}
+            onMouseLeave={() => setIsCarouselHovered(false)}
+            style={{ maxWidth: '100%', margin: '0 auto', display: 'flex', overflowX: 'auto', gap: '24px', scrollBehavior: 'smooth', scrollSnapType: 'x mandatory', paddingBottom: '1rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+          >
+            {announcements.slice(0, 10).map((news) => (
+              <div 
+                key={news.id} 
+                className="news-card" 
+                onClick={() => navigate(`/news/${news.id}`)}
+                style={{ cursor: 'pointer', flex: '0 0 auto', width: 'calc((100% - 48px) / 3)', minWidth: '280px', scrollSnapAlign: 'start', background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease-in-out', position: 'relative' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                {news.is_pinned ? (
+                {news.is_pinned === 1 && (
                   <span style={{
                     position: 'absolute', top: 12, right: 12,
                     background: '#fbbf24', color: '#78350f', fontSize: '0.7rem',
-                    fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
-                    display: 'flex', alignItems: 'center', gap: '4px'
+                    fontWeight: 700, padding: '2px 8px', borderRadius: '4px',
+                    display: 'flex', alignItems: 'center', gap: '4px', zIndex: 1
                   }}><MapPinIcon style={{ width: 12, height: 12 }} /> ปักหมุด</span>
-                ) : null}
-                {news.coverImage && (
-                  <Box
-                    component="img"
-                    src={news.coverImage}
-                    alt={news.title}
-                    sx={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 1, mb: 2 }}
-                  />
                 )}
-                <span style={{
-                  display: 'inline-block', fontSize: '0.7rem', fontWeight: 700,
-                  padding: '2px 10px', borderRadius: '999px', marginBottom: '8px',
-                  backgroundColor: news.category === 'รับสมัคร' ? '#dcfce7' : news.category === 'ประกาศ' ? '#dbeafe' : news.category === 'กิจกรรม' ? '#fef3c7' : '#f3f4f6',
-                  color: news.category === 'รับสมัคร' ? '#166534' : news.category === 'ประกาศ' ? '#1e40af' : news.category === 'กิจกรรม' ? '#92400e' : '#374151',
-                }}>{news.category}</span>
-                <h3 style={{ marginBottom: '8px', fontSize: '1rem' }}>{news.title}</h3>
-                <p style={{ color: '#64748b', fontSize: '0.85rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {news.content}
-                </p>
-                <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '12px' }}>
-                  {new Date(news.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  {news.author && ` • โดย ${news.author}`}
-                </p>
+                {news.coverImage ? (
+                  <img src={news.coverImage} alt={news.title} style={{ width: '100%', height: 'auto', aspectRatio: '3/2', objectFit: 'cover', borderBottom: '3px solid #f97316' }} />
+                ) : (
+                  <div style={{ width: '100%', height: 'auto', aspectRatio: '3/2', background: '#f3f4f6', borderBottom: '3px solid #f97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: '#9ca3af' }}>ไม่มีรูปภาพ</span>
+                  </div>
+                )}
+                
+                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.75rem' }}>
+                    {news.author || 'admin'} &mdash; {new Date(news.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111', marginBottom: '0.75rem', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {news.title}
+                  </h3>
+                  <p style={{ fontSize: '0.9rem', color: '#666', lineHeight: 1.6, marginBottom: '1.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
+                    {news.content}
+                  </p>
+                  
+                  <Link to={`/news/${news.id}`} onClick={(e) => e.stopPropagation()} style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111', textDecoration: 'none', display: 'inline-block', marginTop: 'auto' }}>
+                    Read More
+                  </Link>
+                </div>
               </div>
-              </Link>
             ))}
           </div>
         </section>

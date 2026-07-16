@@ -358,6 +358,25 @@
   color: #475569;
 }
 
+/* News Carousel Specific Styles */
+.news-carousel-container::-webkit-scrollbar {
+  display: none;
+}
+
+.news-card:hover {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+}
+
+.news-card h3:hover {
+  color: #f97316 !important;
+  transition: color 0.2s;
+}
+
+.news-card a:hover {
+  color: #f97316 !important;
+  transition: color 0.2s;
+}
+
 /* Footer */
 .footer {
   background: transparent;
