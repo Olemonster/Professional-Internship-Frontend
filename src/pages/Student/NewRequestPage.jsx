@@ -638,7 +638,7 @@ const NewRequestPage = () => {
 
                 <div className="form-group">
                   <label htmlFor="studentName">ชื่อ-นามสกุล</label>
-                  <TextField fullWidth size="small" type="text" id="studentName" name="studentName" value={formData.studentName} onChange={handleChange} placeholder="ชื่อ-นามสกุล" />
+                  <TextField fullWidth size="small" type="text" id="studentName" name="studentName" value={formData.studentName} onChange={handleChange} placeholder="ชื่อ-นามสกุล" disabled={true} />
                 </div>
               </div>
 
@@ -655,6 +655,7 @@ const NewRequestPage = () => {
                     onChange={handleChange}
                     placeholder="รหัสนักศึกษา"
                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 13 }}
+                    disabled={true}
                   />
                 </div>
 
@@ -694,7 +695,7 @@ const NewRequestPage = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="studentMajor">สาขา</label>
-                  <TextField select fullWidth size="small" id="studentMajor" name="studentMajor" value={formData.studentMajor} onChange={handleChange}>
+                  <TextField select fullWidth size="small" id="studentMajor" name="studentMajor" value={formData.studentMajor} onChange={handleChange} disabled={true}>
                     <MenuItem value="">เลือกสาขา</MenuItem>
                     {departmentOptions.map((dept) => (
                       <MenuItem key={dept} value={dept}>{dept}</MenuItem>
