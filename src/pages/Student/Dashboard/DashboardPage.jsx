@@ -17,6 +17,7 @@ import {
 import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './ProcessTracker.css';
 import { PencilSquareIcon, EnvelopeIcon, CheckCircleIcon, DocumentTextIcon, CalendarIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import StudentSidebar from '../../../components/StudentSidebar';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -231,37 +232,12 @@ const DashboardPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
-      <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2>นักศึกษา</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/dashboard" className="nav-item active">
-            <span>หน้าหลัก</span>
-          </Link>
-          <Link to="/dashboard/new-request" className="nav-item">
-            <span>ยื่นคำร้องใหม่</span>
-          </Link>
-          <Link to="/dashboard/my-requests" className="nav-item">
-            <span>คำร้องของฉัน</span>
-          </Link>
-          <Link to="/dashboard/payment-proof" className="nav-item">
-            <span>หลักฐานการชำระออกฝึก</span>
-          </Link>
-          <Link to="/dashboard/check-in" className="nav-item">
-            <span>รายงานประจำวัน</span>
-          </Link>
-          <Link to="/dashboard/profile" className="nav-item">
-            <span>โปรไฟล์</span>
-          </Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <span>← ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
+      <StudentSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/dashboard"
+        handleLogout={handleLogout}
+      />
 
       <main className="dashboard-main">
         <header className="dashboard-header">

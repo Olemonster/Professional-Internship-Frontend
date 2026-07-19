@@ -4,6 +4,7 @@ import { TextField, Button, Input } from '@mui/material';
 import asyncStorage from '../../../utils/asyncStorage';
 import './AdminDashboardPage.css';
 import '../../Student/Dashboard/ProfilePage.css';
+import AdminSidebar from '../../../components/AdminSidebar';
 
 const AdminProfilePage = () => {
   const navigate = useNavigate();
@@ -104,50 +105,12 @@ const AdminProfilePage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
-      <div
-        className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`}
-        onClick={() => setIsMenuOpen(false)}
-      ></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2> ผู้ดูแลระบบ</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className="nav-item">
-            <span>หน้าหลัก</span>
-          </Link>
-          <Link to="/admin-dashboard/students" className="nav-item">
-            <span>นักศึกษา</span>
-          </Link>
-          <Link to="/admin-dashboard/users" className="nav-item">
-            <span>จัดการผู้ใช้</span>
-          </Link>
-          
-          <Link to="/admin-dashboard/checkins" className="nav-item">
-            <span>รายงานประจำวัน</span>
-          </Link>
-          <Link to="/admin-dashboard/attendance-overview" className="nav-item">
-            <span>ภาพรวมรายบุคคล</span>
-          </Link>
-          <Link to="/admin-dashboard/reports" className="nav-item">
-            <span>รายงาน</span>
-          </Link>
-          <Link to="/admin-dashboard/analytics" className="nav-item">
-            <span>สถิติการประเมิน</span>
-          </Link>
-          <Link to="/admin-dashboard/announcements" className="nav-item">
-            <span>ข่าวประชาสัมพันธ์</span>
-          </Link>
-          <Link to="/admin-dashboard/profile" className="nav-item active">
-            <span>โปรไฟล์</span>
-          </Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <span>← ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/admin-dashboard/profile"
+        handleLogout={handleLogout}
+      />
 
       <main className="admin-main">
         <header className="admin-header">

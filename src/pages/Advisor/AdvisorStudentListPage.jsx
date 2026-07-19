@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import '../Admin/Dashboard/AdminDashboardPage.css'; // Reuse styles
 import '../Admin/Dashboard/StudentListPage.css';
+import AdvisorSidebar from '../../components/AdvisorSidebar';
 
 const AdvisorStudentListPage = () => {
     const navigate = useNavigate();
@@ -93,31 +94,12 @@ const AdvisorStudentListPage = () => {
                 <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
                 <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
             </div>
-            <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-            <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-                <div className="sidebar-header">
-                        <h2> อาจารย์ที่ปรึกษา</h2>
-                </div>
-                <nav className="sidebar-nav">
-                    <Link to="/advisor-dashboard" className="nav-item">
-                        <span>หน้าหลัก</span>
-                    </Link>
-                    <Link to="/advisor-dashboard/students" className="nav-item active">
-                        <span>รายชื่อนักศึกษาฝึกงาน</span>
-                    </Link>
-                    <Link to="/advisor-dashboard/supervision" className="nav-item">
-                        <span>ตารางนิเทศงาน</span>
-                    </Link>
-                    <Link to="/advisor-dashboard/progress" className="nav-item">
-                        <span>เช็ค Progress</span>
-                    </Link>
-                </nav>
-                <div className="sidebar-footer">
-                    <button onClick={handleLogout} className="logout-btn">
-                        <span>← ออกจากระบบ</span>
-                    </button>
-                </div>
-            </aside>
+            <AdvisorSidebar
+                isMenuOpen={isMenuOpen}
+                setIsMenuOpen={setIsMenuOpen}
+                currentPath="/advisor-dashboard/students"
+                handleLogout={handleLogout}
+            />
 
             <main className="admin-main">
                 <header className="admin-header">

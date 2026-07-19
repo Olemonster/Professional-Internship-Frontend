@@ -114,7 +114,7 @@ const HomePage = () => {
         </Typography>
       </Box>
 
-      <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '3px solid transparent', borderImage: 'linear-gradient(to right, #9333ea, #eab308) 1', bgcolor: '#ffffff' }}>
+      <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '3px solid transparent', borderImage: 'linear-gradient(to right, #000000, #ffffff) 1', bgcolor: '#ffffff' }}>
         <Toolbar
           sx={{
             minHeight: 90,
@@ -127,7 +127,7 @@ const HomePage = () => {
           }}
         >
           <Box sx={{ minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box
                 component="img"
                 src={logo}
@@ -141,7 +141,15 @@ const HomePage = () => {
                 }}
               />
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.125rem', sm: '1.3rem', md: '1.6rem' }, letterSpacing: '0.2px', color: '#111111' }}>
+                <Typography sx={{ 
+                  fontWeight: 800, 
+                  fontSize: { xs: '0.9rem', sm: '1.2rem', md: '1.4rem' }, 
+                  letterSpacing: '0px', 
+                  whiteSpace: 'nowrap',
+                  color: '#111111',
+                  textTransform: 'uppercase',
+                  fontFamily: '"Outfit", "Inter", sans-serif'
+                }}>
                   Professional Internship
                 </Typography>
               </Box>
@@ -158,7 +166,7 @@ const HomePage = () => {
             }}
           >
             {!user ? (
-              <Button component={Link} to="/login" variant="text" sx={{ background: 'linear-gradient(135deg, #6b21a8, #9333ea)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700, minWidth: 'auto', px: 1, transition: 'all 0.3s', '&:hover': { background: 'linear-gradient(135deg, #ca8a04, #facc15)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' } }}>
+              <Button component={Link} to="/login" variant="text" sx={{ color: '#111111', fontWeight: 700, minWidth: 'auto', px: 1, transition: 'all 0.3s', '&:hover': { color: '#f59e0b' } }}>
                 เข้าสู่ระบบ
               </Button>
             ) : (
@@ -168,21 +176,19 @@ const HomePage = () => {
                   to={getDashboardPath(user.role)}
                   variant="text"
                   sx={{
-                    background: 'linear-gradient(135deg, #6b21a8, #9333ea)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
+                    color: '#111111',
                     fontWeight: 700,
                     minWidth: 'auto',
                     px: { xs: 0.5, sm: 1 },
                     transition: 'all 0.3s',
-                    '&:hover': { background: 'linear-gradient(135deg, #ca8a04, #facc15)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }
+                    '&:hover': { color: '#f59e0b' }
                   }}
                 >
                   Dashboard
                 </Button>
 
                 <IconButton onClick={handleOpenMenu} size="small" sx={{ p: 0.25 }}>
-                  <Avatar sx={{ width: 38, height: 38, background: 'linear-gradient(135deg, #6b21a8, #9333ea)', fontSize: '1rem', fontWeight: 700 }}>
+                  <Avatar sx={{ width: 38, height: 38, background: '#111111', fontSize: '1rem', fontWeight: 700 }}>
                     {(user?.name || user?.full_name || 'U').charAt(0).toUpperCase()}
                   </Avatar>
                 </IconButton>

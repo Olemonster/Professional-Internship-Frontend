@@ -6,7 +6,11 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  Box,
+  Typography,
+  Zoom,
 } from '@mui/material';
+import { ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
 function GlobalAlertModalProvider({ children }) {
   const [open, setOpen] = useState(false);
@@ -173,20 +177,71 @@ function GlobalAlertModalProvider({ children }) {
       <Dialog
         open={confirmModal.open}
         onClose={handleConfirmClose}
-        aria-labelledby="global-confirm-title"
-        aria-describedby="global-confirm-description"
+        TransitionComponent={Zoom}
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            padding: 3,
+            minWidth: { xs: '320px', sm: '420px' },
+            textAlign: 'center',
+            boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+          }
+        }}
       >
-        <DialogTitle id="global-confirm-title">{confirmModal.title}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="global-confirm-description">
+        <DialogTitle sx={{ pt: 2, pb: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ width: 80, height: 80, borderRadius: '50%', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ width: 56, height: 56, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ExclamationTriangleIcon style={{ width: 32, height: 32, color: '#ef4444' }} />
+            </Box>
+          </Box>
+          <Typography variant="h5" component="div" sx={{ fontWeight: 800, color: '#111111', mt: 1, letterSpacing: '-0.5px' }}>
+            {confirmModal.title}
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pb: 4 }}>
+          <DialogContentText sx={{ color: '#4b5563', fontSize: '1.05rem', lineHeight: 1.6 }}>
             {confirmModal.message}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleConfirmClose}>
+        <DialogActions sx={{ justifyContent: 'center', gap: 2, pb: 2, px: 3 }}>
+          <Button 
+            onClick={handleConfirmClose}
+            variant="contained"
+            disableElevation
+            sx={{ 
+              background: '#f3f4f6', 
+              color: '#374151', 
+              fontWeight: 700, 
+              px: 3, 
+              py: 1, 
+              borderRadius: '999px', 
+              whiteSpace: 'nowrap',
+              textTransform: 'none',
+              fontSize: '1rem',
+              '&:hover': { background: '#e5e7eb' } 
+            }}
+          >
             {confirmModal.cancelText}
           </Button>
-          <Button color="error" onClick={handleConfirmAccept} autoFocus>
+          <Button 
+            onClick={handleConfirmAccept} 
+            variant="contained"
+            disableElevation
+            autoFocus
+            sx={{ 
+              background: '#ef4444', 
+              color: 'white', 
+              fontWeight: 700, 
+              px: 3, 
+              py: 1, 
+              borderRadius: '999px', 
+              whiteSpace: 'nowrap',
+              textTransform: 'none',
+              fontSize: '1rem',
+              boxShadow: '0 4px 6px -1px rgb(239 68 68 / 0.4)',
+              '&:hover': { background: '#dc2626', boxShadow: '0 4px 6px -1px rgb(220 38 38 / 0.4)' } 
+            }}
+          >
             {confirmModal.confirmText}
           </Button>
         </DialogActions>

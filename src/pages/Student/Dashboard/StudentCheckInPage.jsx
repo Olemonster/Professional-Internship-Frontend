@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextF
 import api from '../../../api/axios';
 import './DashboardPage.css';
 import '../../Admin/Shared/CheckInPage.css';
+import StudentSidebar from '../../../components/StudentSidebar';
 
 const StudentCheckInPage = () => {
   const navigate = useNavigate();
@@ -163,37 +164,12 @@ const StudentCheckInPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
-      <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2>นักศึกษา</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/dashboard" className="nav-item">
-            <span>หน้าหลัก</span>
-          </Link>
-          <Link to="/dashboard/new-request" className="nav-item">
-            <span>ยื่นคำร้องใหม่</span>
-          </Link>
-          <Link to="/dashboard/my-requests" className="nav-item">
-            <span>คำร้องของฉัน</span>
-          </Link>
-          <Link to="/dashboard/payment-proof" className="nav-item">
-            <span>หลักฐานการชำระออกฝึก</span>
-          </Link>
-          <Link to="/dashboard/check-in" className="nav-item active">
-            <span>รายงานประจำวัน</span>
-          </Link>
-          <Link to="/dashboard/profile" className="nav-item">
-            <span>โปรไฟล์</span>
-          </Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <span>← ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
+      <StudentSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/dashboard/check-in"
+        handleLogout={handleLogout}
+      />
 
       <main className="dashboard-main">
         <header className="dashboard-header">

@@ -10,10 +10,17 @@ import {
   TableRow,
   TextField,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  IconButton
 } from '@mui/material';
 import './AdminDashboardPage.css';
 import '../Shared/CheckInPage.css';
 import './AdminAttendanceOverviewPage.css';
+import AdminSidebar from '../../../components/AdminSidebar';
 
 const AdminAttendanceOverviewPage = () => {
   const navigate = useNavigate();
@@ -23,7 +30,7 @@ const AdminAttendanceOverviewPage = () => {
   const [departmentMap, setDepartmentMap] = useState({});
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [filters, setFilters] = useState({ search: '', department: 'all' });
-  const [expandedStudent, setExpandedStudent] = useState(null);
+  const [detailsModal, setDetailsModal] = useState({ open: false, student: null });
 
   const statusLabel = useMemo(() => ({
     present: 'มา',
@@ -155,47 +162,12 @@ const AdminAttendanceOverviewPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
-      <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2> ผู้ดูแลระบบ</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className="nav-item">
-            <span>หน้าหลัก</span>
-          </Link>
-          <Link to="/admin-dashboard/students" className="nav-item">
-            <span>นักศึกษา</span>
-          </Link>
-          <Link to="/admin-dashboard/users" className="nav-item">
-            <span>จัดการผู้ใช้</span>
-          </Link>
-          
-          <Link to="/admin-dashboard/checkins" className="nav-item">
-            <span>รายงานประจำวัน</span>
-          </Link>
-          <Link to="/admin-dashboard/attendance-overview" className="nav-item active">
-            <span>ภาพรวมรายบุคคล</span>
-          </Link>
-          <Link to="/admin-dashboard/reports" className="nav-item">
-            <span>รายงาน</span>
-          </Link>
-          <Link to="/admin-dashboard/analytics" className="nav-item">
-            <span>สถิติการประเมิน</span>
-          </Link>
-          <Link to="/admin-dashboard/announcements" className="nav-item">
-            <span>ข่าวประชาสัมพันธ์</span>
-          </Link>
-          <Link to="/admin-dashboard/profile" className="nav-item">
-            <span>โปรไฟล์</span>
-          </Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <span>← ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/admin-dashboard/attendance-overview"
+        handleLogout={handleLogout}
+      />
 
       <main className="admin-main">
         <header className="admin-header">
@@ -234,8 +206,8 @@ const AdminAttendanceOverviewPage = () => {
 
         <div className="content-section">
           {/* Filters */}
-          <div className="checkin-filters">
-            <div className="checkin-field">
+          <div className="attendance-filters">
+            <div>
               <TextField
                 fullWidth
                 size="small"
@@ -243,6 +215,7 @@ const AdminAttendanceOverviewPage = () => {
                 select
                 value={filters.department}
                 onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+                sx={{ backgroundColor: 'white', borderRadius: 1 }}
               >
                 <MenuItem value="all">ทั้งหมด</MenuItem>
                 {departmentOptions.map((dept) => (
@@ -250,7 +223,7 @@ const AdminAttendanceOverviewPage = () => {
                 ))}
               </TextField>
             </div>
-            <div className="checkin-field" style={{ flex: 1 }}>
+            <div>
               <TextField
                 fullWidth
                 size="small"
@@ -258,6 +231,7 @@ const AdminAttendanceOverviewPage = () => {
                 placeholder="ชื่อหรือรหัสนักศึกษา"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                sx={{ backgroundColor: 'white', borderRadius: 1 }}
               />
             </div>
           </div>
@@ -268,20 +242,25 @@ const AdminAttendanceOverviewPage = () => {
             <div className="student-cards-grid">
               {filteredStudents.map((student) => {
                 const rate = getAttendanceRate(student);
-                const isExpanded = expandedStudent === student.studentId;
                 const pPct = student.total > 0 ? (student.present / student.total) * 100 : 0;
                 const lPct = student.total > 0 ? (student.late / student.total) * 100 : 0;
                 const aPct = student.total > 0 ? (student.absent / student.total) * 100 : 0;
 
                 return (
-                  <div
-                    key={student.studentId}
-                    className={`student-overview-card${isExpanded ? ' expanded' : ''}`}
-                    onClick={() => !isExpanded && setExpandedStudent(student.studentId)}
-                  >
+                  <div key={student.studentId} className="student-overview-card">
                     <div className="student-card-header">
                       <div className="student-info">
-                        <h3>{student.studentName}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h3>{student.studentName}</h3>
+                          <Button 
+                            variant="text" 
+                            size="small" 
+                            onClick={() => setDetailsModal({ open: true, student })}
+                            sx={{ fontSize: '0.75rem', p: 0, minWidth: 'auto', color: '#3b82f6', '&:hover': { background: 'transparent', textDecoration: 'underline' } }}
+                          >
+                            ดูรายละเอียด
+                          </Button>
+                        </div>
                         <p>{student.studentId} &middot; {getDepartment(student.studentId)}</p>
                       </div>
                       <span className={`attendance-rate-badge ${getRateClass(rate)}`}>
@@ -302,40 +281,6 @@ const AdminAttendanceOverviewPage = () => {
                       <div className="bar-absent" style={{ width: `${aPct}%` }}></div>
                     </div>
 
-                    {isExpanded && (
-                      <div className="student-detail-section" onClick={(e) => e.stopPropagation()}>
-                        <button className="detail-close-btn" onClick={() => setExpandedStudent(null)}>
-                          ✕ ปิด
-                        </button>
-                        <h4>ประวัติรายงานประจำวัน</h4>
-                        <TableContainer className="checkin-table-container">
-                          <Table size="small" className="checkin-table" stickyHeader>
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>วันที่</TableCell>
-                                <TableCell>สถานะ</TableCell>
-                                <TableCell>กิจกรรมที่ทำในวันนี้</TableCell>
-                                <TableCell>เวลาเช็ค</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {sortedDetailEntries(student.entries).map((entry, idx) => (
-                                <TableRow key={`${entry.date}-${idx}`} hover>
-                                  <TableCell>{entry.date}</TableCell>
-                                  <TableCell>
-                                    <span className={`checkin-status ${entry.status}`}>
-                                      {statusLabel[entry.status]}
-                                    </span>
-                                  </TableCell>
-                                  <TableCell>{entry.note || '-'}</TableCell>
-                                  <TableCell>{new Date(entry.createdAt).toLocaleString('th-TH')}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -343,6 +288,60 @@ const AdminAttendanceOverviewPage = () => {
           )}
         </div>
       </main>
+
+      {/* Details Modal */}
+      <Dialog 
+        open={detailsModal.open} 
+        onClose={() => setDetailsModal({ open: false, student: null })}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #f3f4f6' }}>
+          ประวัติรายงานประจำวัน - {detailsModal.student?.studentName}
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <TableContainer>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>วันที่</TableCell>
+                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>สถานะ</TableCell>
+                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>กิจกรรมที่ทำในวันนี้</TableCell>
+                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>เวลาเช็ค</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {detailsModal.student && sortedDetailEntries(detailsModal.student.entries).length > 0 ? (
+                  sortedDetailEntries(detailsModal.student.entries).map((entry, idx) => (
+                    <TableRow key={`${entry.date}-${idx}`} hover>
+                      <TableCell>{entry.date}</TableCell>
+                      <TableCell>
+                        <span className={`checkin-status ${entry.status}`}>
+                          {statusLabel[entry.status]}
+                        </span>
+                      </TableCell>
+                      <TableCell>{entry.note || '-'}</TableCell>
+                      <TableCell>{new Date(entry.createdAt).toLocaleString('th-TH')}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ py: 3, color: '#6b7280' }}>
+                      ไม่มีข้อมูลรายงานประจำวัน
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setDetailsModal({ open: false, student: null })} variant="contained" sx={{ bgcolor: '#111', '&:hover': { bgcolor: '#000' } }}>
+            ปิดหน้าต่าง
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

@@ -10,7 +10,6 @@ import AdminDashboardPage from './pages/Admin/Dashboard/AdminDashboardPage';
 import StudentListPage from './pages/Admin/Dashboard/StudentListPage';
 import PaymentProofPage from './pages/Student/Dashboard/PaymentProofPage';
 import AdminReportsPage from './pages/Admin/Dashboard/AdminReportsPage';
-import AdminEvaluationAnalyticsPage from './pages/Admin/Dashboard/AdminEvaluationAnalyticsPage';
 import AdminAnnouncementsPage from './pages/Admin/Dashboard/AdminAnnouncementsPage';
 import AdminUserManagementPage from './pages/Admin/Dashboard/AdminUserManagementPage';
 import AdminProfilePage from './pages/Admin/Dashboard/AdminProfilePage';
@@ -48,7 +47,6 @@ function App() {
         <Route path="/admin-dashboard/checkins" element={<AdminCheckInPage />} />
         <Route path="/admin-dashboard/attendance-overview" element={<AdminAttendanceOverviewPage />} />
         <Route path="/admin-dashboard/reports" element={<AdminReportsPage />} />
-        <Route path="/admin-dashboard/analytics" element={<AdminEvaluationAnalyticsPage />} />
         <Route path="/admin-dashboard/announcements" element={<AdminAnnouncementsPage />} />
         <Route path="/admin-dashboard/profile" element={<AdminProfilePage />} />
         <Route path="/advisor-dashboard" element={<AdvisorDashboardPage />} />

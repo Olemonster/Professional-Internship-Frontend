@@ -240,6 +240,7 @@ const AdvisorProgressCheckPage = () => {
               label="สถานะ"
               value={filters.status}
               onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}
+              sx={{ backgroundColor: 'white' }}
             >
               <MenuItem value="all">ทั้งหมด</MenuItem>
               <MenuItem value="ออกฝึกงาน">ออกฝึกงาน</MenuItem>

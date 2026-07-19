@@ -29,12 +29,14 @@ import {
   TextField,
   Tooltip,
   Typography,
+  MenuItem,
 } from '@mui/material';
 import { BellIcon } from '@heroicons/react/24/solid';
 import { QRCodeSVG } from 'qrcode.react';
 import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './AdminDashboardPage.css';
 import { ClockIcon } from '@heroicons/react/24/outline';
+import AdminSidebar from '../../../components/AdminSidebar';
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
@@ -428,46 +430,12 @@ const AdminDashboardPage = () => {
           <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
         </div>
       </div>
-      <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2> ผู้ดูแลระบบ</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className="nav-item active">
-            <span>หน้าหลัก</span>
-          </Link>
-          <Link to="/admin-dashboard/students" className="nav-item">
-            <span>นักศึกษา</span>
-          </Link>
-          <Link to="/admin-dashboard/users" className="nav-item">
-            <span>จัดการผู้ใช้</span>
-          </Link>
-          <Link to="/admin-dashboard/checkins" className="nav-item">
-            <span>รายงานประจำวัน</span>
-          </Link>
-          <Link to="/admin-dashboard/attendance-overview" className="nav-item">
-            <span>ภาพรวมรายบุคคล</span>
-          </Link>
-          <Link to="/admin-dashboard/reports" className="nav-item">
-            <span>รายงาน</span>
-          </Link>
-          <Link to="/admin-dashboard/analytics" className="nav-item">
-            <span>สถิติการประเมิน</span>
-          </Link>
-          <Link to="/admin-dashboard/announcements" className="nav-item">
-            <span>ข่าวประชาสัมพันธ์</span>
-          </Link>
-          <Link to="/admin-dashboard/profile" className="nav-item">
-            <span>โปรไฟล์</span>
-          </Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <span>← ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/admin-dashboard"
+        handleLogout={handleLogout}
+      />
 
       <main className="admin-main">
         <header className="admin-header">
@@ -614,40 +582,28 @@ const AdminDashboardPage = () => {
         </Box>
 
         <Paper className="content-section" elevation={0} sx={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 2, boxShadow: 'none', p: { xs: 2, md: 3 } }}>
-          <div className="section-header">
-            <h2>คำร้องทั้งหมด</h2>
-            <div className="filter-buttons">
-              <button 
-                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-                onClick={() => setFilter('all')}
-              >
-                ทั้งหมด
-              </button>
-              <button 
-                className={`filter-btn ${filter === 'pending_admin' ? 'active' : ''}`}
-                onClick={() => setFilter('pending_admin')}
-              >
-                รอตรวจสอบ
-              </button>
-              <button 
-                className={`filter-btn ${filter === 'รอสถานประกอบการตอบรับ' ? 'active' : ''}`}
-                onClick={() => setFilter('รอสถานประกอบการตอบรับ')}
-              >
-                รอสถานประกอบการ
-              </button>
-              <button 
-                className={`filter-btn ${filter === 'approved' ? 'active' : ''}`}
-                onClick={() => setFilter('อนุมัติแล้ว')}
-              >
-                อนุมัติแล้ว
-              </button>
-              <button 
-                className={`filter-btn ${filter === 'rejected' ? 'active' : ''}`}
-                onClick={() => setFilter('rejected')}
-              >
-                ไม่อนุมัติ
-              </button>
-            </div>
+          <div className="section-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
+            <h2 style={{ margin: 0 }}>คำร้องทั้งหมด</h2>
+            <TextField
+              select
+              size="small"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              sx={{ minWidth: { xs: '100%', sm: '220px' }, backgroundColor: 'white' }}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 300 }
+                  }
+                }
+              }}
+            >
+              <MenuItem value="all">ทั้งหมด</MenuItem>
+              <MenuItem value="pending_admin">รอตรวจสอบ</MenuItem>
+              <MenuItem value="รอสถานประกอบการตอบรับ">รอสถานประกอบการ</MenuItem>
+              <MenuItem value="approved">อนุมัติแล้ว</MenuItem>
+              <MenuItem value="rejected">ไม่อนุมัติ</MenuItem>
+            </TextField>
           </div>
 
           <TableContainer component={Box} className="compact-table">

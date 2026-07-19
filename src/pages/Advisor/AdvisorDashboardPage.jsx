@@ -22,9 +22,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  MenuItem,
 } from '@mui/material';
 import { STAT_EMOJI } from '../../utils/statEmojis';
 import '../Admin/Dashboard/AdminDashboardPage.css'; // Reuse Admin styles
+import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import AdvisorSidebar from '../../components/AdvisorSidebar';
 import './AdvisorDashboardPage.css';
 
 const AdvisorDashboardPage = () => {
@@ -155,31 +158,12 @@ const AdvisorDashboardPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
-      <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2> อาจารย์ที่ปรึกษา</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/advisor-dashboard" className="nav-item active">
-            <span>หน้าหลัก</span>
-          </Link>
-          <Link to="/advisor-dashboard/students" className="nav-item">
-            <span>รายชื่อนักศึกษาฝึกงาน</span>
-          </Link>
-          <Link to="/advisor-dashboard/supervision" className="nav-item">
-            <span>ตารางนิเทศงาน</span>
-          </Link>
-          <Link to="/advisor-dashboard/progress" className="nav-item">
-            <span>เช็ค Progress</span>
-          </Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <span>← ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
+      <AdvisorSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/advisor-dashboard"
+        handleLogout={handleLogout}
+      />
 
       <main className="admin-main">
         <header className="admin-header">
@@ -249,23 +233,17 @@ const AdvisorDashboardPage = () => {
         <Paper className="content-section" elevation={0} sx={{ width: '100%' }}>
           <div className="section-header">
             <h2>รายการคำร้องที่ต้องตรวจสอบ</h2>
-            <div className="filter-buttons">
-              <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-                ทั้งหมด
-              </button>
-              <button
-                className={`filter-btn ${filter === 'รออาจารย์ที่ปรึกษาอนุมัติ' ? 'active' : ''}`}
-                onClick={() => setFilter('รออาจารย์ที่ปรึกษาอนุมัติ')}
-              >
-                รออนุมัติ
-              </button>
-              <button
-                className={`filter-btn ${filter === 'อนุมัติแล้ว' ? 'active' : ''}`}
-                onClick={() => setFilter('อนุมัติแล้ว')}
-              >
-                อนุมัติแล้ว
-              </button>
-            </div>
+            <TextField
+              select
+              size="small"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              sx={{ minWidth: { xs: '100%', sm: '220px' }, backgroundColor: 'white' }}
+            >
+              <MenuItem value="all">ทั้งหมด</MenuItem>
+              <MenuItem value="รออาจารย์ที่ปรึกษาอนุมัติ">รออนุมัติ</MenuItem>
+              <MenuItem value="อนุมัติแล้ว">อนุมัติแล้ว</MenuItem>
+            </TextField>
           </div>
           <TableContainer component={Box} className="compact-table">
             <Table size="small">

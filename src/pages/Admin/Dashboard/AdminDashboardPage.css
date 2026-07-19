@@ -154,37 +154,6 @@
   font-size: 1.5rem;
 }
 
-/* Filter Buttons */
-.filter-buttons {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  flex-wrap: nowrap;
-}
-
-.filter-btn {
-  padding: 0.5rem 1rem;
-  background: #ffffff;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  color: #111111;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.filter-btn:hover {
-  background: #f3f4f6;
-  border-color: #111111;
-  color: #111111;
-}
-
-.filter-btn.active {
-  background: #111111;
-  border-color: #111111;
-  color: #ffffff;
-}
 
 .sortable {
   cursor: pointer;

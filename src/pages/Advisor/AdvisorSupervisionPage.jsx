@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 import { STAT_EMOJI } from '../../utils/statEmojis';
 import '../Admin/Dashboard/AdminDashboardPage.css';
+import AdvisorSidebar from '../../components/AdvisorSidebar';
 
 const AdvisorSupervisionPage = () => {
     const navigate = useNavigate();
@@ -207,31 +208,12 @@ const AdvisorSupervisionPage = () => {
                 <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
                 <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
             </div>
-            <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-            <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-                <div className="sidebar-header">
-                    <h2> อาจารย์ที่ปรึกษา</h2>
-                </div>
-                <nav className="sidebar-nav">
-                    <Link to="/advisor-dashboard" className="nav-item">
-                        <span>หน้าหลัก</span>
-                    </Link>
-                    <Link to="/advisor-dashboard/students" className="nav-item">
-                        <span>รายชื่อนักศึกษาฝึกงาน</span>
-                    </Link>
-                    <Link to="/advisor-dashboard/supervision" className="nav-item active">
-                        <span>ตารางนิเทศงาน</span>
-                    </Link>
-                    <Link to="/advisor-dashboard/progress" className="nav-item">
-                        <span>เช็ค Progress</span>
-                    </Link>
-                </nav>
-                <div className="sidebar-footer">
-                    <button onClick={handleLogout} className="logout-btn">
-                        <span>← ออกจากระบบ</span>
-                    </button>
-                </div>
-            </aside>
+            <AdvisorSidebar
+                isMenuOpen={isMenuOpen}
+                setIsMenuOpen={setIsMenuOpen}
+                currentPath="/advisor-dashboard/supervision"
+                handleLogout={handleLogout}
+            />
 
             <main className="admin-main">
                 <header className="admin-header">

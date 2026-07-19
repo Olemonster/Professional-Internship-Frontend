@@ -3,11 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Box, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, MenuItem, Typography, Snackbar, Alert as MuiAlert, Switch,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControlLabel
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControlLabel,
+  Avatar, IconButton, Divider, InputBase, Zoom
 } from '@mui/material';
 import api from '../../../api/axios';
 import '../Dashboard/AdminDashboardPage.css';
-import { MegaphoneIcon, MapPinIcon, PencilSquareIcon, PencilIcon } from '@heroicons/react/24/outline';
+import AdminSidebar from '../../../components/AdminSidebar';
+import ImageEditorModal from '../../../components/ImageEditorModal';
+import { MegaphoneIcon, MapPinIcon, PencilSquareIcon, PencilIcon, PhotoIcon, XMarkIcon, GlobeAltIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 const categories = ['รับสมัคร', 'ประกาศ', 'กิจกรรม', 'ทั่วไป'];
 
@@ -27,6 +30,7 @@ const AdminAnnouncementsPage = () => {
   const [formDialog, setFormDialog] = useState({ open: false, mode: 'create', data: null });
   const [formData, setFormData] = useState({ title: '', content: '', category: 'ทั่วไป', coverImage: '', is_pinned: false });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, title: '' });
+  const [editorModalOpen, setEditorModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -85,6 +89,11 @@ const AdminAnnouncementsPage = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleSaveEditedImage = ({ image, altText }) => {
+    setFormData(prev => ({ ...prev, coverImage: image }));
+    // Optional: store altText if your API supports it
+  };
+
   const handleSubmit = async () => {
     if (!formData.title.trim() || !formData.content.trim()) {
       setToast({ open: true, message: 'กรุณากรอกหัวข้อและเนื้อหา', severity: 'warning' });
@@ -137,24 +146,12 @@ const AdminAnnouncementsPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
-      <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header"><h2>ผู้ดูแลระบบ</h2></div>
-        <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className="nav-item"><span>หน้าหลัก</span></Link>
-          <Link to="/admin-dashboard/students" className="nav-item"><span>นักศึกษา</span></Link>
-          <Link to="/admin-dashboard/users" className="nav-item"><span>จัดการผู้ใช้</span></Link>
-          <Link to="/admin-dashboard/checkins" className="nav-item"><span>รายงานประจำวัน</span></Link>
-          <Link to="/admin-dashboard/attendance-overview" className="nav-item"><span>ภาพรวมรายบุคคล</span></Link>
-          <Link to="/admin-dashboard/reports" className="nav-item"><span>รายงาน</span></Link>
-          <Link to="/admin-dashboard/analytics" className="nav-item"><span>สถิติการประเมิน</span></Link>
-          <Link to="/admin-dashboard/announcements" className="nav-item active"><span>ข่าวประชาสัมพันธ์</span></Link>
-          <Link to="/admin-dashboard/profile" className="nav-item"><span>โปรไฟล์</span></Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn"><span>← ออกจากระบบ</span></button>
-        </div>
-      </aside>
+      <AdminSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/admin-dashboard/announcements"
+        handleLogout={handleLogout}
+      />
 
       <main className="admin-main">
         <header className="admin-header">
@@ -230,39 +227,132 @@ const AdminAnnouncementsPage = () => {
         </Paper>
       </main>
 
-      {/* Create / Edit Dialog */}
-      <Dialog open={formDialog.open} onClose={handleCloseDialog} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>{formDialog.mode === 'create' ? <><PencilSquareIcon style={{width:24, height:24}}/> สร้างข่าวใหม่</> : <><PencilIcon style={{width:24, height:24}}/> แก้ไขข่าว</>}</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
-          <TextField label="หัวข้อข่าว" name="title" value={formData.title} onChange={handleFormChange} fullWidth required />
-          <TextField label="เนื้อหา" name="content" value={formData.content} onChange={handleFormChange} fullWidth multiline rows={4} required />
-          <TextField select label="หมวดหมู่" name="category" value={formData.category} onChange={handleFormChange} fullWidth>
-            {categories.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-          </TextField>
-          <Box>
-            <Button variant="outlined" component="label" sx={{ mb: 1 }}>
-              อัปโหลดรูปปก
-              <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleImageUpload} />
-            </Button>
-            {formData.coverImage && (
-              <Box sx={{ mt: 1 }}>
-                <Box component="img" src={formData.coverImage} alt="preview" sx={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 1 }} />
-                <Button size="small" color="error" onClick={() => setFormData(prev => ({ ...prev, coverImage: '' }))}>ลบรูป</Button>
+      {/* Create / Edit Dialog (Facebook Style) */}
+      <Dialog open={formDialog.open} onClose={handleCloseDialog} fullWidth maxWidth="md" TransitionComponent={Zoom} PaperProps={{ sx: { borderRadius: 4, boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', minHeight: '500px' } }}>
+        <DialogTitle sx={{ fontWeight: 800, textAlign: 'center', borderBottom: '1px solid #f3f4f6', py: 2, color: '#111' }}>
+          {formDialog.mode === 'create' ? 'สร้างโพสต์ประกาศ' : 'แก้ไขโพสต์ประกาศ'}
+          <IconButton onClick={handleCloseDialog} sx={{ position: 'absolute', right: 16, top: 12, bgcolor: '#f3f4f6', '&:hover': { bgcolor: '#e5e7eb' } }}>
+            <XMarkIcon style={{ width: 20, height: 20, color: '#4b5563' }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar sx={{ width: 44, height: 44, bgcolor: '#111111', fontWeight: 700 }}>A</Avatar>
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#111111' }}>ผู้ดูแลระบบ (Admin)</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: '#f3f4f6', px: 1, py: 0.25, borderRadius: 1.5, cursor: 'pointer', border: '1px solid #e5e7eb' }}>
+                  <GlobeAltIcon style={{ width: 14, height: 14, color: '#4b5563' }} />
+                  <select 
+                    name="category" 
+                    value={formData.category} 
+                    onChange={handleFormChange}
+                    style={{ border: 'none', background: 'transparent', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', outline: 'none', appearance: 'none', paddingRight: '16px', cursor: 'pointer' }}
+                  >
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <ChevronDownIcon style={{ width: 12, height: 12, color: '#4b5563', marginLeft: '-14px', pointerEvents: 'none' }} />
+                </Box>
+                {formData.is_pinned && (
+                  <Chip size="small" icon={<MapPinIcon style={{width: 12, height: 12}}/>} label="ปักหมุด" sx={{ height: 22, fontSize: '0.7rem', bgcolor: '#fef2f2', color: '#ef4444', fontWeight: 600, '& .MuiChip-icon': { color: '#ef4444' } }} />
+                )}
               </Box>
-            )}
+            </Box>
           </Box>
-          <FormControlLabel
-            control={<Switch checked={formData.is_pinned} onChange={(e) => setFormData(prev => ({ ...prev, is_pinned: e.target.checked }))} />}
-            label={<span style={{display:"flex", alignItems:"center", gap:"4px"}}><MapPinIcon style={{width: 20, height: 20}}/> ปักหมุดข่าวนี้ (แสดงเป็นอันดับแรก)</span>}
-          />
+          
+          <Box sx={{ px: 3, pb: 2, flexGrow: 1 }}>
+            <InputBase 
+              placeholder="หัวข้อประกาศ..." 
+              name="title" 
+              value={formData.title} 
+              onChange={handleFormChange} 
+              fullWidth 
+              sx={{ fontWeight: 800, fontSize: '1.5rem', mb: 1, color: '#111' }} 
+            />
+            <InputBase 
+              placeholder="คุณกำลังคิดอะไรอยู่ แอดมิน? (เขียนเนื้อหาประกาศที่นี่...)" 
+              name="content" 
+              value={formData.content} 
+              onChange={handleFormChange} 
+              fullWidth 
+              multiline 
+              minRows={6} 
+              sx={{ fontSize: '1.15rem', lineHeight: 1.6, color: '#374151' }} 
+            />
+          </Box>
+
+          {formData.coverImage && (
+            <Box sx={{ position: 'relative', px: 3, pb: 2 }}>
+              <Box sx={{ position: 'relative', borderRadius: 3, overflow: 'hidden', border: '1px solid #e5e7eb', bgcolor: '#f3f4f6', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '150px' }}>
+                <Box sx={{ position: 'absolute', right: 12, top: 12, display: 'flex', gap: 1, zIndex: 10 }}>
+                  <Button 
+                    variant="contained" 
+                    size="small" 
+                    onClick={() => setEditorModalOpen(true)}
+                    sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#111', '&:hover': { bgcolor: '#fff' }, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: 2, fontWeight: 600 }}
+                    startIcon={<PencilIcon style={{ width: 16, height: 16 }} />}
+                  >
+                    แก้ไข
+                  </Button>
+                  <IconButton 
+                    onClick={() => setFormData(prev => ({ ...prev, coverImage: '' }))} 
+                    sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#ef4444', '&:hover': { bgcolor: '#fff', color: '#dc2626' }, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                  >
+                    <XMarkIcon style={{ width: 20, height: 20 }} />
+                  </IconButton>
+                </Box>
+                <img src={formData.coverImage} alt="preview" style={{ width: '100%', maxHeight: '350px', objectFit: 'contain', display: 'block' }} />
+              </Box>
+            </Box>
+          )}
+
+          <Box sx={{ px: 3, pb: 2 }}>
+            <Box sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', bgcolor: '#f9fafb' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#111' }}>เพิ่มลงในโพสต์ของคุณ</Typography>
+              <Box sx={{ display: 'flex', gap: 1.5 }}>
+                <IconButton component="label" sx={{ color: '#10b981', bgcolor: '#ecfdf5', '&:hover': { bgcolor: '#d1fae5' } }} title="อัปโหลดรูปภาพ">
+                  <PhotoIcon style={{ width: 24, height: 24 }} />
+                  <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                </IconButton>
+                <IconButton onClick={() => setFormData(prev => ({ ...prev, is_pinned: !prev.is_pinned }))} sx={{ color: formData.is_pinned ? '#ef4444' : '#64748b', bgcolor: formData.is_pinned ? '#fef2f2' : '#f1f5f9', '&:hover': { bgcolor: formData.is_pinned ? '#fee2e2' : '#e2e8f0' } }} title="ปักหมุดโพสต์">
+                  <MapPinIcon style={{ width: 24, height: 24 }} />
+                </IconButton>
+              </Box>
+            </Box>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSubmit} sx={{ bgcolor: '#111', '&:hover': { bgcolor: '#000' } }}>
-            {formDialog.mode === 'create' ? 'สร้างข่าว' : 'บันทึก'}
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button 
+            variant="contained" 
+            fullWidth 
+            disableElevation
+            onClick={handleSubmit} 
+            disabled={!formData.title.trim() || !formData.content.trim()}
+            sx={{ 
+              bgcolor: (!formData.title.trim() || !formData.content.trim()) ? '#e5e7eb !important' : '#111111', 
+              color: (!formData.title.trim() || !formData.content.trim()) ? '#9ca3af !important' : '#ffffff', 
+              fontWeight: 700, 
+              py: 1.25, 
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '1rem',
+              '&:hover': { bgcolor: '#000000' } 
+            }}
+          >
+            {formDialog.mode === 'create' ? 'โพสต์' : 'บันทึกการแก้ไข'}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Facebook-style Image Editor Modal */}
+      {formData.coverImage && (
+        <ImageEditorModal
+          open={editorModalOpen}
+          onClose={() => setEditorModalOpen(false)}
+          imageSrc={formData.coverImage}
+          onSave={handleSaveEditedImage}
+        />
+      )}
 
       {/* Delete Confirmation */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, id: null, title: '' })}>
