@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Box, Paper, Typography, Chip, Divider, Stack, CircularProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Alert } from '@mui/material';
 import api from '../../api/axios';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import '../Admin/Shared/RequestDetailsPage.css';
 
 const PublicRequestPage = () => {
   const { id } = useParams();
@@ -127,71 +128,126 @@ const PublicRequestPage = () => {
       : '';
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa' }}>
-      {/* Header */}
-      <Box sx={{ bgcolor: '#fff', borderBottom: '1px solid #e0e0e0', px: 3, py: 2.5, textAlign: 'center' }}>
-        <Typography variant="h5" sx={{ fontWeight: 800 }}>
-          รายละเอียดคำร้องฝึกงาน
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          เลขที่คำร้อง: {request.id}
-        </Typography>
-      </Box>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', py: 4 }}>
+      <div className="request-details-container">
+        <div className="details-card">
+          <header className="details-header" style={{ position: 'relative', minHeight: '140px', paddingRight: details.studentPhoto?.dataUrl ? '130px' : '20px' }}>
+            <div>
+              <h2>รายละเอียดคำร้องฝึกงาน</h2>
+              <p style={{ color: '#718096', marginTop: '5px' }}>เลขที่คำร้อง: {request.id} (ยื่นเมื่อ: {new Date(request.submittedDate).toLocaleDateString('th-TH')})</p>
+              <span className="status-badge-lg" style={{ marginTop: '10px', display: 'inline-block' }}>
+                {getStatusChip(request.status)}
+              </span>
+            </div>
+            {details.studentPhoto?.dataUrl && (
+              <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+                <img 
+                  src={details.studentPhoto.dataUrl} 
+                  alt="รูปนักศึกษา" 
+                  style={{ width: '100px', height: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} 
+                />
+              </div>
+            )}
+          </header>
 
-      <Box sx={{ maxWidth: 800, mx: 'auto', py: 4, px: 2 }}>
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0', bgcolor: '#fff' }}>
-          <Stack spacing={2.5}>
+          <section className="detail-section">
+            <h3>ข้อมูลนักศึกษา</h3>
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span className="detail-label">ชื่อ-นามสกุล</span>
+                <span className="detail-value">{request.studentName}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">รหัสนักศึกษา</span>
+                <span className="detail-value">{request.studentId}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">สาขาวิชา</span>
+                <span className="detail-value">{request.department}</span>
+              </div>
+              {studentInfo.lastSemesterGrade && (
+                <div className="detail-item">
+                  <span className="detail-label">เกรดเฉลี่ยเทอมล่าสุด</span>
+                  <span className="detail-value">{studentInfo.lastSemesterGrade}</span>
+                </div>
+              )}
+              <div className="detail-item">
+                <span className="detail-label">โทรศัพท์ / อีเมลติดต่อ</span>
+                <span className="detail-value">{studentInfo.phone || request.studentPhone || '-'} / {studentInfo.email || request.studentEmail || '-'}</span>
+              </div>
+              {studentAddress && studentAddress !== '-' && (
+                <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                  <span className="detail-label">ที่อยู่ปัจจุบัน</span>
+                  <span className="detail-value">{studentAddress}</span>
+                </div>
+              )}
+            </div>
+          </section>
 
-            {/* Status */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>สถานะคำร้อง</Typography>
-              {getStatusChip(request.status)}
-            </Box>
+          <section className="detail-section">
+            <h3>รายละเอียดสถานประกอบการ</h3>
+            <div className="detail-grid">
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">1. ชื่อบุคคล / ชื่อตำแหน่งงานติดต่อ / ผู้ประสานงานที่ติดต่อ</span>
+                <span className="detail-value">
+                  {details.contactPerson || '-'} {details.contactPosition ? `(${details.contactPosition})` : ''}
+                </span>
+              </div>
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">2. ชื่อหน่วยงาน / บริษัทที่ติดต่อ</span>
+                <span className="detail-value">{details.companyName || request.company}</span>
+              </div>
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">3. ที่อยู่หน่วยงาน</span>
+                <span className="detail-value">{companyAddress}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">4. โทรศัพท์ / อีเมลติดต่อ</span>
+                <span className="detail-value">{details.contactPhone || '-'} / {details.contactEmail || '-'}</span>
+              </div>
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">5. ตำแหน่งงานที่ต้องการเข้าฝึกงาน</span>
+                <span className="detail-value">{details.position || request.position}</span>
+              </div>
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">6. ข้อมูลเพิ่มเติม (ลักษณะงานที่ทำ / ทักษะที่ต้องการ)</span>
+                <p className="detail-value" style={{whiteSpace: 'pre-wrap', marginTop: '5px'}}>
+                  {details.description ? `ลักษณะงาน: ${details.description}\n` : ''}
+                  {details.skills ? `ทักษะ: ${details.skills}` : ''}
+                  {!details.description && !details.skills && '-'}
+                </p>
+              </div>
+            </div>
+          </section>
 
-            <Divider />
+          <section className="detail-section">
+            <h3>ความประสงค์ในการฝึกงาน</h3>
+            <div className="detail-grid">
+              {internshipTermLabel ? (
+                <div className="detail-item">
+                  <span className="detail-label">ขอให้ออกหนังสือฝึกงานประจำ</span>
+                  <span className="detail-value">{internshipTermLabel}</span>
+                </div>
+              ) : (
+                <div className="detail-item" style={{ gridColumn: '1 / -1', display: 'flex', gap: '20px' }}>
+                  <div>
+                    <span className="detail-label">วันเริ่มฝึกงาน</span>
+                    <span className="detail-value">{details.startDate ? new Date(details.startDate).toLocaleDateString('th-TH') : '-'}</span>
+                  </div>
+                  <div>
+                    <span className="detail-label">วันสิ้นสุด</span>
+                    <span className="detail-value">{details.endDate ? new Date(details.endDate).toLocaleDateString('th-TH') : '-'}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
 
-            {/* Student Info */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>ข้อมูลนักศึกษา</Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
-                <InfoItem label="รหัสนักศึกษา" value={request.studentId} />
-                <InfoItem label="ชื่อ-นามสกุล" value={request.studentName} />
-                <InfoItem label="สาขาวิชา" value={request.department} />
-                {studentInfo.lastSemesterGrade && (
-                  <InfoItem label="เกรดเฉลี่ยเทอมล่าสุด" value={studentInfo.lastSemesterGrade} />
-                )}
-                <InfoItem label="อีเมล" value={studentInfo.email || request.studentEmail} />
-                <InfoItem label="เบอร์โทรศัพท์" value={studentInfo.phone || request.studentPhone} />
-                {studentAddress && studentAddress !== '-' && (
-                  <Box sx={{ gridColumn: 'span 2' }}>
-                    <InfoItem label="ที่อยู่" value={studentAddress} />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-
-            <Divider />
-
-            {/* Company Info */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>ข้อมูลสถานประกอบการ</Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
-                <InfoItem label="ชื่อบริษัท/องค์กร" value={details.companyName || request.company} />
-                <InfoItem label="ตำแหน่ง" value={details.position || request.position} />
-                {companyAddress && companyAddress !== '-' && (
-                  <Box sx={{ gridColumn: 'span 2' }}>
-                    <InfoItem label="ที่อยู่บริษัท" value={companyAddress} />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-
-            {/* Dispatch Letter */}
-            {dispatchLetter?.dataUrl && (
-              <>
-                <Divider />
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>หนังสือส่งตัวนักศึกษา</Typography>
+          {dispatchLetter?.dataUrl && (
+            <section className="detail-section">
+              <h3>หนังสือส่งตัวนักศึกษา</h3>
+              <div className="detail-grid">
+                <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                   <Paper
                     variant="outlined"
                     sx={{
@@ -250,107 +306,64 @@ const PublicRequestPage = () => {
                       </Button>
                     </Stack>
                   </Paper>
-                </Box>
-              </>
-            )}
+                </div>
+              </div>
+            </section>
+          )}
 
-            {/* Internship Period */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>ระยะเวลาการฝึกงาน</Typography>
-              {internshipTermLabel ? (
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr' }, gap: 1.5 }}>
-                  <InfoItem label="ช่วงฝึกงาน" value={internshipTermLabel} />
-                </Box>
-              ) : (
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
-                  <InfoItem label="วันเริ่มฝึกงาน" value={details.startDate ? new Date(details.startDate).toLocaleDateString('th-TH') : '-'} />
-                  <InfoItem label="วันสิ้นสุด" value={details.endDate ? new Date(details.endDate).toLocaleDateString('th-TH') : '-'} />
-                </Box>
-              )}
-            </Box>
-
-            <Divider />
-
-            {/* Supervisor Info */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>ข้อมูลพี่เลี้ยง/ผู้ดูแล</Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
-                <InfoItem label="ชื่อพี่เลี้ยง/ผู้ดูแล" value={details.contactPerson} />
-                <InfoItem label="เบอร์โทรศัพท์" value={details.contactPhone} />
-                <InfoItem label="อีเมล" value={details.contactEmail} />
-              </Box>
-            </Box>
-
-            <Divider />
-
-            {/* Job Description */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>รายละเอียดงาน</Typography>
-              <InfoItem label="ลักษณะงานที่ทำ" value={details.description} />
-              <Box sx={{ mt: 1 }}>
-                <InfoItem label="ทักษะที่ต้องการ" value={details.skills} />
-              </Box>
-            </Box>
-
-            {/* Submission Date */}
-            <Divider />
-            <Box>
-              <InfoItem label="วันที่ยื่นคำร้อง" value={request.submittedDate ? new Date(request.submittedDate).toLocaleDateString('th-TH') : '-'} />
-            </Box>
-
-            {/* Feedback */}
-            {feedback.message && (
+          {/* Feedback */}
+          {feedback.message && (
+            <section className="detail-section">
               <Alert severity={feedback.severity} sx={{ borderRadius: 2 }}>
                 {feedback.message}
               </Alert>
-            )}
+            </section>
+          )}
 
-            {/* Accept / Reject Buttons */}
-            {canRespond && (
-              <>
-                <Divider />
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                    ตอบรับนักศึกษาเข้าฝึกงาน
-                  </Typography>
-                  <Stack direction="row" spacing={2} justifyContent="center">
-                    <Button
-                      variant="contained"
-                      color="error"
-                      size="large"
-                      disabled={updating}
-                      onClick={handleRejectOpen}
-                      sx={{ minWidth: 140, fontWeight: 700, borderRadius: 2 }}
-                    >
-                      ปฏิเสธ
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="large"
-                      disabled={updating}
-                      onClick={handleAccept}
-                      sx={{ minWidth: 140, fontWeight: 700, borderRadius: 2 }}
-                    >
-                      ตอบรับ
-                    </Button>
-                  </Stack>
-                </Box>
-              </>
-            )}
+          {/* Accept / Reject Buttons */}
+          {canRespond && (
+            <section className="detail-section" style={{ textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
+                ตอบรับนักศึกษาเข้าฝึกงาน
+              </Typography>
+              <Stack direction="row" spacing={2} justifyContent="center">
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="large"
+                  disabled={updating}
+                  onClick={handleRejectOpen}
+                  sx={{ minWidth: 160, fontWeight: 700, borderRadius: 2, padding: '12px 24px' }}
+                >
+                  ปฏิเสธ
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="large"
+                  disabled={updating}
+                  onClick={handleAccept}
+                  sx={{ minWidth: 160, fontWeight: 700, borderRadius: 2, padding: '12px 24px' }}
+                >
+                  ตอบรับ
+                </Button>
+              </Stack>
+            </section>
+          )}
 
-            {/* Already responded */}
-            {(request.status === 'อนุมัติแล้ว' || request.status === 'ปฏิเสธ') && !feedback.message && (
+          {/* Already responded */}
+          {(request.status === 'อนุมัติแล้ว' || request.status === 'ปฏิเสธ') && !feedback.message && (
+            <section className="detail-section">
               <Alert severity={request.status === 'อนุมัติแล้ว' ? 'success' : 'error'} sx={{ borderRadius: 2 }}>
                 {request.status === 'อนุมัติแล้ว'
                   ? 'สถานประกอบการตอบรับนักศึกษาแล้ว'
                   : 'สถานประกอบการปฏิเสธคำร้องนี้แล้ว'}
               </Alert>
-            )}
+            </section>
+          )}
 
-          </Stack>
-        </Paper>
-      </Box>
+        </div>
+      </div>
 
       {/* Reject Reason Dialog */}
       <Dialog open={rejectDialog.open} onClose={() => setRejectDialog({ open: false, reason: '' })} fullWidth maxWidth="sm">
