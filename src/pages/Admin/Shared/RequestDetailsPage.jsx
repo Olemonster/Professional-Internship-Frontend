@@ -360,6 +360,19 @@ const RequestDetailsPage = () => {
           </div>
         </section>
 
+        {details.studentPhoto?.dataUrl && (
+          <section className="detail-section">
+            <h3>รูปภาพแนบ</h3>
+            <div className="detail-item">
+              <img 
+                src={details.studentPhoto.dataUrl} 
+                alt={details.studentPhoto.name || 'Attached Image'} 
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '10px' }} 
+              />
+            </div>
+          </section>
+        )}
+
         {request.supervisionAppointment && (
           <section className="detail-section">
             <h3 style={{ color: '#0ea5e9' }}>กำหนดการนิเทศ (โดยอาจารย์ที่ปรึกษา)</h3>
