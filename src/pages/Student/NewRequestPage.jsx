@@ -394,6 +394,7 @@ const NewRequestPage = () => {
         },
         contactPerson: formData.supervisor,
         contactPosition: formData.supervisorPosition,
+        contactEmail: formData.supervisorEmail,
         contactPhone: formData.supervisorPhone,
         internshipTerm: formData.internshipTerm,
         description: formData.jobDescription,
