@@ -391,6 +391,25 @@ const DashboardPage = () => {
                         <Chip label={request.status} className="status-badge" sx={{ background: statusStyle.bg, color: statusStyle.color, fontWeight: 700, borderRadius: '20px', height: 36 }} />
                       </Box>
 
+                      {(request.status === 'ไม่อนุมัติ (Admin)' && request.admin_comment) && (
+                        <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#fef2f2', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
+                          <Typography variant="body2" sx={{ color: '#b91c1c', fontWeight: 600, mb: 0.5 }}>เหตุผลที่ไม่อนุมัติ (Admin):</Typography>
+                          <Typography variant="body2" sx={{ color: '#7f1d1d' }}>{request.admin_comment}</Typography>
+                        </Box>
+                      )}
+                      {(request.status === 'ไม่อนุมัติ (อาจารย์)' && request.advisor_comment) && (
+                        <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#fef2f2', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
+                          <Typography variant="body2" sx={{ color: '#b91c1c', fontWeight: 600, mb: 0.5 }}>เหตุผลที่ไม่อนุมัติ (อาจารย์):</Typography>
+                          <Typography variant="body2" sx={{ color: '#7f1d1d' }}>{request.advisor_comment}</Typography>
+                        </Box>
+                      )}
+                      {(request.status === 'ปฏิเสธ' && request.company_comment) && (
+                        <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#fef2f2', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
+                          <Typography variant="body2" sx={{ color: '#b91c1c', fontWeight: 600, mb: 0.5 }}>เหตุผลที่ปฏิเสธ (บริษัท):</Typography>
+                          <Typography variant="body2" sx={{ color: '#7f1d1d' }}>{request.company_comment}</Typography>
+                        </Box>
+                      )}
+
                       <Box className="request-footer" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', paddingTop: '0.75rem' }}>
                         <div className="request-date">
                           <span className="request-date-label"> ยื่นเมื่อ</span>
