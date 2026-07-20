@@ -323,9 +323,9 @@ const NewRequestPage = () => {
       return;
     }
     
-    // Limit to 1MB to prevent MySQL max_allowed_packet crash
-    if (file.size > 1 * 1024 * 1024) {
-      alert('ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 1MB');
+    // Limit to 20MB
+    if (file.size > 20 * 1024 * 1024) {
+      alert('ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 20MB');
       e.target.value = null;
       return;
     }
