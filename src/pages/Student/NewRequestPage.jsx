@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   TextField,
   MenuItem,
@@ -46,6 +46,7 @@ const NewRequestPage = () => {
     'สาขาวิชาเทคโนโลยีโยธาและสถาปัตยกรรม'
   ];
   const navigate = useNavigate();
+  const { id } = useParams();
   const [hasExistingRequest, setHasExistingRequest] = useState(false);
   const alertShown = useRef(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -78,27 +79,89 @@ const NewRequestPage = () => {
     }
     const user = JSON.parse(userStr);
 
-    // Prefill student-related fields if available from the logged-in user
-    setFormData(prev => ({
-      ...prev,
-      studentName: user.full_name || user.name || prev.studentName,
-      studentEmail: user.email || prev.studentEmail,
-      studentId: user.student_code || user.username || prev.studentId,
-      studentMajor: user.major || prev.studentMajor,
-      studentPhone: user.phone || prev.studentPhone
-    }));
+    if (id) {
+      // Edit mode: fetch existing request data
+      api.get(`/requests/${id}`).then(res => {
+        const reqData = res.data.data;
+        if (reqData) {
+          const details = reqData.details || {};
+          const studentInfo = details.student_info || {};
+          const companyAddress = details.companyAddress || {};
 
-    // Check for existing active request via API
-    const studentId = user.student_code || user.studentId || user.username;
-    api.get(`/requests?studentId=${studentId}`).then(res => {
-      const REJECTED_STATUSES = ['ไม่อนุมัติ (อาจารย์)', 'ไม่อนุมัติ (Admin)', 'ปฏิเสธ'];
-      const activeRequest = (res.data.data || []).find(req => !REJECTED_STATUSES.includes(req.status));
-      if (activeRequest) {
-        setHasExistingRequest(true);
-      }
-    }).catch(err => console.error('Failed to check existing requests:', err));
+          setFormData(prev => ({
+            ...prev,
+            studentTitle: studentInfo.title || '',
+            studentName: studentInfo.name || reqData.studentName || '',
+            studentEmail: studentInfo.email || '',
+            studentId: studentInfo.studentId || reqData.studentId || '',
+            studentYear: studentInfo.year || '',
+            lastSemesterGrade: studentInfo.lastSemesterGrade || '',
+            studentMajor: studentInfo.major || reqData.department || '',
+            homeHouse: studentInfo.address?.house || '',
+            homeMoo: studentInfo.address?.moo || '',
+            homeTambon: studentInfo.address?.tambon || '',
+            homeAmphur: studentInfo.address?.amphur || '',
+            homeProvince: studentInfo.address?.province || '',
+            homePostal: studentInfo.address?.postal || '',
+            studentPhone: studentInfo.phone || '',
+            
+            companyName: details.companyName || reqData.company || '',
+            companyHouse: companyAddress.house || '',
+            companyMoo: companyAddress.moo || '',
+            companyTambon: companyAddress.tambon || '',
+            companyAmphur: companyAddress.amphur || '',
+            companyProvince: companyAddress.province || '',
+            companyPostal: companyAddress.postal || '',
+            address: companyAddress.detail || '',
+            
+            supervisor: details.contactPerson || '',
+            supervisorPosition: details.contactPosition || '',
+            supervisorEmail: details.contactEmail || '',
+            supervisorPhone: details.contactPhone || '',
+            position: reqData.position || details.position || '',
+            internshipTerm: details.internshipTerm || '',
+            jobDescription: details.description || '',
+            skills: details.skills || ''
+          }));
 
-  }, [navigate]);
+          if (details.studentPhoto && details.studentPhoto.dataUrl) {
+            // Reconstruct a File object-like state for display
+            fetch(details.studentPhoto.dataUrl)
+              .then(r => r.blob())
+              .then(blob => {
+                const file = new File([blob], details.studentPhoto.name || 'photo.jpg', { type: blob.type });
+                setStudentPhoto(file);
+              });
+          }
+        }
+      }).catch(err => {
+        console.error('Failed to load existing request:', err);
+        alert('ไม่สามารถโหลดข้อมูลคำร้องเดิมได้');
+        navigate('/dashboard/my-requests');
+      });
+    } else {
+      // New mode: Prefill student-related fields if available from the logged-in user
+      setFormData(prev => ({
+        ...prev,
+        studentName: user.full_name || user.name || prev.studentName,
+        studentEmail: user.email || prev.studentEmail,
+        studentId: user.student_code || user.username || prev.studentId,
+        studentMajor: user.major || prev.studentMajor,
+        studentPhone: user.phone || prev.studentPhone
+      }));
+
+      // Check for existing active request via API only in NEW mode
+      const studentId = user.student_code || user.studentId || user.username;
+      api.get(`/requests?studentId=${studentId}`).then(res => {
+        const REJECTED_STATUSES = ['ไม่อนุมัติ (อาจารย์)', 'ไม่อนุมัติ (Admin)', 'ปฏิเสธ'];
+        const activeRequest = (res.data.data || []).find(req => !REJECTED_STATUSES.includes(req.status));
+        if (activeRequest) {
+          setHasExistingRequest(true);
+        }
+      }).catch(err => console.error('Failed to check existing requests:', err));
+    }
+
+  }, [navigate, id]);
 
   useEffect(() => {
     let mounted = true;
@@ -417,7 +480,11 @@ const NewRequestPage = () => {
         details,
       };
 
-      await api.post('/requests', requestPayload);
+      if (id) {
+        await api.put(`/requests/${id}`, requestPayload);
+      } else {
+        await api.post('/requests', requestPayload);
+      }
 
       // Update avatar in localStorage if photo is an image
       if (studentPhoto && studentPhoto.type.startsWith('image/') && photoData) {
@@ -429,7 +496,11 @@ const NewRequestPage = () => {
         }
       }
 
-      alert('ยื่นคำร้องสำเร็จ! รอการอนุมัติจากอาจารย์ที่ปรึกษา');
+      if (id) {
+        alert('แก้ไขคำร้องและยื่นใหม่สำเร็จ!');
+      } else {
+        alert('ยื่นคำร้องสำเร็จ! รอการอนุมัติจากอาจารย์ที่ปรึกษา');
+      }
       navigate('/dashboard/my-requests');
     } catch (error) {
       console.error('Error submitting request:', error);

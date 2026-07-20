@@ -36,6 +36,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/profile" element={<ProfilePage />} />
         <Route path="/dashboard/new-request" element={<NewRequestPage />} />
+        <Route path="/dashboard/edit-request/:id" element={<NewRequestPage />} />
         <Route path="/dashboard/my-requests" element={<MyRequestsPage />} />
         <Route path="/dashboard/request/:id" element={<RequestDetailsPage />} />
         <Route path="/dashboard/student/:id" element={<StudentDetailsPage />} />

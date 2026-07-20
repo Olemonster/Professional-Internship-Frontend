@@ -202,6 +202,11 @@ const MyRequestsPage = () => {
                                 ลิงก์ประเมิน
                               </button>
                             )}
+                            {(req.status === 'ไม่อนุมัติ (Admin)' || req.status === 'ไม่อนุมัติ (อาจารย์)' || req.status === 'ปฏิเสธ') && (
+                              <Link to={`/dashboard/edit-request/${req.id}`} className="btn-view" style={{ backgroundColor: '#f59e0b', color: 'white' }}>
+                                แก้ไขคำร้อง
+                              </Link>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
