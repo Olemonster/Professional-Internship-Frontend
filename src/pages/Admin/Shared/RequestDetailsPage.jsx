@@ -245,26 +245,35 @@ const RequestDetailsPage = () => {
   return (
     <div className="request-details-container">
       <div className="details-card">
-        <header className="details-header">
+        <header className="details-header" style={{ position: 'relative', minHeight: '140px', paddingRight: details.studentPhoto?.dataUrl ? '130px' : '20px' }}>
           <div>
             <h2>รายละเอียดคำร้องฝึกงาน</h2>
-            <p style={{ color: '#718096', marginTop: '5px' }}>เลขที่คำร้อง: {request.id}</p>
+            <p style={{ color: '#718096', marginTop: '5px' }}>เลขที่คำร้อง: {request.id} (ยื่นเมื่อ: {new Date(request.submittedDate).toLocaleDateString('th-TH')})</p>
+            <span className="status-badge-lg" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color, marginTop: '10px', display: 'inline-block' }}>
+              {statusInfo.label}
+            </span>
           </div>
-          <span className="status-badge-lg" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
-            {statusInfo.label}
-          </span>
+          {details.studentPhoto?.dataUrl && (
+            <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+              <img 
+                src={details.studentPhoto.dataUrl} 
+                alt="รูปนักศึกษา" 
+                style={{ width: '100px', height: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} 
+              />
+            </div>
+          )}
         </header>
 
         <section className="detail-section">
           <h3>ข้อมูลนักศึกษา</h3>
           <div className="detail-grid">
             <div className="detail-item">
-              <span className="detail-label">รหัสนักศึกษา</span>
-              <span className="detail-value">{request.studentId}</span>
-            </div>
-            <div className="detail-item">
               <span className="detail-label">ชื่อ-นามสกุล</span>
               <span className="detail-value">{request.studentName}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">รหัสนักศึกษา</span>
+              <span className="detail-value">{request.studentId}</span>
             </div>
             <div className="detail-item">
               <span className="detail-label">สาขาวิชา</span>
@@ -276,53 +285,71 @@ const RequestDetailsPage = () => {
                 <span className="detail-value">{details.student_info.lastSemesterGrade}</span>
               </div>
             )}
+            <div className="detail-item">
+              <span className="detail-label">โทรศัพท์</span>
+              <span className="detail-value">{details.student_info?.phone || '-'}</span>
+            </div>
             {studentAddress && studentAddress !== '-' && (
-              <div className="detail-item">
-                <span className="detail-label">ที่อยู่ตามบัตรประชาชน</span>
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">ที่อยู่ปัจจุบัน</span>
                 <span className="detail-value">{studentAddress}</span>
               </div>
             )}
-             <div className="detail-item">
-              <span className="detail-label">วันที่ยื่นคำร้อง</span>
-              <span className="detail-value">{new Date(request.submittedDate).toLocaleDateString('th-TH')}</span>
-            </div>
           </div>
         </section>
 
         <section className="detail-section">
-          <h3>ข้อมูลสถานประกอบการ</h3>
+          <h3>รายละเอียดสถานประกอบการ</h3>
           <div className="detail-grid">
-            <div className="detail-item">
-              <span className="detail-label">ชื่อบริษัท/องค์กร</span>
+            <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+              <span className="detail-label">1. ชื่อบุคคล / ชื่อตำแหน่งงานติดต่อ / ผู้ประสานงานที่ติดต่อ</span>
+              <span className="detail-value">
+                {details.contactPerson || '-'} {details.contactPosition ? `(${details.contactPosition})` : ''}
+              </span>
+            </div>
+            <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+              <span className="detail-label">2. ชื่อหน่วยงาน / บริษัทที่ติดต่อ</span>
               <span className="detail-value">{details.companyName || request.company}</span>
             </div>
-            <div className="detail-item">
-              <span className="detail-label">ตำแหน่ง</span>
-              <span className="detail-value">{details.position || request.position}</span>
+            <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+              <span className="detail-label">3. ที่อยู่หน่วยงาน</span>
+              <span className="detail-value">{companyAddress}</span>
             </div>
             <div className="detail-item">
-              <span className="detail-label">ที่อยู่บริษัท</span>
-              <span className="detail-value">{companyAddress}</span>
+              <span className="detail-label">4. โทรศัพท์ / อีเมลติดต่อ</span>
+              <span className="detail-value">{details.contactPhone || '-'} / {details.contactEmail || '-'}</span>
+            </div>
+            <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+              <span className="detail-label">5. ตำแหน่งงานที่ต้องการเข้าฝึกงาน</span>
+              <span className="detail-value">{details.position || request.position}</span>
+            </div>
+            <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+              <span className="detail-label">6. ข้อมูลเพิ่มเติม (ลักษณะงานที่ทำ / ทักษะที่ต้องการ)</span>
+              <p className="detail-value" style={{whiteSpace: 'pre-wrap', marginTop: '5px'}}>
+                {details.description ? `ลักษณะงาน: ${details.description}\n` : ''}
+                {details.skills ? `ทักษะ: ${details.skills}` : ''}
+                {!details.description && !details.skills && '-'}
+              </p>
             </div>
           </div>
         </section>
 
         <section className="detail-section">
-          <h3> ระยะเวลาการฝึกงาน</h3>
+          <h3>ความประสงค์ในการฝึกงาน</h3>
           <div className="detail-grid">
             {internshipTermLabel ? (
               <div className="detail-item">
-                <span className="detail-label">ช่วงฝึกงาน</span>
+                <span className="detail-label">ขอให้ออกหนังสือฝึกงานประจำ</span>
                 <span className="detail-value">{internshipTermLabel}</span>
               </div>
             ) : (
               <>
                 <div className="detail-item">
-                  <span className="detail-label">วันเริ่มฝึกงาน</span>
+                  <span className="detail-label">วันที่ต้องการฝึกงานตั้งแต่วันที่</span>
                   <span className="detail-value">{details.startDate ? new Date(details.startDate).toLocaleDateString('th-TH') : '-'}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">วันสิ้นสุดการฝึกงาน</span>
+                  <span className="detail-label">ถึงวันที่</span>
                   <span className="detail-value">{details.endDate ? new Date(details.endDate).toLocaleDateString('th-TH') : '-'}</span>
                 </div>
               </>
@@ -330,48 +357,6 @@ const RequestDetailsPage = () => {
           </div>
         </section>
 
-         <section className="detail-section">
-          <h3> ข้อมูลพี่เลี้ยง/ผู้ดูแล</h3>
-          <div className="detail-grid">
-            <div className="detail-item">
-              <span className="detail-label">ชื่อพี่เลี้ยง/ผู้ดูแล</span>
-              <span className="detail-value">{details.contactPerson || '-'}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">เบอร์โทรศัพท์</span>
-              <span className="detail-value">{details.contactPhone || '-'}</span>
-            </div>
-             <div className="detail-item">
-              <span className="detail-label">อีเมล</span>
-              <span className="detail-value">{details.contactEmail || '-'}</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="detail-section">
-          <h3>รายละเอียดงาน</h3>
-          <div className="detail-item">
-             <span className="detail-label">ลักษณะงานที่ทำ</span>
-             <p className="detail-value" style={{whiteSpace: 'pre-wrap'}}>{details.description || '-'}</p>
-          </div>
-           <div className="detail-item" style={{ marginTop: '15px' }}>
-             <span className="detail-label">ทักษะที่ต้องการ</span>
-             <p className="detail-value" style={{whiteSpace: 'pre-wrap'}}>{details.skills || '-'}</p>
-          </div>
-        </section>
-
-        {details.studentPhoto?.dataUrl && (
-          <section className="detail-section">
-            <h3>รูปภาพแนบ</h3>
-            <div className="detail-item">
-              <img 
-                src={details.studentPhoto.dataUrl} 
-                alt={details.studentPhoto.name || 'Attached Image'} 
-                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '10px' }} 
-              />
-            </div>
-          </section>
-        )}
 
         {request.supervisionAppointment && (
           <section className="detail-section">
