@@ -170,7 +170,6 @@ const PaymentProofPage = () => {
                         <Alert severity="error">เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง</Alert>
                       )}
                     </Stack>
-                </form>
             </div>
         </div>
       </main>
