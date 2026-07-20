@@ -19,6 +19,7 @@ const RequestDetailsPage = () => {
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
   const [qrModal, setQrModal] = useState({ open: false, link: '' });
   const [dispatchModal, setDispatchModal] = useState({ open: false, file: null, submitting: false, error: '' });
+  const [imageModal, setImageModal] = useState(false);
   const dispatchFileInputRef = useRef(null);
   const printRef = useRef(null);
 
@@ -254,7 +255,11 @@ const RequestDetailsPage = () => {
             </span>
           </div>
           {details.studentPhoto?.dataUrl && (
-            <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+            <div 
+              style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }} 
+              onClick={() => setImageModal(true)}
+              title="คลิกเพื่อดูรูปขยาย"
+            >
               <img 
                 src={details.studentPhoto.dataUrl} 
                 alt="รูปนักศึกษา" 
@@ -379,6 +384,19 @@ const RequestDetailsPage = () => {
             </div>
           </section>
         )}
+
+        {/* Image Modal */}
+        <Dialog open={imageModal} onClose={() => setImageModal(false)} maxWidth="md">
+          <DialogContent style={{ padding: '0', backgroundColor: '#000', textAlign: 'center' }}>
+            {details.studentPhoto?.dataUrl && (
+              <img 
+                src={details.studentPhoto.dataUrl} 
+                alt="รูปนักศึกษา (Full)" 
+                style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         {request.rejectReason && (
              <section className="detail-section" style={{ backgroundColor: '#fff5f5', padding: '15px', borderRadius: '8px', border: '1px solid #fed7d7' }}>
