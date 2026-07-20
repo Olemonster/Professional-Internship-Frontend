@@ -322,6 +322,14 @@ const NewRequestPage = () => {
       setStudentPhoto(null);
       return;
     }
+    
+    // Limit to 1MB to prevent MySQL max_allowed_packet crash
+    if (file.size > 1 * 1024 * 1024) {
+      alert('ไฟล์มีขนาดใหญ่เกินไป กรุณาอัพโหลดไฟล์ขนาดไม่เกิน 1MB');
+      e.target.value = null;
+      return;
+    }
+
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
       alert('กรุณาอัพโหลดไฟล์รูปภาพ (JPG, PNG) หรือ PDF เท่านั้น');
