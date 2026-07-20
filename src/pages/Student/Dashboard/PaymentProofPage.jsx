@@ -24,13 +24,30 @@ const PaymentProofPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
       setStudentName(user.full_name || user.name);
+      
+      const studentId = user.student_code || user.studentId || user.username;
+      if (studentId) {
+        api.get(`/payments?studentId=${studentId}`)
+          .then(res => {
+            if (!mounted) return;
+            const payments = res.data.data || [];
+            // If there is any non-rejected payment, show success status
+            const activePayment = payments.find(p => p.status !== 'rejected');
+            if (activePayment) {
+              setUploadStatus('success');
+            }
+          })
+          .catch(err => console.error("Failed to fetch payment status:", err));
+      }
     } else {
       navigate('/login');
     }
+    return () => { mounted = false; };
   }, [navigate]);
 
   const handleLogout = () => {
@@ -110,39 +127,42 @@ const PaymentProofPage = () => {
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>อัพโหลดใบเสร็จ</Typography>
                 <Typography className="instruction-text" sx={{ color: '#475569', mb: 2 }}>กรุณาแนบไฟล์รูปภาพ (JPG, PNG) ของหลักฐานการชำระเงิน (ขนาดไม่เกิน 20MB)</Typography>
                 
-                <form onSubmit={handleUpload} className="upload-form">
-                    <div className="file-drop-area">
-                        {previewUrl ? (
-                            <div className="image-preview">
-                                <img src={previewUrl} alt="Preview" />
-                              <Button type="button" size="small" color="error" variant="outlined" className="remove-btn" onClick={() => {
-                                    setFile(null);
-                                    setPreviewUrl(null);
-                              }}>ยกเลิก</Button>
-                            </div>
-                        ) : (
-                            <div className="placeholder-preview">
-                                <span>คลิกเพื่อเลือกรูปภาพ</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleFileChange}
-                                  className="file-input"
-                                />
-                            </div>
-                        )}
-                    </div>
+                {uploadStatus !== 'success' ? (
+                  <form onSubmit={handleUpload} className="upload-form">
+                      <div className="file-drop-area">
+                          {previewUrl ? (
+                              <div className="image-preview">
+                                  <img src={previewUrl} alt="Preview" />
+                                <Button type="button" size="small" color="error" variant="outlined" className="remove-btn" onClick={() => {
+                                      setFile(null);
+                                      setPreviewUrl(null);
+                                }}>ยกเลิก</Button>
+                              </div>
+                          ) : (
+                              <div className="placeholder-preview">
+                                  <span>คลิกเพื่อเลือกรูปภาพ</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="file-input"
+                                  />
+                              </div>
+                          )}
+                      </div>
 
-                    <Button 
-                        type="submit" 
-                        variant="contained"
-                        className="submit-btn"
-                        disabled={!file || uploading}
-                    >
-                        {uploading ? 'กำลังอัพโหลด...' : 'ยืนยันการส่งหลักฐาน'}
-                    </Button>
+                      <Button 
+                          type="submit" 
+                          variant="contained"
+                          className="submit-btn"
+                          disabled={!file || uploading}
+                      >
+                          {uploading ? 'กำลังอัพโหลด...' : 'ยืนยันการส่งหลักฐาน'}
+                      </Button>
+                  </form>
+                ) : null}
 
-                    <Stack spacing={1} sx={{ mt: 1 }}>
+                <Stack spacing={1} sx={{ mt: uploadStatus === 'success' ? 0 : 1 }}>
                       {uploadStatus === 'success' && (
                         <Alert severity="success">ส่งหลักฐานเรียบร้อยแล้ว รอการตรวจสอบจากเจ้าหน้าที่</Alert>
                       )}
