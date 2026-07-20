@@ -291,8 +291,8 @@ const RequestDetailsPage = () => {
               </div>
             )}
             <div className="detail-item">
-              <span className="detail-label">โทรศัพท์</span>
-              <span className="detail-value">{details.student_info?.phone || '-'}</span>
+              <span className="detail-label">โทรศัพท์ / อีเมลติดต่อ</span>
+              <span className="detail-value">{details.student_info?.phone || '-'} / {details.student_info?.email || '-'}</span>
             </div>
             {studentAddress && studentAddress !== '-' && (
               <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
