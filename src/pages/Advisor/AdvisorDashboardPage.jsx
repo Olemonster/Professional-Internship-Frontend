@@ -15,7 +15,7 @@ import {
   DialogActions,
   TextField,
   Snackbar,
-  Alert as MuiAlert,
+  Alert,
   Table,
   TableBody,
   TableCell,
@@ -23,11 +23,15 @@ import {
   TableHead,
   TableRow,
   MenuItem,
+  Checkbox,
 } from '@mui/material';
 import { STAT_EMOJI } from '../../utils/statEmojis';
 import '../Admin/Dashboard/AdminDashboardPage.css'; // Reuse Admin styles
 import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import AdvisorSidebar from '../../components/AdvisorSidebar';
+import StatusBadge from '../../components/StatusBadge';
+import ModernButton from '../../components/ModernButton';
+import StatCard from '../../components/StatCard';
 import './AdvisorDashboardPage.css';
 
 const AdvisorDashboardPage = () => {
@@ -37,6 +41,7 @@ const AdvisorDashboardPage = () => {
   const [advisorName, setAdvisorName] = useState('');
   const [advisorDepartment, setAdvisorDepartment] = useState('');
   const [allRequests, setAllRequests] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [rejectModal, setRejectModal] = useState({
     open: false,
     requestId: null,
@@ -83,11 +88,12 @@ const AdvisorDashboardPage = () => {
     return req.status === filter;
   });
   
-  const handleApprove = async (requestId) => {
+  const handleApprove = async (requestId, currentStatus) => {
     try {
-      await api.patch(`/requests/${requestId}/status`, { status: 'รอผู้ดูแลระบบอนุมัติ' });
-      setAllRequests(allRequests.map(r => String(r.id) === String(requestId) ? { ...r, status: 'รอผู้ดูแลระบบอนุมัติ' } : r));
-      setToast({ open: true, message: 'อนุมัติคำร้องเรียบร้อย และส่งต่อให้ผู้ดูแลระบบ', severity: 'success' });
+      const nextStatus = currentStatus === 'รออาจารย์อนุมัติเริ่มฝึกงาน' ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
+      await api.patch(`/requests/${requestId}/status`, { status: nextStatus });
+      setAllRequests(allRequests.map(r => String(r.id) === String(requestId) ? { ...r, status: nextStatus } : r));
+      setToast({ open: true, message: nextStatus === 'ออกฝึกงาน' ? 'อนุมัติการเริ่มฝึกงานเรียบร้อย' : 'อนุมัติคำร้องเรียบร้อย และส่งต่อให้ผู้ดูแลระบบ', severity: 'success' });
     } catch (err) {
       setToast({ open: true, message: 'อัปเดตล้มเหลว: ' + (err.response?.data?.message || err.message), severity: 'error' });
     }
@@ -125,7 +131,6 @@ const AdvisorDashboardPage = () => {
     setRejectModal({ open: false, requestId: null, reason: '' });
   };
 
-
   const handleFinishInternship = async (requestId) => {
     try {
       await api.patch(`/requests/${requestId}/status`, { status: 'ฝึกงานเสร็จแล้ว' });
@@ -138,18 +143,105 @@ const AdvisorDashboardPage = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusStyles = {
-      'รออาจารย์ที่ปรึกษาอนุมัติ': { bg: '#fff3cd', color: '#856404' },
-      'รอผู้ดูแลระบบอนุมัติ': { bg: '#c3dafe', color: '#434190' },
-      'อนุมัติแล้ว': { bg: '#d4edda', color: '#155724' },
-      'ออกฝึกงาน': { bg: '#c4f1f9', color: '#0c4a6e' },
-      'ประเมินเสร็จแล้ว': { bg: '#ddd6fe', color: '#4c1d95' },
-      'ฝึกงานเสร็จแล้ว': { bg: '#fbcfe8', color: '#9d174d' },
-      'ไม่อนุมัติ (อาจารย์)': { bg: '#f8d7da', color: '#721c24' },
-      'ไม่อนุมัติ (Admin)': { bg: '#f8d7da', color: '#721c24' }
-    };
-    return statusStyles[status] || { bg: '#e2e3e5', color: '#383d41' };
+  const actionableRequests = filteredRequests.filter((r) =>
+    ['ประเมินเสร็จแล้ว', 'รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน'].includes(r.status)
+  );
+
+  const isAllSelected =
+    actionableRequests.length > 0 &&
+    actionableRequests.every((r) => selectedIds.includes(String(r.id)));
+  const isSomeSelected =
+    actionableRequests.some((r) => selectedIds.includes(String(r.id))) && !isAllSelected;
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(actionableRequests.map((r) => String(r.id)));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleToggleSelect = (id) => {
+    const strId = String(id);
+    setSelectedIds((prev) =>
+      prev.includes(strId) ? prev.filter((i) => i !== strId) : [...prev, strId]
+    );
+  };
+
+  const selectedEvaluatedCount = filteredRequests.filter(
+    (r) => selectedIds.includes(String(r.id)) && r.status === 'ประเมินเสร็จแล้ว'
+  ).length;
+
+  const selectedPendingCount = filteredRequests.filter(
+    (r) =>
+      selectedIds.includes(String(r.id)) &&
+      ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน'].includes(r.status)
+  ).length;
+
+  const handleBatchFinishInternship = async () => {
+    const targets = filteredRequests.filter(
+      (r) => selectedIds.includes(String(r.id)) && r.status === 'ประเมินเสร็จแล้ว'
+    );
+    if (targets.length === 0) return;
+
+    try {
+      await Promise.all(
+        targets.map((r) => api.patch(`/requests/${r.id}/status`, { status: 'ฝึกงานเสร็จแล้ว' }))
+      );
+      const targetIds = targets.map((r) => String(r.id));
+      setAllRequests((prev) =>
+        prev.map((r) => (targetIds.includes(String(r.id)) ? { ...r, status: 'ฝึกงานเสร็จแล้ว' } : r))
+      );
+      setSelectedIds((prev) => prev.filter((id) => !targetIds.includes(id)));
+      setToast({
+        open: true,
+        message: `อนุมัติเสร็จสิ้นการฝึกงาน ${targets.length} รายการเรียบร้อยแล้ว`,
+        severity: 'success',
+      });
+    } catch (err) {
+      setToast({
+        open: true,
+        message: 'เกิดข้อผิดพลาดในการอนุมัติ: ' + (err.response?.data?.message || err.message),
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleBatchApprovePending = async () => {
+    const targets = filteredRequests.filter(
+      (r) =>
+        selectedIds.includes(String(r.id)) &&
+        ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน'].includes(r.status)
+    );
+    if (targets.length === 0) return;
+
+    try {
+      await Promise.all(
+        targets.map((r) => {
+          const nextStatus = r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
+          return api.patch(`/requests/${r.id}/status`, { status: nextStatus });
+        })
+      );
+      const targetMap = {};
+      targets.forEach((r) => {
+        targetMap[String(r.id)] = r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
+      });
+      setAllRequests((prev) =>
+        prev.map((r) => (targetMap[String(r.id)] ? { ...r, status: targetMap[String(r.id)] } : r))
+      );
+      setSelectedIds((prev) => prev.filter((id) => !targetMap[id]));
+      setToast({
+        open: true,
+        message: `อนุมัติคำร้อง ${targets.length} รายการเรียบร้อยแล้ว`,
+        severity: 'success',
+      });
+    } catch (err) {
+      setToast({
+        open: true,
+        message: 'เกิดข้อผิดพลาดในการอนุมัติ: ' + (err.response?.data?.message || err.message),
+        severity: 'error',
+      });
+    }
   };
 
   return (
@@ -182,51 +274,17 @@ const AdvisorDashboardPage = () => {
           }}
         >
           {[
-            { title: 'ทั้งหมด', value: departmentFilteredRequests.length, icon: STAT_EMOJI.TOTAL, color: '#667eea' },
-            { title: 'รอตรวจสอบ', value: departmentFilteredRequests.filter((request) => request.status === 'รออาจารย์ที่ปรึกษาอนุมัติ').length, icon: STAT_EMOJI.PENDING, color: '#f093fb' },
-            { title: 'อนุมัติแล้ว', value: departmentFilteredRequests.filter((request) => request.status === 'อนุมัติแล้ว').length, icon: STAT_EMOJI.APPROVED, color: '#16a34a' },
+            { title: 'ทั้งหมด', value: departmentFilteredRequests.length, icon: STAT_EMOJI.TOTAL, color: '#3b82f6' },
+            { title: 'รอตรวจสอบ', value: departmentFilteredRequests.filter((request) => request.status === 'รออาจารย์ที่ปรึกษาอนุมัติ').length, icon: STAT_EMOJI.PENDING, color: '#f59e0b' },
+            { title: 'อนุมัติแล้ว', value: departmentFilteredRequests.filter((request) => request.status === 'อนุมัติแล้ว').length, icon: STAT_EMOJI.APPROVED, color: '#10b981' },
           ].map((stat) => (
-            <Card
+            <StatCard
               key={stat.title}
-              elevation={0}
-              sx={{
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: 'divider',
-                background: `linear-gradient(135deg, ${stat.color}22 0%, #ffffff 56%)`,
-                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
-              }}
-            >
-              <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: 2,
-                      display: 'grid',
-                      placeItems: 'center',
-                      fontWeight: 800,
-                      fontSize: '1rem',
-                      color: stat.color,
-                      backgroundColor: `${stat.color}1a`,
-                      border: `1px solid ${stat.color}33`,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {stat.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontWeight: 500 }}>
-                      {stat.title}
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.1, color: 'text.primary' }}>
-                      {stat.value}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              color={stat.color}
+            />
           ))}
         </Box>
 
@@ -243,12 +301,76 @@ const AdvisorDashboardPage = () => {
               <MenuItem value="all">ทั้งหมด</MenuItem>
               <MenuItem value="รออาจารย์ที่ปรึกษาอนุมัติ">รออนุมัติ</MenuItem>
               <MenuItem value="อนุมัติแล้ว">อนุมัติแล้ว</MenuItem>
+              <MenuItem value="ประเมินเสร็จแล้ว">ประเมินเสร็จแล้ว</MenuItem>
             </TextField>
           </div>
+
+          <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2 }}>
+            <strong>ข้อความแจ้งเตือนระบบ:</strong> หากอาจารย์ไม่ได้กดอนุมัติเสร็จสิ้นการฝึกงานด้วยตนเอง ระบบจะอนุมัติให้จบการฝึกงานให้อัตโนมัติภายใน 3 วัน หลังจากที่สถานประกอบการส่งผลประเมินเรียบร้อยแล้ว
+          </Alert>
+
+          {selectedIds.length > 0 && (
+            <Paper
+              elevation={0}
+              sx={{
+                mb: 2,
+                p: 1.5,
+                px: 2,
+                bgcolor: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1.5,
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e40af' }}>
+                เลือกอยู่ {selectedIds.length} รายการ
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+                {selectedEvaluatedCount > 0 && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    onClick={handleBatchFinishInternship}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    อนุมัติเสร็จสิ้นฝึกงาน ({selectedEvaluatedCount})
+                  </Button>
+                )}
+                {selectedPendingCount > 0 && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    onClick={handleBatchApprovePending}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    อนุมัติคำร้องที่เลือก ({selectedPendingCount})
+                  </Button>
+                )}
+                <Button variant="outlined" size="small" color="inherit" onClick={() => setSelectedIds([])}>
+                  ยกเลิกการเลือก
+                </Button>
+              </Stack>
+            </Paper>
+          )}
+
           <TableContainer component={Box} className="compact-table">
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={isAllSelected}
+                      indeterminate={isSomeSelected}
+                      onChange={handleSelectAll}
+                      disabled={actionableRequests.length === 0}
+                    />
+                  </TableCell>
                   <TableCell>รหัสนักศึกษา</TableCell>
                   <TableCell>ชื่อ-นามสกุล</TableCell>
                   <TableCell>บริษัท</TableCell>
@@ -261,21 +383,31 @@ const AdvisorDashboardPage = () => {
               <TableBody>
                 {filteredRequests.map((request) => {
                   const normalizedStatus = String(request.status || '').trim();
-                  const statusStyle = getStatusBadge(normalizedStatus);
                   const isPending = normalizedStatus === 'รออาจารย์ที่ปรึกษาอนุมัติ';
+                  const isWaitingToStart = normalizedStatus === 'รออาจารย์อนุมัติเริ่มฝึกงาน';
                   const isInterning = normalizedStatus === 'ออกฝึกงาน';
                   const isEvaluated = normalizedStatus === 'ประเมินเสร็จแล้ว';
-                  const displayStatus = getDisplayStatus(normalizedStatus);
+                  const isActionable = isPending || isWaitingToStart || isEvaluated;
+                  const isSelected = selectedIds.includes(String(request.id));
+
                   return (
-                    <TableRow key={request.id} hover>
+                    <TableRow key={request.id} hover selected={isSelected}>
+                      <TableCell padding="checkbox">
+                        {isActionable ? (
+                          <Checkbox
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(request.id)}
+                          />
+                        ) : (
+                          <Checkbox disabled checked={false} />
+                        )}
+                      </TableCell>
                       <TableCell>{request.studentId}</TableCell>
                       <TableCell>{request.studentName}</TableCell>
                       <TableCell>{request.company}</TableCell>
                       <TableCell>{request.position}</TableCell>
                       <TableCell>
-                        <span className="status-badge" style={{ background: statusStyle.bg, color: statusStyle.color }}>
-                          {displayStatus}
-                        </span>
+                        <StatusBadge status={normalizedStatus} />
                       </TableCell>
                       <TableCell>
                         <Button
@@ -289,22 +421,22 @@ const AdvisorDashboardPage = () => {
                         </Button>
                       </TableCell>
                       <TableCell className="action-column">
-                        {isPending && (
+                        {(isPending || isWaitingToStart) && (
                           <div className="advisor-action-buttons">
-                            <Button size="small" variant="contained" color="success" onClick={() => handleApprove(request.id)}>
-                              อนุมัติ
-                            </Button>
-                            <Button size="small" variant="contained" color="error" onClick={() => handleReject(request.id)}>
+                            <ModernButton size="small" customVariant="accept" onClick={() => handleApprove(request.id, normalizedStatus)}>
+                              {isWaitingToStart ? 'เริ่มฝึกงาน' : 'อนุมัติ'}
+                            </ModernButton>
+                            <ModernButton size="small" customVariant="reject" onClick={() => handleReject(request.id)}>
                               ปฏิเสธ
-                            </Button>
+                            </ModernButton>
                           </div>
                         )}
-                        {!isPending && !isInterning && isEvaluated && (
-                          <Button size="small" variant="contained" color="success" onClick={() => handleFinishInternship(request.id)}>
+                        {!isPending && !isWaitingToStart && !isInterning && isEvaluated && (
+                          <ModernButton size="small" customVariant="primary" onClick={() => handleFinishInternship(request.id)}>
                             เสร็จสิ้นการฝึกงาน
-                          </Button>
+                          </ModernButton>
                         )}
-                        {!isPending && !isInterning && !isEvaluated && (
+                        {!isPending && !isWaitingToStart && !isInterning && !isEvaluated && (
                           <span className="muted-action">-</span>
                         )}
                       </TableCell>
@@ -313,7 +445,7 @@ const AdvisorDashboardPage = () => {
                 })}
                 {filteredRequests.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">ไม่พบข้อมูล</TableCell>
+                    <TableCell colSpan={8} align="center">ไม่พบข้อมูล</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -350,7 +482,7 @@ const AdvisorDashboardPage = () => {
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <MuiAlert
+        <Alert
           elevation={6}
           variant="filled"
           onClose={() => setToast((prev) => ({ ...prev, open: false }))}
@@ -358,7 +490,7 @@ const AdvisorDashboardPage = () => {
           sx={{ width: '100%' }}
         >
           {toast.message}
-        </MuiAlert>
+        </Alert>
       </Snackbar>
     </div>
   );

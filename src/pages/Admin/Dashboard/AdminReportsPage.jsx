@@ -27,6 +27,8 @@ import {
 import './AdminDashboardPage.css';
 import './AdminReportsPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import StatCard from '../../../components/StatCard';
+import { STAT_EMOJI } from '../../../utils/statEmojis';
 
 const AdminReportsPage = () => {
   const navigate = useNavigate();
@@ -235,6 +237,7 @@ const AdminReportsPage = () => {
     if (!statusPieRef.current) return undefined;
 
     const root = am5.Root.new(statusPieRef.current);
+    if (root._logo) root._logo.dispose();
     root.setThemes([am5themes_Animated.new(root)]);
 
     const chart = root.container.children.push(
@@ -278,6 +281,7 @@ const AdminReportsPage = () => {
     if (!departmentBarRef.current) return undefined;
 
     const root = am5.Root.new(departmentBarRef.current);
+    if (root._logo) root._logo.dispose();
     root.setThemes([am5themes_Animated.new(root)]);
 
     const chart = root.container.children.push(
@@ -424,17 +428,18 @@ const AdminReportsPage = () => {
           }}
         >
           {[
-            { label: 'คำร้องทั้งหมด', value: summary.total, color: '#2563eb' },
-            { label: 'รอตรวจสอบ', value: summary.pending, color: '#d97706' },
-            { label: 'อนุมัติแล้ว', value: summary.approved, color: '#16a34a' },
-            { label: 'ไม่อนุมัติ', value: summary.rejected, color: '#dc2626' },
+            { label: 'คำร้องทั้งหมด', value: summary.total, color: '#3b82f6', icon: STAT_EMOJI.TOTAL },
+            { label: 'รอตรวจสอบ', value: summary.pending, color: '#f59e0b', icon: STAT_EMOJI.PENDING },
+            { label: 'อนุมัติแล้ว', value: summary.approved, color: '#10b981', icon: STAT_EMOJI.APPROVED },
+            { label: 'ไม่อนุมัติ', value: summary.rejected, color: '#ef4444', icon: STAT_EMOJI.REJECTED },
           ].map((card) => (
-            <Card key={card.label} elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 2 }}>
-              <CardContent>
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600 }}>{card.label}</Typography>
-                <Typography variant="h4" sx={{ mt: 1, color: card.color, fontWeight: 700 }}>{card.value}</Typography>
-              </CardContent>
-            </Card>
+            <StatCard
+              key={card.label}
+              title={card.label}
+              value={card.value}
+              icon={card.icon}
+              color={card.color}
+            />
           ))}
         </Box>
 
@@ -447,14 +452,12 @@ const AdminReportsPage = () => {
           }}
         >
           <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>กราฟสถานะ (Pie)</Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>amCharts 5</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>กราฟสัดส่วนสถานะคำร้องฝึกงาน</Typography>
             <Box ref={statusPieRef} className="report-amchart" />
           </Paper>
 
           <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>กราฟแยกตามสาขา</Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>amCharts 5</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>กราฟจำนวนคำร้องแยกตามสาขาวิชา</Typography>
             <Box ref={departmentBarRef} className="report-amchart" />
           </Paper>
         </Box>

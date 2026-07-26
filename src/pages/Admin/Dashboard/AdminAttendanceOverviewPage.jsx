@@ -15,12 +15,19 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  IconButton
+  IconButton,
+  Box,
+  Typography,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
+import { AcademicCapIcon, DocumentTextIcon, CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, CalendarIcon, TableCellsIcon } from '@heroicons/react/24/outline';
 import './AdminDashboardPage.css';
 import '../Shared/CheckInPage.css';
 import './AdminAttendanceOverviewPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import StatCard from '../../../components/StatCard';
+import AttendanceCalendar from '../../../components/AttendanceCalendar';
 
 const AdminAttendanceOverviewPage = () => {
   const navigate = useNavigate();
@@ -30,13 +37,32 @@ const AdminAttendanceOverviewPage = () => {
   const [departmentMap, setDepartmentMap] = useState({});
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [filters, setFilters] = useState({ search: '', department: 'all' });
+  const [statFilter, setStatFilter] = useState('all'); // 'all' | 'submitted' | 'warning'
   const [detailsModal, setDetailsModal] = useState({ open: false, student: null });
+  const [modalViewMode, setModalViewMode] = useState('calendar'); // 'calendar' | 'table'
 
   const statusLabel = useMemo(() => ({
     present: 'มา',
     absent: 'ขาด',
     late: 'สาย',
   }), []);
+
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const cleanStr = String(dateStr).split('T')[0];
+      const [year, month, day] = cleanStr.split('-');
+      if (year && month && day) {
+        const thaiYear = parseInt(year) > 2500 ? year : parseInt(year) + 543;
+        return `${day}/${month}/${thaiYear}`;
+      }
+      const dateObj = new Date(dateStr);
+      if (isNaN(dateObj.getTime())) return cleanStr;
+      return dateObj.toLocaleDateString('th-TH');
+    } catch (e) {
+      return String(dateStr).split('T')[0];
+    }
+  };
 
   const buildDepartmentMap = async () => {
     const map = {};
@@ -89,6 +115,8 @@ const AdminAttendanceOverviewPage = () => {
   // Group entries by studentId
   const studentSummaries = useMemo(() => {
     const map = {};
+    const todayStr = new Date().toISOString().slice(0, 10);
+
     entries.forEach((entry) => {
       const key = entry.studentId || 'unknown';
       if (!map[key]) {
@@ -99,14 +127,41 @@ const AdminAttendanceOverviewPage = () => {
           present: 0,
           late: 0,
           absent: 0,
+          unchecked: 0,
           total: 0,
+          datesMap: new Set(),
+          minDate: null,
         };
       }
       map[key].entries.push(entry);
       map[key].total += 1;
+      if (entry.date) {
+        const cleanDate = String(entry.date).split('T')[0];
+        map[key].datesMap.add(cleanDate);
+        if (!map[key].minDate || cleanDate < map[key].minDate) map[key].minDate = cleanDate;
+      }
       if (entry.status === 'present') map[key].present += 1;
       else if (entry.status === 'late') map[key].late += 1;
       else if (entry.status === 'absent') map[key].absent += 1;
+    });
+
+    Object.values(map).forEach((s) => {
+      if (s.minDate) {
+        let curr = new Date(s.minDate);
+        const end = new Date(todayStr);
+        let countUnchecked = 0;
+        while (curr <= end) {
+          const dayOfWeek = curr.getDay();
+          const dateKey = curr.toISOString().slice(0, 10);
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Mon-Fri
+            if (!s.datesMap.has(dateKey)) {
+              countUnchecked++;
+            }
+          }
+          curr.setDate(curr.getDate() + 1);
+        }
+        s.unchecked = countUnchecked;
+      }
     });
 
     return Object.values(map).sort((a, b) => {
@@ -116,9 +171,56 @@ const AdminAttendanceOverviewPage = () => {
     });
   }, [entries]);
 
-  // Filter students
-  const filteredStudents = useMemo(() => {
+  const getAttendanceRate = (s) => {
+    const grandTotal = s.present + s.late + s.absent + s.unchecked;
+    if (grandTotal === 0) return 0;
+    return Math.round(((s.present + s.late) / grandTotal) * 100);
+  };
+
+  // Department-filtered students for scoped StatCards
+  const departmentStudents = useMemo(() => {
     return studentSummaries.filter((s) => {
+      if (filters.department !== 'all' && getDepartment(s.studentId) !== filters.department) return false;
+      return true;
+    });
+  }, [studentSummaries, filters.department, departmentMap]);
+
+  // Global stats recalculated specifically for the selected department
+  const globalStats = useMemo(() => {
+    let present = 0, late = 0, absent = 0, unchecked = 0;
+    const deptStudentIds = new Set(departmentStudents.map((s) => s.studentId));
+
+    entries.forEach((e) => {
+      if (deptStudentIds.has(e.studentId)) {
+        if (e.status === 'present') present += 1;
+        else if (e.status === 'late') late += 1;
+        else if (e.status === 'absent') absent += 1;
+      }
+    });
+
+    departmentStudents.forEach((s) => {
+      unchecked += s.unchecked;
+    });
+
+    return {
+      total: present + late + absent,
+      present,
+      late,
+      absent,
+      unchecked,
+      students: departmentStudents.length,
+    };
+  }, [entries, departmentStudents]);
+
+  const overallRate = useMemo(() => {
+    const total = globalStats.present + globalStats.late + globalStats.absent + globalStats.unchecked;
+    if (total === 0) return 0;
+    return Math.round(((globalStats.present + globalStats.late) / total) * 100);
+  }, [globalStats]);
+
+  // Filter & sort students (with statFilter support for high-risk / warning focus)
+  const filteredStudents = useMemo(() => {
+    let list = studentSummaries.filter((s) => {
       if (filters.department !== 'all' && getDepartment(s.studentId) !== filters.department) return false;
       if (filters.search) {
         const term = filters.search.toLowerCase();
@@ -128,23 +230,21 @@ const AdminAttendanceOverviewPage = () => {
       }
       return true;
     });
-  }, [studentSummaries, filters, departmentMap]);
 
-  // Global stats
-  const globalStats = useMemo(() => {
-    let present = 0, late = 0, absent = 0;
-    entries.forEach((e) => {
-      if (e.status === 'present') present += 1;
-      else if (e.status === 'late') late += 1;
-      else if (e.status === 'absent') absent += 1;
-    });
-    return { total: entries.length, present, late, absent, students: studentSummaries.length };
-  }, [entries, studentSummaries]);
+    if (statFilter === 'submitted') {
+      list = list.filter((s) => s.present + s.late > 0);
+    } else if (statFilter === 'warning') {
+      list = list.filter((s) => s.absent + s.unchecked > 0 || getAttendanceRate(s) < 80);
+      list.sort((a, b) => {
+        const warnA = a.absent + a.unchecked;
+        const warnB = b.absent + b.unchecked;
+        if (warnB !== warnA) return warnB - warnA;
+        return getAttendanceRate(a) - getAttendanceRate(b);
+      });
+    }
 
-  const getAttendanceRate = (s) => {
-    if (s.total === 0) return 0;
-    return Math.round(((s.present + s.late) / s.total) * 100);
-  };
+    return list;
+  }, [studentSummaries, filters, statFilter, departmentMap]);
 
   const getRateClass = (rate) => {
     if (rate >= 80) return 'rate-good';
@@ -181,30 +281,114 @@ const AdminAttendanceOverviewPage = () => {
         </header>
 
         {/* Summary stats */}
-        <div className="attendance-stats-grid">
-          <div className="attendance-stat-card">
-            <div className="stat-value">{globalStats.students}</div>
-            <div className="stat-label">นักศึกษาทั้งหมด</div>
-          </div>
-          <div className="attendance-stat-card">
-            <div className="stat-value">{globalStats.total}</div>
-            <div className="stat-label">รายงานประจำวันทั้งหมด</div>
-          </div>
-          <div className="attendance-stat-card present">
-            <div className="stat-value">{globalStats.present}</div>
-            <div className="stat-label">มา</div>
-          </div>
-          <div className="attendance-stat-card late">
-            <div className="stat-value">{globalStats.late}</div>
-            <div className="stat-label">สาย</div>
-          </div>
-          <div className="attendance-stat-card absent">
-            <div className="stat-value">{globalStats.absent}</div>
-            <div className="stat-label">ขาด</div>
-          </div>
-        </div>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
+            gap: 2,
+            mb: 3,
+          }}
+        >
+          <Box 
+            onClick={() => setStatFilter('all')} 
+            sx={{ 
+              cursor: 'pointer', 
+              transition: 'transform 0.2s', 
+              borderRadius: 3,
+              outline: statFilter === 'all' ? '2px solid #3b82f6' : 'none',
+              '&:hover': { transform: 'translateY(-2px)' } 
+            }}
+          >
+            <StatCard
+              title="นักศึกษาทั้งหมด"
+              value={globalStats.students}
+              icon={<AcademicCapIcon style={{ width: 24, height: 24 }} />}
+              color="#3b82f6"
+            />
+          </Box>
+
+          <Box 
+            onClick={() => setStatFilter(statFilter === 'submitted' ? 'all' : 'submitted')} 
+            sx={{ 
+              cursor: 'pointer', 
+              transition: 'all 0.2s', 
+              borderRadius: 3,
+              outline: statFilter === 'submitted' ? '3px solid #10b981' : 'none',
+              '&:hover': { transform: 'translateY(-2px)' } 
+            }}
+          >
+            <StatCard
+              title="ส่งรายงานแล้ว"
+              value={globalStats.present + globalStats.late}
+              icon={<DocumentTextIcon style={{ width: 24, height: 24 }} />}
+              color="#10b981"
+            />
+          </Box>
+
+          <Box 
+            onClick={() => setStatFilter(statFilter === 'warning' ? 'all' : 'warning')} 
+            sx={{ 
+              cursor: 'pointer', 
+              transition: 'all 0.2s', 
+              borderRadius: 3,
+              outline: statFilter === 'warning' ? '3px solid #ef4444' : 'none',
+              '&:hover': { transform: 'translateY(-2px)' } 
+            }}
+          >
+            <StatCard
+              title="ขาด / ไม่ส่งรายงาน (ต้องติดตาม)"
+              value={globalStats.absent + globalStats.unchecked}
+              icon={<ExclamationTriangleIcon style={{ width: 24, height: 24 }} />}
+              color="#ef4444"
+            />
+          </Box>
+
+          <Box 
+            onClick={() => setStatFilter('all')} 
+            sx={{ 
+              cursor: 'pointer', 
+              transition: 'transform 0.2s', 
+              borderRadius: 3,
+              '&:hover': { transform: 'translateY(-2px)' } 
+            }}
+          >
+            <StatCard
+              title="อัตราส่งรายงานภาพรวม"
+              value={`${overallRate}%`}
+              icon={<CheckCircleIcon style={{ width: 24, height: 24 }} />}
+              color="#8b5cf6"
+            />
+          </Box>
+        </Box>
 
         <div className="content-section">
+          {statFilter !== 'all' && (
+            <Box 
+              sx={{ 
+                mb: 2.5, 
+                p: 1.5, 
+                px: 2, 
+                borderRadius: 2, 
+                bgcolor: statFilter === 'warning' ? '#fef2f2' : '#f0fdf4',
+                border: statFilter === 'warning' ? '1px solid #fecaca' : '1px solid #bbf7d0',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, color: statFilter === 'warning' ? '#991b1b' : '#166534' }}>
+                {statFilter === 'warning' 
+                  ? `🚨 แสดงเฉพาะกลุ่มนักศึกษาสุ่มเสี่ยง / ต้องติดตาม (ขาด หรือ ไม่ส่งรายงาน) จำนวน ${filteredStudents.length} คน` 
+                  : `✅ แสดงเฉพาะนักศึกษาที่ส่งรายงานแล้ว จำนวน ${filteredStudents.length} คน`}
+              </Typography>
+              <Button size="small" variant="outlined" color={statFilter === 'warning' ? 'error' : 'success'} onClick={() => setStatFilter('all')}>
+                แสดงทั้งหมด
+              </Button>
+            </Box>
+          )}
+
           {/* Filters */}
           <div className="attendance-filters">
             <div>
@@ -242,9 +426,11 @@ const AdminAttendanceOverviewPage = () => {
             <div className="student-cards-grid">
               {filteredStudents.map((student) => {
                 const rate = getAttendanceRate(student);
-                const pPct = student.total > 0 ? (student.present / student.total) * 100 : 0;
-                const lPct = student.total > 0 ? (student.late / student.total) * 100 : 0;
-                const aPct = student.total > 0 ? (student.absent / student.total) * 100 : 0;
+                const grandTotal = student.present + student.late + student.absent + student.unchecked;
+                const pPct = grandTotal > 0 ? (student.present / grandTotal) * 100 : 0;
+                const lPct = grandTotal > 0 ? (student.late / grandTotal) * 100 : 0;
+                const aPct = grandTotal > 0 ? (student.absent / grandTotal) * 100 : 0;
+                const uPct = grandTotal > 0 ? (student.unchecked / grandTotal) * 100 : 0;
 
                 return (
                   <div key={student.studentId} className="student-overview-card">
@@ -272,13 +458,15 @@ const AdminAttendanceOverviewPage = () => {
                       <span className="mini-stat"><span className="dot present"></span> มา {student.present}</span>
                       <span className="mini-stat"><span className="dot late"></span> สาย {student.late}</span>
                       <span className="mini-stat"><span className="dot absent"></span> ขาด {student.absent}</span>
-                      <span className="mini-stat" style={{ marginLeft: 'auto', color: '#9ca3af' }}>รวม {student.total} วัน</span>
+                      <span className="mini-stat"><span className="dot unchecked"></span> ไม่ได้เช็ค {student.unchecked}</span>
+                      <span className="mini-stat" style={{ marginLeft: 'auto', color: '#9ca3af' }}>รวม {grandTotal} วัน</span>
                     </div>
 
                     <div className="attendance-progress">
                       <div className="bar-present" style={{ width: `${pPct}%` }}></div>
                       <div className="bar-late" style={{ width: `${lPct}%` }}></div>
                       <div className="bar-absent" style={{ width: `${aPct}%` }}></div>
+                      <div className="bar-unchecked" style={{ width: `${uPct}%` }}></div>
                     </div>
 
                   </div>
@@ -295,46 +483,76 @@ const AdminAttendanceOverviewPage = () => {
         onClose={() => setDetailsModal({ open: false, student: null })}
         fullWidth
         maxWidth="md"
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #f3f4f6' }}>
-          ประวัติรายงานประจำวัน - {detailsModal.student?.studentName}
+        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>ประวัติรายงานประจำวัน - {detailsModal.student?.studentName}</span>
+          <ToggleButtonGroup
+            value={modalViewMode}
+            exclusive
+            onChange={(e, nextView) => { if (nextView) setModalViewMode(nextView); }}
+            size="small"
+            sx={{ bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2 }}
+          >
+            <ToggleButton value="calendar" sx={{ py: 0.25, px: 1.25, fontWeight: 700, fontSize: '0.75rem', gap: 0.75, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb' } }}>
+              <CalendarIcon style={{ width: 15, height: 15 }} /> ปฏิทิน
+            </ToggleButton>
+            <ToggleButton value="table" sx={{ py: 0.25, px: 1.25, fontWeight: 700, fontSize: '0.75rem', gap: 0.75, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb' } }}>
+              <TableCellsIcon style={{ width: 15, height: 15 }} /> ตาราง
+            </ToggleButton>
+          </ToggleButtonGroup>
         </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <TableContainer>
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>วันที่</TableCell>
-                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>สถานะ</TableCell>
-                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>กิจกรรมที่ทำในวันนี้</TableCell>
-                  <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>เวลาเช็ค</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {detailsModal.student && sortedDetailEntries(detailsModal.student.entries).length > 0 ? (
-                  sortedDetailEntries(detailsModal.student.entries).map((entry, idx) => (
-                    <TableRow key={`${entry.date}-${idx}`} hover>
-                      <TableCell>{entry.date}</TableCell>
-                      <TableCell>
-                        <span className={`checkin-status ${entry.status}`}>
-                          {statusLabel[entry.status]}
-                        </span>
-                      </TableCell>
-                      <TableCell>{entry.note || '-'}</TableCell>
-                      <TableCell>{new Date(entry.createdAt).toLocaleString('th-TH')}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+        <DialogContent sx={{ p: 2 }}>
+          {modalViewMode === 'calendar' ? (
+            <AttendanceCalendar entries={detailsModal.student?.entries || []} />
+          ) : (
+            <TableContainer>
+              <Table size="small" stickyHeader>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 3, color: '#6b7280' }}>
-                      ไม่มีข้อมูลรายงานประจำวัน
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>วันที่</TableCell>
+                    <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>สถานะ</TableCell>
+                    <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>กิจกรรม / ประสบการณ์ที่ทำ</TableCell>
+                    <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>ลายเซ็นพี่เลี้ยง</TableCell>
+                    <TableCell sx={{ fontWeight: 600, bgcolor: '#f9fafb' }}>เวลาเช็ค</TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {detailsModal.student && sortedDetailEntries(detailsModal.student.entries).length > 0 ? (
+                    sortedDetailEntries(detailsModal.student.entries).map((entry, idx) => (
+                      <TableRow key={`${entry.date}-${idx}`} hover>
+                        <TableCell sx={{ fontWeight: 600 }}>{formatDateDisplay(entry.date)}</TableCell>
+                        <TableCell>
+                          <span className={`checkin-status ${entry.status}`}>
+                            {statusLabel[entry.status]}
+                          </span>
+                        </TableCell>
+                        <TableCell>{entry.work_experience || entry.workExperience || entry.note || '-'}</TableCell>
+                        <TableCell>
+                          {entry.supervisor_signature || entry.supervisorSignature ? (
+                            <img
+                              src={entry.supervisor_signature || entry.supervisorSignature}
+                              alt="Supervisor Signature"
+                              style={{ maxHeight: 32, maxWidth: 100, objectFit: 'contain' }}
+                            />
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>{new Date(entry.createdAt).toLocaleString('th-TH')}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center" sx={{ py: 3, color: '#6b7280' }}>
+                        ไม่มีข้อมูลรายงานประจำวัน
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setDetailsModal({ open: false, student: null })} variant="contained" sx={{ bgcolor: '#111', '&:hover': { bgcolor: '#000' } }}>

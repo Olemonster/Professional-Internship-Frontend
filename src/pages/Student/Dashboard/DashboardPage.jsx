@@ -18,6 +18,8 @@ import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './ProcessTracker.css';
 import { PencilSquareIcon, EnvelopeIcon, CheckCircleIcon, DocumentTextIcon, CalendarIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import StudentSidebar from '../../../components/StudentSidebar';
+import StatCard from '../../../components/StatCard';
+import StatusBadge from '../../../components/StatusBadge';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -92,6 +94,7 @@ const DashboardPage = () => {
     'รอผู้ดูแลระบบตรวจสอบ',
     'รอผู้ดูแลระบบอนุมัติ',
     'รอสถานประกอบการตอบรับ',
+    'รออาจารย์อนุมัติเริ่มฝึกงาน',
   ];
   
     // Map extended status to steps (0-5)
@@ -99,7 +102,7 @@ const DashboardPage = () => {
       if (!status) return 0;
       if (['รออาจารย์ที่ปรึกษาอนุมัติ', 'รอผู้ดูแลระบบตรวจสอบ', 'รอผู้ดูแลระบบอนุมัติ'].includes(status)) return 1;
       if (['รอสถานประกอบการตอบรับ'].includes(status)) return 2;
-      if (['อนุมัติแล้ว', 'ออกฝึกงาน'].includes(status)) return 3;
+      if (['รออาจารย์อนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว', 'ออกฝึกงาน'].includes(status)) return 3;
       if (['ประเมินเสร็จแล้ว'].includes(status)) return 4;
       if (['ฝึกงานเสร็จแล้ว'].includes(status)) return 5;
       if (status.includes('ไม่อนุมัติ') || status.includes('ปฏิเสธ')) return 1; 
@@ -117,22 +120,7 @@ const DashboardPage = () => {
     { title: 'เสร็จสิ้น', icon: '🏁︎' }
   ];
 
-  const getStatusBadge = (status) => {
-    const statusStyles = {
-      'รออาจารย์ที่ปรึกษาอนุมัติ': { bg: 'linear-gradient(135deg, #fde68a 0%, #f59e0b 100%)', color: '#78350f' },
-      'รอผู้ดูแลระบบตรวจสอบ': { bg: 'linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%)', color: '#ffffff' },
-      'รอผู้ดูแลระบบอนุมัติ': { bg: 'linear-gradient(135deg, #7dd3fc 0%, #0284c7 100%)', color: '#ffffff' },
-      'รอสถานประกอบการตอบรับ': { bg: 'linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%)', color: '#ffffff' },
-      'อนุมัติแล้ว': { bg: 'linear-gradient(135deg, #86efac 0%, #22c55e 100%)', color: '#14532d' },
-      'ประเมินเสร็จแล้ว': { bg: 'linear-gradient(135deg, #c7d2fe 0%, #6366f1 100%)', color: '#1e1b4b' },
-      'ไม่อนุมัติ (อาจารย์)': { bg: 'linear-gradient(135deg, #fda4af 0%, #f43f5e 100%)', color: '#ffffff' },
-      'ไม่อนุมัติ (Admin)': { bg: 'linear-gradient(135deg, #fb7185 0%, #e11d48 100%)', color: '#ffffff' },
-      'ปฏิเสธ': { bg: 'linear-gradient(135deg, #fb7185 0%, #be123c 100%)', color: '#ffffff' },
-      'ออกฝึกงาน': { bg: 'linear-gradient(135deg, #67e8f9 0%, #0ea5e9 100%)', color: '#083344' },
-      'ฝึกงานเสร็จแล้ว': { bg: 'linear-gradient(135deg, #f9a8d4 0%, #ec4899 100%)', color: '#831843' }
-    };
-    return statusStyles[status] || { bg: 'linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)', color: '#111827' };
-  };
+
 
   const formatThaiDateTime = (dateValue) => {
     if (!dateValue) return { date: '-', time: '-' };
@@ -256,12 +244,139 @@ const DashboardPage = () => {
           </div>
         </header>
 
-        {currentRequest?.supervisionAppointment?.date && (
-          <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-            <strong style={{display:'inline-flex', alignItems:'center', gap:'4px'}}><CalendarIcon style={{width:20, height:20}}/> กำหนดการนิเทศ:</strong> อาจารย์ที่ปรึกษาได้กำหนดวันนิเทศงานของคุณในวันที่ <strong>{new Date(currentRequest.supervisionAppointment.date).toLocaleDateString('th-TH')}</strong> รูปแบบ <strong>{currentRequest.supervisionAppointment.mode || '-'}</strong>
-            {currentRequest.supervisionAppointment.note ? ` (หมายเหตุ: ${currentRequest.supervisionAppointment.note})` : ''}
-          </Alert>
-        )}
+        {currentRequest?.supervisionAppointment?.date && (() => {
+          const isCompleted = Boolean(currentRequest.supervisionReport || currentRequest.hasAdvisorEval);
+          return (
+            <Paper
+              elevation={0}
+              sx={{
+                mb: 3,
+                p: 2.5,
+                borderRadius: 3,
+                background: isCompleted
+                  ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)'
+                  : 'linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%)',
+                border: isCompleted ? '1px solid #a7f3d0' : '1px solid #bfdbfe',
+                boxShadow: isCompleted
+                  ? '0 4px 12px rgba(22, 163, 74, 0.08)'
+                  : '0 4px 12px rgba(37, 99, 235, 0.06)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 2.5,
+                  bgcolor: isCompleted ? '#16a34a' : '#2563eb',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: isCompleted
+                    ? '0 4px 10px rgba(22, 163, 74, 0.3)'
+                    : '0 4px 10px rgba(37, 99, 235, 0.3)',
+                }}
+              >
+                {isCompleted ? (
+                  <CheckCircleIcon style={{ width: 24, height: 24 }} />
+                ) : (
+                  <CalendarIcon style={{ width: 24, height: 24 }} />
+                )}
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: 700, color: isCompleted ? '#14532d' : '#1e3a8a', lineHeight: 1.2 }}
+                  >
+                    {isCompleted ? 'ผลการนิเทศงาน (นิเทศเสร็จสิ้น)' : 'กำหนดการนิเทศงาน'}
+                  </Typography>
+                  <Chip
+                    label={isCompleted ? 'นิเทศเรียบร้อยแล้ว' : (currentRequest.supervisionAppointment.mode || 'Onsite')}
+                    size="small"
+                    sx={{
+                      bgcolor: isCompleted
+                        ? '#dcfce7'
+                        : (currentRequest.supervisionAppointment.mode === 'Online' ? '#e0e7ff' : '#dcfce7'),
+                      color: isCompleted
+                        ? '#15803d'
+                        : (currentRequest.supervisionAppointment.mode === 'Online' ? '#3730a3' : '#166534'),
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      height: 22,
+                    }}
+                  />
+                  {isCompleted && (
+                    <Chip
+                      label={currentRequest.supervisionAppointment.mode || 'Onsite'}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        borderColor: '#86efac',
+                        color: '#166534',
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        height: 22,
+                      }}
+                    />
+                  )}
+                </Box>
+                <Typography variant="body2" sx={{ color: isCompleted ? '#166534' : '#334155', mb: 1.5, lineHeight: 1.5 }}>
+                  {isCompleted
+                    ? 'อาจารย์นิเทศงานได้ดำเนินการนิเทศและประเมินผลการฝึกงานของคุณเรียบร้อยแล้ว'
+                    : 'อาจารย์ที่ปรึกษาได้กำหนดวันนิเทศงานของคุณเรียบร้อยแล้ว'}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    flexWrap: 'wrap',
+                    bgcolor: '#ffffff',
+                    p: 1.25,
+                    px: 2,
+                    borderRadius: 2,
+                    border: isCompleted ? '1px solid #bbf7d0' : '1px solid #dbeafe',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+                      วันที่นิเทศ:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                      {new Date(currentRequest.supervisionAppointment.date).toLocaleDateString('th-TH')}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+                      สถานะการนิเทศ:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 700, color: isCompleted ? '#16a34a' : '#2563eb' }}
+                    >
+                      {isCompleted ? 'เสร็จสิ้น (ประเมินแล้ว)' : 'รอนิเทศงาน'}
+                    </Typography>
+                  </Box>
+                  {currentRequest.supervisionAppointment.note && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+                        หมายเหตุ:
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#334155' }}>
+                        {currentRequest.supervisionAppointment.note}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </Paper>
+          );
+        })()}
 
         <Box
           sx={{
@@ -272,36 +387,14 @@ const DashboardPage = () => {
           }}
         >
           {summaryCards.map((card) => (
-            <Card key={card.label} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Stack direction="row" spacing={1.25} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 2,
-                      display: 'grid',
-                      placeItems: 'center',
-                      color: card.color,
-                      bgcolor: `${card.color}1a`,
-                      border: `1px solid ${card.color}40`,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {card.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" color="text.secondary">{card.label}</Typography>
-                    <Typography
-                      variant={card.isText ? 'body1' : 'h5'}
-                      sx={{ fontWeight: 700, color: card.color, wordBreak: 'break-word' }}
-                    >
-                      {card.value}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
+            <StatCard
+              key={card.label}
+              title={card.label}
+              value={card.value}
+              icon={card.icon}
+              color={card.color}
+              isText={card.isText}
+            />
           ))}
         </Box>
 
@@ -379,7 +472,6 @@ const DashboardPage = () => {
           <div className="requests-list">
             {internshipRequests.length > 0 ? (
               internshipRequests.map((request) => {
-                const statusStyle = getStatusBadge(request.status);
                 return (
                   <Card key={request.id} className="request-card" elevation={2}>
                     <CardContent style={{ padding: '1rem 1.25rem' }}>
@@ -388,7 +480,7 @@ const DashboardPage = () => {
                           <Typography component="h3" variant="h6" sx={{ marginBottom: '0.25rem', color: '#111827' }}>{request.companyName}</Typography>
                           <Typography className="position" variant="body2" sx={{ color: '#374151' }}>{request.position}</Typography>
                         </div>
-                        <Chip label={request.status} className="status-badge" sx={{ background: statusStyle.bg, color: statusStyle.color, fontWeight: 700, borderRadius: '20px', height: 36 }} />
+                        <StatusBadge status={request.status} />
                       </Box>
 
                       {(request.status === 'ไม่อนุมัติ (Admin)' && request.admin_comment) && (

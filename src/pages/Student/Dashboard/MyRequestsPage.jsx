@@ -6,6 +6,7 @@ import './DashboardPage.css'; // Reusing layout styles
 import './MyRequestsPage.css';
 import { ClockIcon } from '@heroicons/react/24/outline'; // Specific styles for this page
 import StudentSidebar from '../../../components/StudentSidebar';
+import StatusBadge from '../../../components/StatusBadge';
 
 const MyRequestsPage = () => {
   const navigate = useNavigate();
@@ -91,20 +92,6 @@ const MyRequestsPage = () => {
     alert('คัดลอกลิงก์ประเมินแล้ว นำไปส่งให้บริษัทหรือพี่เลี้ยงได้เลยครับ');
   };
 
-  const getStatusBadge = (status) => {
-    const statusStyles = {
-      'รออาจารย์ที่ปรึกษาอนุมัติ': { bg: '#fff3cd', color: '#856404' },
-      'รอผู้ดูแลระบบอนุมัติ': { bg: '#c3dafe', color: '#434190' },
-      'อนุมัติแล้ว': { bg: '#d4edda', color: '#155724' },
-      'ไม่อนุมัติ (อาจารย์)': { bg: '#f8d7da', color: '#721c24' },
-      'ไม่อนุมัติ (Admin)': { bg: '#f8d7da', color: '#721c24' },
-      'ออกฝึกงาน': { bg: '#d1ecf1', color: '#0c5460' },
-      'ฝึกงานเสร็จแล้ว': { bg: '#e2e3e5', color: '#383d41' }
-    };
-    const style = statusStyles[status] || { bg: '#e2e3e5', color: '#383d41' };
-    return <span className="status-badge" style={{ backgroundColor: style.bg, color: style.color }}>{status}</span>;
-  };
-
   return (
     <div className="dashboard-container">
       <div className="mobile-top-navbar">
@@ -180,7 +167,7 @@ const MyRequestsPage = () => {
                                       <div>{formatThaiDateTime(req.submittedDate).time}</div>
                         </TableCell>
                         <TableCell>
-                          {getStatusBadge(req.status)}
+                          <StatusBadge status={req.status} />
                           {(req.status === 'ออกฝึกงาน' || req.status === 'ประเมินเสร็จแล้ว' || req.status === 'ฝึกงานเสร็จแล้ว') && (
                             <div style={{ marginTop: '8px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '4px', fontWeight: 500 }}>
                               {req.hasCompanyEval ? 

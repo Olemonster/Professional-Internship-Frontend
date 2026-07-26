@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TextField, MenuItem, Button, Input } from '@mui/material';
 import asyncStorage from '../../../utils/asyncStorage';
+import api from '../../../api/axios';
 import './DashboardPage.css'; // Shared dashboard layout
 import './ProfilePage.css';
 import StudentSidebar from '../../../components/StudentSidebar';
@@ -87,6 +88,21 @@ const ProfilePage = () => {
     };
 
     await asyncStorage.setItem('user', JSON.stringify(updated));
+
+    // Update the database via API
+    try {
+      if (user.id) {
+        await api.put(`/users/${user.id}`, {
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          studentId: form.studentId,
+          department: form.major
+        });
+      }
+    } catch (error) {
+      console.error("Failed to sync profile update to server", error);
+    }
 
     const usersRaw = await asyncStorage.getItem('users');
     if (usersRaw) {

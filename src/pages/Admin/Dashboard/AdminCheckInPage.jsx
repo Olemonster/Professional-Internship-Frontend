@@ -291,22 +291,34 @@ const AdminCheckInPage = () => {
                   <TableCell>วันที่</TableCell>
                   <TableCell>รหัสนักศึกษา</TableCell>
                   <TableCell>ชื่อ-นามสกุล</TableCell>
-                  <TableCell>สาขา</TableCell>
+                  <TableCell>สาขาวิชา</TableCell>
                   <TableCell>สถานะ</TableCell>
-                  <TableCell>กิจกรรมที่ทำในวันนี้</TableCell>
-                  <TableCell>เวลาเช็ค</TableCell>
+                  <TableCell>ลายเซ็นพี่เลี้ยง</TableCell>
+                  <TableCell>หมายเหตุ</TableCell>
+                  <TableCell>เวลาบันทึก</TableCell>
                   <TableCell>จัดการ</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8}>ยังไม่มีข้อมูลรายงานประจำวัน</TableCell>
+                    <TableCell colSpan={9}>ยังไม่มีข้อมูลรายงานประจำวัน</TableCell>
                   </TableRow>
                 ) : (
                   filteredEntries.map((entry) => (
                     <TableRow key={`${entry.id}-${entry.date}`} hover>
-                      <TableCell>{entry.date}</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        {(() => {
+                          if (!entry.date) return '-';
+                          const cleanStr = String(entry.date).split('T')[0];
+                          const [year, month, day] = cleanStr.split('-');
+                          if (year && month && day) {
+                            const thaiYear = parseInt(year) > 2500 ? year : parseInt(year) + 543;
+                            return `${day}/${month}/${thaiYear}`;
+                          }
+                          return cleanStr;
+                        })()}
+                      </TableCell>
                       <TableCell>{entry.studentId}</TableCell>
                       <TableCell>{entry.studentName}</TableCell>
                       <TableCell>{getDepartment(entry)}</TableCell>

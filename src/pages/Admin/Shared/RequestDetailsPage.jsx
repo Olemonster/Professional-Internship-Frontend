@@ -375,6 +375,15 @@ const RequestDetailsPage = () => {
                 <span className="detail-label">รูปแบบ</span>
                 <span className="detail-value">{request.supervisionAppointment.mode || '-'}</span>
               </div>
+              <div className="detail-item">
+                <span className="detail-label">สถานะการประเมิน</span>
+                <span className="detail-value" style={{ 
+                  fontWeight: 'bold', 
+                  color: (request.supervisionReport || request.hasAdvisorEval) ? '#10b981' : '#f59e0b' 
+                }}>
+                  {(request.supervisionReport || request.hasAdvisorEval) ? 'นิเทศและประเมินเรียบร้อยแล้ว' : 'รอนิเทศงาน'}
+                </span>
+              </div>
               {request.supervisionAppointment.note && (
                 <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                   <span className="detail-label">หมายเหตุ</span>

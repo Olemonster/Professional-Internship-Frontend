@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import AttendanceCalendar from '../../components/AttendanceCalendar';
+import { CalendarIcon, TableCellsIcon } from '@heroicons/react/24/outline';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import {
@@ -21,6 +23,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import AdvisorSidebar from '../../components/AdvisorSidebar';
 import '../Admin/Dashboard/AdminDashboardPage.css';
 
 const AdvisorProgressCheckPage = () => {
@@ -37,6 +40,7 @@ const AdvisorProgressCheckPage = () => {
     studentId: '',
     entries: [],
   });
+  const [dialogView, setDialogView] = useState('calendar');
 
   const internshipStatuses = useMemo(() => new Set(['ออกฝึกงาน', 'ฝึกงานเสร็จแล้ว']), []);
 
@@ -195,31 +199,11 @@ const AdvisorProgressCheckPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
-      <div className={`sidebar-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2> อาจารย์ที่ปรึกษา</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/advisor-dashboard" className="nav-item">
-            <span>หน้าหลัก</span>
-          </Link>
-          <Link to="/advisor-dashboard/students" className="nav-item">
-            <span>รายชื่อนักศึกษาฝึกงาน</span>
-          </Link>
-          <Link to="/advisor-dashboard/supervision" className="nav-item">
-            <span>ตารางนิเทศงาน</span>
-          </Link>
-          <Link to="/advisor-dashboard/progress" className="nav-item active">
-            <span>เช็ค Progress</span>
-          </Link>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <span>← ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
+      <AdvisorSidebar
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        currentPath="/advisor-dashboard/progress"
+      />
 
       <main className="admin-main">
         <header className="admin-header">
@@ -305,44 +289,90 @@ const AdvisorProgressCheckPage = () => {
         </Paper>
       </main>
 
-      <Dialog open={historyDialog.open} onClose={closeHistoryDialog} fullWidth maxWidth="md">
-        <DialogTitle>
-          ประวัติรายงานประจำวัน: {historyDialog.studentName} ({historyDialog.studentId})
+      <Dialog open={historyDialog.open} onClose={closeHistoryDialog} fullWidth maxWidth="lg">
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, pb: 1, borderBottom: '1px solid #e2e8f0' }}>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a' }}>
+              ประวัติรายงานประจำวัน: {historyDialog.studentName} ({historyDialog.studentId})
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1, backgroundColor: '#f1f5f9', p: 0.5, borderRadius: 2 }}>
+            <Button
+              size="small"
+              variant={dialogView === 'calendar' ? 'contained' : 'text'}
+              disableElevation
+              onClick={() => setDialogView('calendar')}
+              startIcon={<CalendarIcon style={{ width: 16, height: 16 }} />}
+              sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+            >
+              มุมมองปฏิทิน
+            </Button>
+            <Button
+              size="small"
+              variant={dialogView === 'table' ? 'contained' : 'text'}
+              disableElevation
+              onClick={() => setDialogView('table')}
+              startIcon={<TableCellsIcon style={{ width: 16, height: 16 }} />}
+              sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+            >
+              มุมมองตาราง
+            </Button>
+          </Box>
         </DialogTitle>
-        <DialogContent>
-          <TableContainer component={Box} sx={{ mt: 1 }}>
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>วันที่</TableCell>
-                  <TableCell>สถานะ</TableCell>
-                  <TableCell>หมายเหตุ</TableCell>
-                  <TableCell>เวลาบันทึก</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {historyDialog.entries.length === 0 ? (
+        <DialogContent sx={{ p: 2.5, backgroundColor: '#f8fafc' }}>
+          {dialogView === 'calendar' ? (
+            <Box sx={{ pt: 1 }}>
+              <AttendanceCalendar entries={historyDialog.entries} />
+            </Box>
+          ) : (
+            <TableContainer component={Paper} elevation={0} sx={{ mt: 1, border: '1px solid #e2e8f0', borderRadius: 2 }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 2.5 }}>
-                      ยังไม่มีประวัติรายงานประจำวัน
-                    </TableCell>
+                    <TableCell>วันที่</TableCell>
+                    <TableCell>สถานะ</TableCell>
+                    <TableCell>ประสบการณ์ / กิจกรรมที่ทำ</TableCell>
+                    <TableCell>ลายเซ็นพี่เลี้ยง</TableCell>
+                    <TableCell>หมายเหตุ</TableCell>
+                    <TableCell>เวลาบันทึก</TableCell>
                   </TableRow>
-                ) : (
-                  historyDialog.entries.map((entry) => (
-                    <TableRow key={`${entry.id}-${entry.date}`} hover>
-                      <TableCell>{entry.date || '-'}</TableCell>
-                      <TableCell>{statusLabel[entry.status] || '-'}</TableCell>
-                      <TableCell>{entry.note || '-'}</TableCell>
-                      <TableCell>{entry.createdAt ? new Date(entry.createdAt).toLocaleString('th-TH') : '-'}</TableCell>
+                </TableHead>
+                <TableBody>
+                  {historyDialog.entries.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 3, color: '#64748b' }}>
+                        ยังไม่มีประวัติรายงานประจำวัน
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ) : (
+                    historyDialog.entries.map((entry) => (
+                      <TableRow key={`${entry.id}-${entry.date}`} hover>
+                        <TableCell sx={{ fontWeight: 600 }}>{entry.date || '-'}</TableCell>
+                        <TableCell>{statusLabel[entry.status] || '-'}</TableCell>
+                        <TableCell>{entry.work_experience || entry.workExperience || '-'}</TableCell>
+                        <TableCell>
+                          {entry.supervisor_signature || entry.supervisorSignature ? (
+                            <img
+                              src={entry.supervisor_signature || entry.supervisorSignature}
+                              alt="Supervisor Signature"
+                              style={{ maxHeight: 32, maxWidth: 100, objectFit: 'contain' }}
+                            />
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>{entry.note || '-'}</TableCell>
+                        <TableCell>{entry.createdAt ? new Date(entry.createdAt).toLocaleString('th-TH') : '-'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeHistoryDialog}>ปิด</Button>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+          <Button onClick={closeHistoryDialog} variant="contained" sx={{ px: 3 }}>ปิด</Button>
         </DialogActions>
       </Dialog>
     </div>

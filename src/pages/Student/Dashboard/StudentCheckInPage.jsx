@@ -1,53 +1,57 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, MenuItem, Button } from '@mui/material';
+import { ExclamationTriangleIcon, CheckCircleIcon, InformationCircleIcon, CalendarIcon, TableCellsIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, MenuItem, Button, Chip, Box, Typography, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import SignatureCanvas from 'react-signature-canvas';
 import api from '../../../api/axios';
 import './DashboardPage.css';
 import '../../Admin/Shared/CheckInPage.css';
 import StudentSidebar from '../../../components/StudentSidebar';
+import StatusBadge from '../../../components/StatusBadge';
+import ModernButton from '../../../components/ModernButton';
+import AttendanceCalendar from '../../../components/AttendanceCalendar';
 
 const StudentCheckInPage = () => {
   const navigate = useNavigate();
   const todayDate = new Date().toISOString().slice(0, 10);
+  const sigCanvas = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [entries, setEntries] = useState([]);
   const [message, setMessage] = useState('');
   const [canCheckIn, setCanCheckIn] = useState(false);
   const [currentRequestStatus, setCurrentRequestStatus] = useState('ไม่มีคำร้อง');
+  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'table'
+  const [showSignature, setShowSignature] = useState(false);
   const [form, setForm] = useState({
     date: todayDate,
     status: 'present',
+    workExperience: '',
     note: ''
   });
 
-  const getRequestStatusDisplay = (status) => {
-    if (status === 'รออาจารย์ที่ปรึกษาอนุมัติ') return 'รออาจารย์อนุมัติ';
-    if (status === 'รอผู้ดูแลระบบอนุมัติ' || status === 'รอผู้ดูแลระบบตรวจสอบ') return 'รอแอดมินอนุมัติ';
-    if (status === 'รอสถานประกอบการตอบรับ') return 'รอสถานประกอบการตอบรับ';
-    if (status === 'ประเมินเสร็จแล้ว') return 'ประเมินเสร็จแล้ว';
-    if (!status || status === 'ไม่มีคำร้อง') return 'ยังไม่มีคำร้อง';
-    return status;
-  };
+  const formattedTodayDate = useMemo(() => {
+    if (!todayDate) return '';
+    const [year, month, day] = todayDate.split('-');
+    const thaiYear = parseInt(year) > 2500 ? year : parseInt(year) + 543;
+    return `${day}/${month}/${thaiYear}`;
+  }, [todayDate]);
 
-  const getRequestStatusStyle = (status) => {
-    if (status === 'ออกฝึกงาน' || status === 'ฝึกงานเสร็จแล้ว') {
-      return { background: '#d4edda', color: '#155724' };
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const cleanStr = String(dateStr).split('T')[0];
+      const [year, month, day] = cleanStr.split('-');
+      if (year && month && day) {
+        const thaiYear = parseInt(year) > 2500 ? year : parseInt(year) + 543;
+        return `${day}/${month}/${thaiYear}`;
+      }
+      const dateObj = new Date(dateStr);
+      if (isNaN(dateObj.getTime())) return cleanStr;
+      return dateObj.toLocaleDateString('th-TH');
+    } catch (e) {
+      return String(dateStr).split('T')[0];
     }
-    if (status === 'อนุมัติแล้ว') {
-      return { background: '#e6fffa', color: '#0c5460' };
-    }
-    if (status === 'ประเมินเสร็จแล้ว') {
-      return { background: '#e0e7ff', color: '#312e81' };
-    }
-    if (status.includes('ไม่อนุมัติ') || status === 'ปฏิเสธ') {
-      return { background: '#f8d7da', color: '#721c24' };
-    }
-    if (status === 'ไม่มีคำร้อง') {
-      return { background: '#e2e3e5', color: '#495057' };
-    }
-    return { background: '#fff3cd', color: '#856404' };
   };
 
   useEffect(() => {
@@ -111,13 +115,11 @@ const StudentCheckInPage = () => {
     navigate('/');
   };
 
-  const statusLabel = useMemo(() => {
-    return {
-      present: 'มา',
-      absent: 'ขาด',
-      late: 'สาย'
-    };
-  }, []);
+  const clearSignature = () => {
+    if (sigCanvas.current) {
+      sigCanvas.current.clear();
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -131,16 +133,26 @@ const StudentCheckInPage = () => {
     const studentId = user.student_code || user.studentId || user.username || user.email;
     const studentName = user.full_name || user.name || user.username || 'นักศึกษา';
 
+    let supervisorSignature = null;
+    if (showSignature && sigCanvas.current && !sigCanvas.current.isEmpty()) {
+      supervisorSignature = sigCanvas.current.getCanvas().toDataURL('image/png');
+    }
+
     try {
-      const response = await api.post('/checkins', {
+      await api.post('/checkins', {
         studentId,
         studentName,
         date: form.date,
         status: form.status,
+        workExperience: form.workExperience || '',
         note: form.note || '',
+        supervisorSignature,
       });
 
       setMessage('บันทึกรายงานประจำวันเรียบร้อยแล้ว');
+      setForm((prev) => ({ ...prev, workExperience: '', note: '' }));
+      if (sigCanvas.current) sigCanvas.current.clear();
+      setShowSignature(false);
 
       // Reload checkins from API
       const checkinRes = await api.get(`/checkins?studentId=${studentId}`);
@@ -149,7 +161,7 @@ const StudentCheckInPage = () => {
       setEntries(ownEntries);
     } catch (error) {
       if (error.response?.status === 409) {
-        setMessage('คุณรายงานประจำวันนี้แล้ว (รายงานได้วันละ 1 ครั้ง)');
+        setMessage('คุณเช็คชื่อของวันนี้ไปแล้ว (จะรีเซ็ตในวันถัดไปหลัง 07:00 น.)');
       } else {
         setMessage('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
       }
@@ -175,7 +187,7 @@ const StudentCheckInPage = () => {
         <header className="dashboard-header">
           <div>
             <h1>รายงานประจำวัน</h1>
-            <p>รายงานตัวให้เจ้าหน้าที่รับทราบในแต่ละวัน</p>
+            <p>รายงานตัวและบันทึกประสบการณ์การทำงานในแต่ละวัน</p>
           </div>
           <div className="user-info">
             <span>{user.full_name || user.name || user.username}</span>
@@ -187,16 +199,14 @@ const StudentCheckInPage = () => {
             ['ฝึกงานเสร็จแล้ว', 'ประเมินจากสถานประกอบการแล้ว', 'ประเมินจากอาจารย์แล้ว', 'เสร็จสิ้นสมบูรณ์'].includes(currentRequestStatus) ? (
               <div className="checkin-card">
                 <h3>การฝึกงานเสร็จสิ้นแล้ว</h3>
-                <p style={{ marginTop: '0.5rem' }}>
-                  สถานะคำร้องปัจจุบัน:{' '}
-                  <span className="status-badge" style={getRequestStatusStyle(currentRequestStatus)}>
-                    {getRequestStatusDisplay(currentRequestStatus)}
-                  </span>
-                </p>
+                <Box sx={{ mt: 1, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">สถานะคำร้องปัจจุบัน:</Typography>
+                  <StatusBadge status={currentRequestStatus} />
+                </Box>
                 <p>คุณได้ผ่านการฝึกงานเรียบร้อยแล้ว ไม่จำเป็นต้องรายงานประจำวันอีกต่อไป</p>
-                <div className="checkin-actions" style={{ marginTop: '1rem' }}>
-                  <Link to="/dashboard/my-requests" className="checkin-submit" style={{ textDecoration: 'none' }}>
-                    ไปที่คำร้องของฉัน
+                <div className="checkin-actions" style={{ marginTop: '1.25rem' }}>
+                  <Link to="/dashboard/my-requests" style={{ textDecoration: 'none' }}>
+                    <ModernButton customVariant="primary">ไปที่คำร้องของฉัน</ModernButton>
                   </Link>
                 </div>
                 {message && <div className="checkin-message" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' }}>{message}</div>}
@@ -204,16 +214,14 @@ const StudentCheckInPage = () => {
             ) : (
               <div className="checkin-card">
                 <h3>ยังไม่สามารถรายงานประจำวันได้</h3>
-                <p style={{ marginTop: '0.5rem' }}>
-                  สถานะคำร้องปัจจุบัน:{' '}
-                  <span className="status-badge" style={getRequestStatusStyle(currentRequestStatus)}>
-                    {getRequestStatusDisplay(currentRequestStatus)}
-                  </span>
-                </p>
+                <Box sx={{ mt: 1, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">สถานะคำร้องปัจจุบัน:</Typography>
+                  <StatusBadge status={currentRequestStatus} />
+                </Box>
                 <p>หน้านี้จะใช้งานได้เมื่อผู้ดูแลระบบกด “เริ่มฝึกงาน” ให้คุณแล้วเท่านั้น</p>
-                <div className="checkin-actions" style={{ marginTop: '1rem' }}>
-                  <Link to="/dashboard/my-requests" className="checkin-submit" style={{ textDecoration: 'none' }}>
-                    ไปที่คำร้องของฉัน
+                <div className="checkin-actions" style={{ marginTop: '1.25rem' }}>
+                  <Link to="/dashboard/my-requests" style={{ textDecoration: 'none' }}>
+                    <ModernButton customVariant="primary">ไปที่คำร้องของฉัน</ModernButton>
                   </Link>
                 </div>
                 {message && <div className="checkin-message">{message}</div>}
@@ -221,95 +229,215 @@ const StudentCheckInPage = () => {
             )
           ) : (
             <>
-              <div className="checkin-card">
-                <h3>บันทึกรายงานประจำวัน</h3>
-                <p style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
-                  สถานะคำร้องปัจจุบัน:{' '}
-                  <span className="status-badge" style={getRequestStatusStyle(currentRequestStatus)}>
-                    {getRequestStatusDisplay(currentRequestStatus)}
-                  </span>
-                </p>
+              {/* Notice Banner */}
+              <Box sx={{ mb: 2.5, p: 2, borderRadius: 3, bgcolor: '#f0f9ff', border: '1px solid #bae6fd', color: '#0369a1', display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                <InformationCircleIcon style={{ width: 22, height: 22, flexShrink: 0, marginTop: 2, color: '#0284c7' }} />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0369a1' }}>
+                    ข้อแนะนำการเช็คชื่อรายงานประจำวัน
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.875rem', mt: 0.5 }}>
+                    ระบบเปิดให้บันทึกรายงานได้วันต่อวัน หากไม่ได้เช็คชื่อในวันนี้ ระบบจะทำการรีเซ็ตสิทธิ์วันใหม่ทุกวันเวลา <strong>07:00 น.</strong>
+                  </Typography>
+                </Box>
+              </Box>
+
+              <div className="checkin-card" style={{ padding: '1.75rem', borderRadius: '16px', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                {/* Clean Header Bar */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', pb: 2, mb: 2.5, borderBottom: '1px solid #f1f5f9', gap: 1.5 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', m: 0, fontSize: '1.15rem' }}>
+                    บันทึกรายงานประจำวัน
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>สถานะคำร้องปัจจุบัน:</Typography>
+                    <StatusBadge status={currentRequestStatus} />
+                  </Box>
+                </Box>
+
                 <form onSubmit={handleSubmit}>
-                  <div className="checkin-fields">
+                  <div className="checkin-fields" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
                     <div className="checkin-field">
                       <TextField
                         fullWidth
                         size="small"
-                        label="วันที่"
-                        type="date"
-                        value={form.date}
-                        onChange={() => {}}
-                        inputProps={{ min: todayDate, max: todayDate, readOnly: true }}
+                        label="วันที่รายงาน"
+                        value={formattedTodayDate}
+                        InputProps={{ readOnly: true }}
                         helperText="ระบบกำหนดให้รายงานได้เฉพาะวันปัจจุบัน"
-                        InputLabelProps={{ shrink: true }}
-                        required
                       />
                     </div>
                     <div className="checkin-field">
                       <TextField
                         fullWidth
                         size="small"
-                        label="สถานะ"
+                        label="สถานะการมา"
                         select
                         value={form.status}
                         onChange={(event) => setForm({ ...form, status: event.target.value })}
+                        helperText="เลือกสถานะรายงานประจำวันของคุณ"
                       >
                         <MenuItem value="present">มา</MenuItem>
                         <MenuItem value="late">สาย</MenuItem>
                         <MenuItem value="absent">ขาด</MenuItem>
                       </TextField>
                     </div>
-                    <div className="checkin-field" style={{ gridColumn: '1 / -1' }}>
+
+                    <div className="checkin-field">
                       <TextField
                         fullWidth
-                        label="หมายเหตุเพิ่มเติม"
+                        label="ประสบการณ์ / กิจกรรมที่ทำในวันนี้"
                         multiline
-                        rows={4}
-                        placeholder="เช่น มาสายเพราะ..."
+                        rows={3}
+                        placeholder="ระบุรายละเอียดงานหรือประสบการณ์ที่ได้รับการฝึกปฏิบัติในวันนี้..."
+                        value={form.workExperience}
+                        onChange={(event) => setForm({ ...form, workExperience: event.target.value })}
+                        required={form.status === 'present'}
+                      />
+                    </div>
+
+                    <div className="checkin-field">
+                      <TextField
+                        fullWidth
+                        label="หมายเหตุเพิ่มเติม (ถ้ามี)"
+                        multiline
+                        rows={3}
+                        placeholder="เช่น เหตุผลการมาสาย/ขาด หรือข้อมูลเพิ่มเติมอื่นๆ..."
                         value={form.note}
                         onChange={(event) => setForm({ ...form, note: event.target.value })}
                       />
                     </div>
                   </div>
-                  <div className="checkin-actions">
-                    <Button type="submit" variant="contained" className="checkin-submit">บันทึกรายงาน</Button>
+
+                  {/* Optional Supervisor Signature Section */}
+                  <Box sx={{ mt: 1, mb: 2 }}>
+                    <Button
+                      type="button"
+                      variant="text"
+                      size="small"
+                      onClick={() => setShowSignature(!showSignature)}
+                      sx={{ gap: 1, color: showSignature ? '#2563eb' : '#64748b', fontWeight: 700, p: 0 }}
+                    >
+                      <PencilSquareIcon style={{ width: 18, height: 18 }} />
+                      {showSignature ? 'ซ่อนช่องลายเซ็นพี่เลี้ยง / ผู้ดูแล' : '+ แนบลายเซ็นยืนยันจากพี่เลี้ยง / ผู้ดูแลสถานประกอบการ (ไม่บังคับ / เผื่อไว้)'}
+                    </Button>
+
+                    {showSignature && (
+                      <Box sx={{ mt: 1.5, p: 2, border: '1px dashed #cbd5e1', borderRadius: 3, bgcolor: '#f8fafc' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 0.5 }}>
+                          ลายเซ็นยืนยันโดยพี่เลี้ยง / ผู้ดูแลสถานประกอบการ
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#64748b', mb: 1.5 }}>
+                          ใช้นิ้วมือหรือเมาส์เซ็นลายเซ็นกำกับรายงานประจำวันนี้เพื่อความถูกต้อง
+                        </Typography>
+
+                        <Box sx={{ border: '1px solid #cbd5e1', borderRadius: 2, bgcolor: '#ffffff', height: 150, overflow: 'hidden', mb: 1.5 }}>
+                          <SignatureCanvas
+                            ref={sigCanvas}
+                            penColor="#0f172a"
+                            canvasProps={{ className: 'sigCanvas', style: { width: '100%', height: '100%' } }}
+                          />
+                        </Box>
+
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Button variant="outlined" color="error" size="small" onClick={clearSignature} sx={{ fontSize: '0.75rem' }}>
+                            ล้างลายเซ็น
+                          </Button>
+                          <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                            * ลายเซ็นนี้จะถูกบันทึกเก็บไว้กับรายงานประจำวันนี้
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+
+                  <div className="checkin-actions" style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <ModernButton type="submit" customVariant="primary">
+                      บันทึกรายงาน
+                    </ModernButton>
                   </div>
                 </form>
-                {message && <div className="checkin-message">{message}</div>}
+                {message && <div className="checkin-message" style={{ marginTop: '1.25rem' }}>{message}</div>}
               </div>
 
-              <div className="checkin-table-wrapper">
-                <h3>ประวัติรายงานประจำวัน</h3>
-                <TableContainer className="checkin-table-container">
-                  <Table size="small" className="checkin-table" stickyHeader>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>วันที่</TableCell>
-                        <TableCell>สถานะ</TableCell>
-                        <TableCell>หมายเหตุ</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {entries.length === 0 ? (
+              {/* Attendance History Section (Calendar / Table Toggle) */}
+              <div className="checkin-table-wrapper" style={{ marginTop: '2rem', padding: '1.75rem', background: '#fff', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, gap: 1.5 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.15rem' }}>
+                    ประวัติรายงานประจำวัน
+                  </Typography>
+
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={(e, nextView) => { if (nextView) setViewMode(nextView); }}
+                    size="small"
+                    sx={{ bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2.5 }}
+                  >
+                    <ToggleButton value="calendar" sx={{ py: 0.5, px: 1.5, fontWeight: 700, fontSize: '0.8rem', gap: 1, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } }}>
+                      <CalendarIcon style={{ width: 16, height: 16 }} /> ปฏิทินเช็คชื่อ
+                    </ToggleButton>
+                    <ToggleButton value="table" sx={{ py: 0.5, px: 1.5, fontWeight: 700, fontSize: '0.8rem', gap: 1, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } }}>
+                      <TableCellsIcon style={{ width: 16, height: 16 }} /> ตารางประวัติ
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+
+                {viewMode === 'calendar' ? (
+                  <AttendanceCalendar entries={entries} />
+                ) : (
+                  <TableContainer className="checkin-table-container">
+                    <Table size="small" className="checkin-table" stickyHeader>
+                      <TableHead>
                         <TableRow>
-                          <TableCell colSpan={3}>ยังไม่มีประวัติรายงานประจำวัน</TableCell>
+                          <TableCell>วันที่</TableCell>
+                          <TableCell>สถานะ</TableCell>
+                          <TableCell>ประสบการณ์ / กิจกรรมที่ทำ</TableCell>
+                          <TableCell>ลายเซ็นพี่เลี้ยง</TableCell>
+                          <TableCell>หมายเหตุ</TableCell>
                         </TableRow>
-                      ) : (
-                        entries.map((entry) => (
-                          <TableRow key={entry.id} hover>
-                            <TableCell>{entry.date}</TableCell>
-                            <TableCell>
-                              <span className={`checkin-status ${entry.status}`}>
-                                {statusLabel[entry.status]}
-                              </span>
-                            </TableCell>
-                            <TableCell>{entry.note || '-'}</TableCell>
+                      </TableHead>
+                      <TableBody>
+                        {entries.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5}>ยังไม่มีประวัติรายงานประจำวัน</TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                        ) : (
+                          entries.map((entry) => (
+                            <TableRow key={entry.id} hover>
+                              <TableCell sx={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
+                                {formatDateDisplay(entry.date)}
+                              </TableCell>
+                              <TableCell>
+                                {entry.status === 'present' && (
+                                  <Chip label="มา" size="small" sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 700, height: 22 }} />
+                                )}
+                                {entry.status === 'late' && (
+                                  <Chip label="สาย" size="small" sx={{ bgcolor: '#fef3c7', color: '#92400e', fontWeight: 700, height: 22 }} />
+                                )}
+                                {entry.status === 'absent' && (
+                                  <Chip label="ขาด" size="small" sx={{ bgcolor: '#fee2e2', color: '#991b1b', fontWeight: 700, height: 22 }} />
+                                )}
+                              </TableCell>
+                              <TableCell>{entry.work_experience || entry.workExperience || entry.note || '-'}</TableCell>
+                              <TableCell>
+                                {entry.supervisor_signature || entry.supervisorSignature ? (
+                                  <img 
+                                    src={entry.supervisor_signature || entry.supervisorSignature} 
+                                    alt="Supervisor Signature" 
+                                    style={{ maxHeight: 32, maxWidth: 100, objectFit: 'contain' }} 
+                                  />
+                                ) : (
+                                  '-'
+                                )}
+                              </TableCell>
+                              <TableCell>{entry.note && (entry.work_experience || entry.workExperience) ? entry.note : '-'}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
               </div>
             </>
           )}

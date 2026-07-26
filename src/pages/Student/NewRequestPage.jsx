@@ -18,11 +18,15 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Box,
+  Typography,
 } from '@mui/material';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import api from '../../api/axios';
 import './NewRequestPage.css';
 import './Dashboard/DashboardPage.css'; // Import dashboard styles
 import StudentSidebar from '../../components/StudentSidebar';
+import ModernButton from '../../components/ModernButton';
 
 const NewRequestPage = () => {
   const DIGIT_ONLY_FIELDS = new Set(['studentId', 'studentYear', 'studentPhone', 'supervisorPhone', 'homePostal', 'companyPostal']);
@@ -652,52 +656,98 @@ const NewRequestPage = () => {
 
           {/* Modal for existing request */}
           {hasExistingRequest && (
-            <div className="modal-overlay" style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 9999
-            }}>
-              <div className="modal-content" style={{
-                background: 'white',
-                padding: '2rem',
-                borderRadius: '8px',
-                width: '90%',
-                maxWidth: '500px',
-                textAlign: 'center',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-              }}>
-                <span style={{ fontSize: '3rem', display: 'block', marginBottom: '1rem' }}>!</span>
-                <h2 style={{ marginBottom: '1rem', color: '#e53e3e' }}>ไม่สามารถยื่นคำร้องใหม่ได้</h2>
-                <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                  คุณมีคำร้องที่อยู่ระหว่างการดำเนินการ <br/>
+            <Box
+              sx={{
+                position: 'fixed',
+                inset: 0,
+                bgcolor: 'rgba(15, 23, 42, 0.65)',
+                backdropFilter: 'blur(8px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                p: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  bgcolor: '#ffffff',
+                  p: { xs: 3, sm: 4.5 },
+                  borderRadius: '24px',
+                  width: '90%',
+                  maxWidth: '460px',
+                  textAlign: 'center',
+                  boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
+                  border: '1px solid rgba(226, 232, 240, 0.8)',
+                  animation: 'modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 68,
+                    height: 68,
+                    borderRadius: '50%',
+                    bgcolor: '#fef2f2',
+                    color: '#ef4444',
+                    border: '2px solid #fee2e2',
+                    display: 'grid',
+                    placeItems: 'center',
+                    mx: 'auto',
+                    mb: 2.5,
+                    boxShadow: '0 8px 20px rgba(239, 68, 68, 0.15)',
+                  }}
+                >
+                  <ExclamationTriangleIcon style={{ width: 36, height: 36 }} />
+                </Box>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 800,
+                    color: '#0f172a',
+                    mb: 1.5,
+                    fontSize: { xs: '1.25rem', sm: '1.4rem' },
+                    lineHeight: 1.3,
+                  }}
+                >
+                  ไม่สามารถยื่นคำร้องใหม่ได้
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#64748b',
+                    mb: 3.5,
+                    lineHeight: 1.6,
+                    fontSize: '0.975rem',
+                  }}
+                >
+                  คุณมีคำร้องที่อยู่ระหว่างการดำเนินการ <br />
                   ระบบจำกัดการยื่นคำร้อง 1 รายการต่อ 1 บัญชีเท่านั้น
-                </p>
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                  <Button
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1.5,
+                    justifyContent: 'center',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <ModernButton
+                    customVariant="secondary"
                     onClick={() => navigate('/dashboard')}
-                    className="btn-secondary"
-                    style={{ padding: '0.75rem 1.5rem', cursor: 'pointer' }}
+                    sx={{ flex: { xs: '1 1 100%', sm: '1' } }}
                   >
                     กลับหน้าหลัก
-                  </Button>
-                  <Button
+                  </ModernButton>
+                  <ModernButton
+                    customVariant="primary"
                     onClick={() => navigate('/dashboard/my-requests')}
-                    className="btn-primary"
-                    variant="contained"
-                    style={{ padding: '0.75rem 1.5rem', cursor: 'pointer', background: '#3182ce', color: 'white', borderRadius: '4px' }}
+                    sx={{ flex: { xs: '1 1 100%', sm: '1' } }}
                   >
                     ดูสถานะคำร้อง
-                  </Button>
-                </div>
-              </div>
-            </div>
+                  </ModernButton>
+                </Box>
+              </Box>
+            </Box>
           )}
           
           <form onSubmit={handleSubmit} className="request-form">

@@ -28,6 +28,7 @@ import {
 import { STAT_EMOJI } from '../../utils/statEmojis';
 import '../Admin/Dashboard/AdminDashboardPage.css';
 import AdvisorSidebar from '../../components/AdvisorSidebar';
+import StatCard from '../../components/StatCard';
 
 const AdvisorSupervisionPage = () => {
     const navigate = useNavigate();
@@ -232,52 +233,18 @@ const AdvisorSupervisionPage = () => {
                     }}
                 >
                     {[
-                        { title: 'นักศึกษาที่ดูแลทั้งหมด', value: summary.totalStudents, icon: STAT_EMOJI.TOTAL, color: '#667eea' },
-                        { title: 'รอนัดนิเทศ', value: summary.pendingSchedule, icon: STAT_EMOJI.PENDING, color: '#f093fb' },
+                        { title: 'นักศึกษาที่ดูแลทั้งหมด', value: summary.totalStudents, icon: STAT_EMOJI.TOTAL, color: '#3b82f6' },
+                        { title: 'รอนัดนิเทศ', value: summary.pendingSchedule, icon: STAT_EMOJI.PENDING, color: '#f59e0b' },
                         { title: 'นิเทศสัปดาห์นี้', value: summary.thisWeek, icon: STAT_EMOJI.CALENDAR, color: '#0284c7' },
-                        { title: 'ยังไม่ประเมิน', value: summary.pendingEvaluation, icon: STAT_EMOJI.NOTE, color: '#16a34a' },
+                        { title: 'ยังไม่ประเมิน', value: summary.pendingEvaluation, icon: STAT_EMOJI.NOTE, color: '#10b981' },
                     ].map((item) => (
-                        <Card
+                        <StatCard
                             key={item.title}
-                            elevation={0}
-                            sx={{
-                                borderRadius: 3,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                background: `linear-gradient(135deg, ${item.color}22 0%, #ffffff 56%)`,
-                                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
-                            }}
-                        >
-                            <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
-                                <Stack direction="row" spacing={1.5} alignItems="center">
-                                    <Box
-                                        sx={{
-                                            width: 46,
-                                            height: 46,
-                                            borderRadius: 2,
-                                            display: 'grid',
-                                            placeItems: 'center',
-                                            fontWeight: 800,
-                                            fontSize: '1rem',
-                                            color: item.color,
-                                            backgroundColor: `${item.color}1a`,
-                                            border: `1px solid ${item.color}33`,
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        {item.icon}
-                                    </Box>
-                                    <Box sx={{ minWidth: 0 }}>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontWeight: 500 }}>
-                                            {item.title}
-                                        </Typography>
-                                        <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.1, color: 'text.primary' }}>
-                                            {item.value}
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-                            </CardContent>
-                        </Card>
+                            title={item.title}
+                            value={item.value}
+                            icon={item.icon}
+                            color={item.color}
+                        />
                     ))}
                 </Box>
 
@@ -315,7 +282,7 @@ const AdvisorSupervisionPage = () => {
                                                     </Stack>
                                                 </TableCell>
                                                 <TableCell>{request.company || request.companyName || '-'}</TableCell>
-                                                <TableCell>{formatDate(request.startDate)}</TableCell>
+                                                <TableCell>{formatDate(request.startDate || request.details?.startDate || request.details?.internship_info?.startDate)}</TableCell>
                                                 <TableCell>
                                                     <Alert severity={statusChipMap[supervisionStatus] || 'default'} sx={{ py: 0, px: 1 }} icon={false}>
                                                         {supervisionStatus}
@@ -333,13 +300,22 @@ const AdvisorSupervisionPage = () => {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                                                        {!request.supervisionAppointment?.date && (
+                                                        {request.supervisionAppointment?.date ? (
+                                                            <Button size="small" variant="outlined" color="info" onClick={() => openAppointmentDialog(request)}>
+                                                                แก้ไขวันนัด
+                                                            </Button>
+                                                        ) : (
                                                             <Button size="small" variant="outlined" onClick={() => openAppointmentDialog(request)}>
                                                                 กำหนดวันนิเทศ
                                                             </Button>
                                                         )}
-                                                        <Button size="small" variant="contained" onClick={() => navigate(`/advisor-dashboard/supervision/evaluate/${request.id}`)}>
-                                                            บันทึกผลนิเทศ
+                                                        <Button 
+                                                            size="small" 
+                                                            variant={supervisionStatus === 'นิเทศแล้ว' ? 'outlined' : 'contained'} 
+                                                            color={supervisionStatus === 'นิเทศแล้ว' ? 'success' : 'primary'}
+                                                            onClick={() => navigate(`/advisor-dashboard/supervision/evaluate/${request.id}`)}
+                                                        >
+                                                            {supervisionStatus === 'นิเทศแล้ว' ? 'ดู/แก้ไขผลนิเทศ' : 'บันทึกผลนิเทศ'}
                                                         </Button>
                                                     </Stack>
                                                 </TableCell>

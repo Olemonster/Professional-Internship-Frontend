@@ -141,9 +141,10 @@
   flex-shrink: 0;
 }
 
-.mini-stat .dot.present { background: #22c55e; }
-.mini-stat .dot.late    { background: #eab308; }
-.mini-stat .dot.absent  { background: #ef4444; }
+.mini-stat .dot.present   { background: #22c55e; }
+.mini-stat .dot.late      { background: #eab308; }
+.mini-stat .dot.absent    { background: #ef4444; }
+.mini-stat .dot.unchecked { background: #94a3b8; }
 
 /* ── Progress bar ── */
 .attendance-progress {
@@ -167,6 +168,11 @@
 
 .attendance-progress .bar-absent {
   background: #ef4444;
+  height: 100%;
+}
+
+.attendance-progress .bar-unchecked {
+  background: #94a3b8;
   height: 100%;
 }
 

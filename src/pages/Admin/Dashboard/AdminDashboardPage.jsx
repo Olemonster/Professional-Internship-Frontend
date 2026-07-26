@@ -37,6 +37,8 @@ import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './AdminDashboardPage.css';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import AdminSidebar from '../../../components/AdminSidebar';
+import StatusBadge from '../../../components/StatusBadge';
+import StatCard from '../../../components/StatCard';
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
@@ -130,7 +132,8 @@ const AdminDashboardPage = () => {
       total: allRequests.length,
       pendingAdmin: allRequests.filter((req) => req.status === 'รอผู้ดูแลระบบตรวจสอบ' || req.status === 'รอผู้ดูแลระบบอนุมัติ').length,
       waitingCompany: allRequests.filter((req) => req.status === 'รอสถานประกอบการตอบรับ').length,
-      approved: allRequests.filter((req) => req.status === 'อนุมัติแล้ว').length,
+      waitingAdvisor: allRequests.filter((req) => req.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน').length,
+      approved: allRequests.filter((req) => req.status === 'อนุมัติแล้ว' || req.status === 'ออกฝึกงาน').length,
       rejected: allRequests.filter((req) => req.status.includes('ไม่อนุมัติ') || req.status === 'ปฏิเสธ').length,
     };
     return count;
@@ -198,6 +201,7 @@ const AdminDashboardPage = () => {
     if (!pieChartRef.current || !hasChartData) return undefined;
 
     const root = am5.Root.new(pieChartRef.current);
+    if (root._logo) root._logo.dispose();
     root.setThemes([am5themes_Animated.new(root)]);
 
     const chart = root.container.children.push(
@@ -386,19 +390,7 @@ const AdminDashboardPage = () => {
     setRejectModal({ open: false, requestId: null, reason: '' });
   };
 
-  const getStatusBadge = (status) => {
-    const statusStyles = {
-      'รออาจารย์ที่ปรึกษาอนุมัติ': { bg: '#e2e3e5', color: '#666' },
-      'รอผู้ดูแลระบบตรวจสอบ': { bg: '#fff3cd', color: '#856404' },
-      'รอผู้ดูแลระบบอนุมัติ': { bg: '#fff3cd', color: '#856404' },
-      'รอสถานประกอบการตอบรับ': { bg: '#e2e8f0', color: '#2d3748' },
-      'อนุมัติแล้ว': { bg: '#d4edda', color: '#155724' },
-      'ไม่อนุมัติ (Admin)': { bg: '#f8d7da', color: '#721c24' },
-      'ไม่อนุมัติ (อาจารย์)': { bg: '#f8d7da', color: '#721c24' },
-      'ปฏิเสธ': { bg: '#f8d7da', color: '#721c24' }
-    };
-    return statusStyles[status] || { bg: '#e2e3e5', color: '#383d41' };
-  };
+
 
   return (
     <div className="admin-dashboard-container">
@@ -454,47 +446,13 @@ const AdminDashboardPage = () => {
           }}
         >
           {summaryCards.map((card) => (
-            <Card
+            <StatCard
               key={card.key}
-              elevation={0}
-              sx={{
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: 'divider',
-                background: `linear-gradient(135deg, ${card.color}22 0%, #ffffff 56%)`,
-                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
-              }}
-            >
-              <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 2,
-                      display: 'grid',
-                      placeItems: 'center',
-                      fontWeight: 800,
-                      fontSize: '0.95rem',
-                      color: card.color,
-                      backgroundColor: `${card.color}1a`,
-                      border: `1px solid ${card.color}33`,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {card.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600 }}>
-                      {card.label}
-                    </Typography>
-                    <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700, color: card.color }}>
-                      {card.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+              title={card.label}
+              value={card.value}
+              icon={card.icon}
+              color={card.color}
+            />
           ))}
         </Box>
 
@@ -512,7 +470,6 @@ const AdminDashboardPage = () => {
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
               <Box>
-                <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>Pie (amCharts)</Typography>
                 {hasChartData ? (
                   <Box ref={pieChartRef} className="dashboard-amchart" />
                 ) : (
@@ -553,7 +510,6 @@ const AdminDashboardPage = () => {
               </TableHead>
               <TableBody>
                 {latestRequests.map((request) => {
-                  const style = getStatusBadge(request.status);
                   return (
                     <TableRow key={`recent-${request.id}`}>
                       <TableCell>{new Date(request.submittedDate).toLocaleDateString('th-TH')}</TableCell>
@@ -561,11 +517,7 @@ const AdminDashboardPage = () => {
                       <TableCell>{request.studentName}</TableCell>
                       <TableCell>{request.company}</TableCell>
                       <TableCell>
-                        <Chip
-                          size="small"
-                          label={getAdminDisplayStatus(request.status)}
-                          sx={{ bgcolor: style.bg, color: style.color, fontWeight: 700 }}
-                        />
+                        <StatusBadge status={request.status} />
                       </TableCell>
                     </TableRow>
                   );
@@ -621,8 +573,6 @@ const AdminDashboardPage = () => {
               </TableHead>
               <TableBody>
                 {sortedRequests.map((request) => {
-                  const statusStyle = getStatusBadge(request.status);
-                  const displayStatus = getAdminDisplayStatus(request.status);
                   return (
                     <TableRow key={request.id} hover>
                       <TableCell>{request.studentId}</TableCell>
@@ -631,11 +581,7 @@ const AdminDashboardPage = () => {
                       <TableCell>{request.company}</TableCell>
                       <TableCell>{new Date(request.submittedDate).toLocaleDateString('th-TH')}</TableCell>
                       <TableCell>
-                        <Chip
-                          size="small"
-                          label={displayStatus}
-                          sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 700 }}
-                        />
+                        <StatusBadge status={request.status} />
                         {(request.status === 'ออกฝึกงาน' || request.status === 'ประเมินเสร็จแล้ว' || request.status === 'ฝึกงานเสร็จแล้ว') && (
                           <div style={{ marginTop: '8px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '4px', fontWeight: 500 }}>
                             {request.hasCompanyEval ? 

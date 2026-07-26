@@ -5,6 +5,7 @@ import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, Tab
 import '../Admin/Dashboard/AdminDashboardPage.css'; // Reuse styles
 import '../Admin/Dashboard/StudentListPage.css';
 import AdvisorSidebar from '../../components/AdvisorSidebar';
+import StatusBadge from '../../components/StatusBadge';
 
 const AdvisorStudentListPage = () => {
     const navigate = useNavigate();
@@ -70,24 +71,6 @@ const AdvisorStudentListPage = () => {
         return String(va).localeCompare(String(vb), 'th-TH', { numeric: true }) * (sortDir === 'asc' ? 1 : -1);
     });
 
-    const getStatusBadge = (status) => {
-        const statusStyles = {
-          'รออาจารย์ที่ปรึกษาอนุมัติ': { bg: '#fff3cd', color: '#856404' },
-          'รอผู้ดูแลระบบตรวจสอบ': { bg: '#c3dafe', color: '#434190' },
-          'รอสถานประกอบการตอบรับ': { bg: '#e2e8f0', color: '#2d3748' },
-          'อนุมัติแล้ว': { bg: '#d4edda', color: '#155724' },
-          'ไม่อนุมัติ (อาจารย์)': { bg: '#f8d7da', color: '#721c24' },
-          'ปฏิเสธ': { bg: '#f8d7da', color: '#721c24' }
-        };
-        const style = statusStyles[status] || { bg: '#e2e3e5', color: '#383d41' };
-        
-        return (
-          <span className="status-badge" style={{ backgroundColor: style.bg, color: style.color }}>
-            {status}
-          </span>
-        );
-    };
-
     return (
         <div className="admin-dashboard-container">
             <div className="mobile-top-navbar">
@@ -134,7 +117,7 @@ const AdvisorStudentListPage = () => {
                                             <TableCell>{req.studentName}</TableCell>
                                             <TableCell>{req.company}</TableCell>
                                             <TableCell>{new Date(req.submittedDate).toLocaleDateString('th-TH')}</TableCell>
-                                            <TableCell>{getStatusBadge(req.status)}</TableCell>
+                                            <TableCell><StatusBadge status={req.status} /></TableCell>
                                             <TableCell>
                                                 <Link to={`/dashboard/request/${req.id}`} className="view-btn">
                                                     ตรวจสอบ
