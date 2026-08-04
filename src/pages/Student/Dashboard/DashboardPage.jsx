@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import lascLogo from '../../../assets/LASC-SSKRU-1.png';
 import api from '../../../api/axios';
 import './DashboardPage.css';
 import {
@@ -217,7 +218,9 @@ const DashboardPage = () => {
   return (
     <div className="dashboard-container">
       <div className="mobile-top-navbar">
-        <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
+        <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
+          <img src={lascLogo} alt="LASC Logo" />
+        </Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
       <StudentSidebar
@@ -251,47 +254,50 @@ const DashboardPage = () => {
               elevation={0}
               sx={{
                 mb: 3,
-                p: 2.5,
-                borderRadius: 3,
+                p: 3,
+                borderRadius: 3.5,
                 background: isCompleted
-                  ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)'
-                  : 'linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%)',
-                border: isCompleted ? '1px solid #a7f3d0' : '1px solid #bfdbfe',
+                  ? 'linear-gradient(135deg, #ecfdf5 0%, #dcfce7 40%, #f0fdf4 100%)'
+                  : 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 40%, #eff6ff 100%)',
+                border: isCompleted ? '2px solid #34d399' : '2px solid #38bdf8',
                 boxShadow: isCompleted
-                  ? '0 4px 12px rgba(22, 163, 74, 0.08)'
-                  : '0 4px 12px rgba(37, 99, 235, 0.06)',
+                  ? '0 10px 30px -5px rgba(16, 185, 129, 0.22), 0 4px 12px rgba(16, 185, 129, 0.12)'
+                  : '0 10px 30px -5px rgba(56, 189, 248, 0.22), 0 4px 12px rgba(56, 189, 248, 0.12)',
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 2,
+                gap: 2.5,
+                transition: 'all 0.3s ease',
               }}
             >
               <Box
                 sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: isCompleted ? '#16a34a' : '#2563eb',
+                  width: 50,
+                  height: 50,
+                  borderRadius: 3,
+                  background: isCompleted
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
                   boxShadow: isCompleted
-                    ? '0 4px 10px rgba(22, 163, 74, 0.3)'
-                    : '0 4px 10px rgba(37, 99, 235, 0.3)',
+                    ? '0 6px 16px rgba(16, 185, 129, 0.4)'
+                    : '0 6px 16px rgba(2, 132, 199, 0.4)',
                 }}
               >
                 {isCompleted ? (
-                  <CheckCircleIcon style={{ width: 24, height: 24 }} />
+                  <CheckCircleIcon style={{ width: 28, height: 28 }} />
                 ) : (
-                  <CalendarIcon style={{ width: 24, height: 24 }} />
+                  <CalendarIcon style={{ width: 28, height: 28 }} />
                 )}
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.75 }}>
                   <Typography
                     variant="subtitle1"
-                    sx={{ fontWeight: 700, color: isCompleted ? '#14532d' : '#1e3a8a', lineHeight: 1.2 }}
+                    sx={{ fontWeight: 800, color: isCompleted ? '#065f46' : '#0369a1', fontSize: '1.05rem', lineHeight: 1.2 }}
                   >
                     {isCompleted ? 'ผลการนิเทศงาน (นิเทศเสร็จสิ้น)' : 'กำหนดการนิเทศงาน'}
                   </Typography>
@@ -299,15 +305,14 @@ const DashboardPage = () => {
                     label={isCompleted ? 'นิเทศเรียบร้อยแล้ว' : (currentRequest.supervisionAppointment.mode || 'Onsite')}
                     size="small"
                     sx={{
-                      bgcolor: isCompleted
-                        ? '#dcfce7'
-                        : (currentRequest.supervisionAppointment.mode === 'Online' ? '#e0e7ff' : '#dcfce7'),
-                      color: isCompleted
-                        ? '#15803d'
-                        : (currentRequest.supervisionAppointment.mode === 'Online' ? '#3730a3' : '#166534'),
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      height: 22,
+                      background: isCompleted
+                        ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                        : (currentRequest.supervisionAppointment.mode === 'Online' ? '#4f46e5' : '#0284c7'),
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: '0.78rem',
+                      height: 24,
+                      boxShadow: isCompleted ? '0 2px 6px rgba(16, 185, 129, 0.3)' : 'none',
                     }}
                   />
                   {isCompleted && (
@@ -316,16 +321,17 @@ const DashboardPage = () => {
                       size="small"
                       variant="outlined"
                       sx={{
-                        borderColor: '#86efac',
-                        color: '#166534',
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        height: 22,
+                        borderColor: '#10b981',
+                        color: '#047857',
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        height: 24,
+                        bgcolor: 'rgba(255, 255, 255, 0.8)'
                       }}
                     />
                   )}
                 </Box>
-                <Typography variant="body2" sx={{ color: isCompleted ? '#166534' : '#334155', mb: 1.5, lineHeight: 1.5 }}>
+                <Typography variant="body2" sx={{ color: isCompleted ? '#047857' : '#0c4a6e', mb: 2, fontWeight: 600, lineHeight: 1.5 }}>
                   {isCompleted
                     ? 'อาจารย์นิเทศงานได้ดำเนินการนิเทศและประเมินผลการฝึกงานของคุณเรียบร้อยแล้ว'
                     : 'อาจารย์ที่ปรึกษาได้กำหนดวันนิเทศงานของคุณเรียบร้อยแล้ว'}
@@ -334,20 +340,23 @@ const DashboardPage = () => {
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 2,
+                    gap: 2.5,
                     flexWrap: 'wrap',
                     bgcolor: '#ffffff',
-                    p: 1.25,
-                    px: 2,
-                    borderRadius: 2,
-                    border: isCompleted ? '1px solid #bbf7d0' : '1px solid #dbeafe',
+                    p: 1.5,
+                    px: 2.5,
+                    borderRadius: 2.5,
+                    border: isCompleted ? '2px solid #6ee7b7' : '2px solid #7dd3fc',
+                    boxShadow: isCompleted
+                      ? '0 4px 12px rgba(16, 185, 129, 0.1)'
+                      : '0 4px 12px rgba(2, 132, 199, 0.1)',
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
                       วันที่นิเทศ:
                     </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a' }}>
                       {new Date(currentRequest.supervisionAppointment.date).toLocaleDateString('th-TH')}
                     </Typography>
                   </Box>
@@ -357,7 +366,7 @@ const DashboardPage = () => {
                     </Typography>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: 700, color: isCompleted ? '#16a34a' : '#2563eb' }}
+                      sx={{ fontWeight: 800, color: isCompleted ? '#059669' : '#0284c7' }}
                     >
                       {isCompleted ? 'เสร็จสิ้น (ประเมินแล้ว)' : 'รอนิเทศงาน'}
                     </Typography>

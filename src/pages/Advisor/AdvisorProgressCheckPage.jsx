@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import AttendanceCalendar from '../../components/AttendanceCalendar';
 import { CalendarIcon, TableCellsIcon } from '@heroicons/react/24/outline';
 import { Link, useNavigate } from 'react-router-dom';
+import lascLogo from '../../assets/LASC-SSKRU-1.png';
 import api from '../../api/axios';
 import {
   Box,
@@ -196,7 +197,9 @@ const AdvisorProgressCheckPage = () => {
   return (
     <div className="admin-dashboard-container">
       <div className="mobile-top-navbar">
-        <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
+        <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
+          <img src={lascLogo} alt="LASC Logo" />
+        </Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
       <AdvisorSidebar

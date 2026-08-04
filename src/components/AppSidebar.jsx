@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import lascLogo from '../assets/LASC-SSKRU-1.png';
 import {
   HomeIcon,
   DocumentPlusIcon,
@@ -99,6 +100,11 @@ const AppSidebar = ({
             gap: '12px',
           }}
         >
+          <img
+            src={lascLogo}
+            alt="LASC Logo"
+            style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+          />
           <h2 style={{ margin: 0 }}>{roleConfig.title}</h2>
         </div>
         <nav className="sidebar-nav">

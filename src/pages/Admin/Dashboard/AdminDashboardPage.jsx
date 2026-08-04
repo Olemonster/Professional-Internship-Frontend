@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import lascLogo from '../../../assets/LASC-SSKRU-1.png';
 import api from '../../../api/axios';
 import * as am5 from '@amcharts/amcharts5';
 import * as am5percent from '@amcharts/amcharts5/percent';
@@ -395,7 +396,9 @@ const AdminDashboardPage = () => {
   return (
     <div className="admin-dashboard-container">
       <div className="mobile-top-navbar">
-        <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
+        <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
+          <img src={lascLogo} alt="LASC Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+        </Link>
         <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
           <IconButton
             onClick={(e) => setNotifAnchor(e.currentTarget)}

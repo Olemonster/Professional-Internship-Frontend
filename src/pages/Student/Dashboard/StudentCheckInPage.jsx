@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import lascLogo from '../../../assets/LASC-SSKRU-1.png';
 import { ExclamationTriangleIcon, CheckCircleIcon, InformationCircleIcon, CalendarIcon, TableCellsIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, MenuItem, Button, Chip, Box, Typography, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import SignatureCanvas from 'react-signature-canvas';
@@ -173,7 +174,9 @@ const StudentCheckInPage = () => {
   return (
     <div className="dashboard-container">
       <div className="mobile-top-navbar">
-        <Link to="/" className="mobile-top-logo" aria-label="LASC Home"></Link>
+        <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
+          <img src={lascLogo} alt="LASC Logo" />
+        </Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
       </div>
       <StudentSidebar

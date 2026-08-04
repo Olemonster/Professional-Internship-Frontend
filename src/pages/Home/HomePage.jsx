@@ -15,7 +15,7 @@ import api from '../../api/axios';
 import './HomePage.css';
 import logo from '../../assets/LASC-SSKRU-1.png';
 import sskruBg from '../../assets/SSKRU_BG.png';
-import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -143,14 +143,13 @@ const HomePage = () => {
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <Typography sx={{ 
                   fontWeight: 800, 
-                  fontSize: { xs: '0.9rem', sm: '1.2rem', md: '1.4rem' }, 
+                  fontSize: { xs: '0.9rem', sm: '1.2rem', md: '1.35rem' }, 
                   letterSpacing: '0px', 
                   whiteSpace: 'nowrap',
                   color: '#111111',
-                  textTransform: 'uppercase',
-                  fontFamily: '"Outfit", "Inter", sans-serif'
+                  fontFamily: '"Prompt", "Kanit", "Inter", sans-serif'
                 }}>
-                  Professional Internship
+                  ระบบฝึกประสบการณ์วิชาชีพ
                 </Typography>
               </Box>
             </Box>
@@ -166,7 +165,37 @@ const HomePage = () => {
             }}
           >
             {!user ? (
-              <Button component={Link} to="/login" variant="text" sx={{ color: '#111111', fontWeight: 700, minWidth: 'auto', px: 1, transition: 'all 0.3s', '&:hover': { color: '#f59e0b' } }}>
+              <Button 
+                component={Link} 
+                to="/login" 
+                variant="contained" 
+                size="small"
+                sx={{ 
+                  borderRadius: '24px',
+                  background: 'linear-gradient(135deg, #111111 0%, #262626 100%)',
+                  color: '#ffffff', 
+                  fontWeight: 700, 
+                  fontSize: '0.88rem',
+                  fontFamily: '"Prompt", "Kanit", sans-serif',
+                  px: 2.5, 
+                  py: 0.8, 
+                  textTransform: 'none',
+                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                  '& .MuiButton-endIcon': {
+                    transition: 'transform 0.3s ease',
+                  },
+                  '&:hover': { 
+                    background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 20px rgba(217, 119, 6, 0.35)',
+                    '& .MuiButton-endIcon': {
+                      transform: 'translateX(4px)',
+                    }
+                  } 
+                }}
+                endIcon={<ArrowRightIcon style={{ width: 16, height: 16 }} />}
+              >
                 เข้าสู่ระบบ
               </Button>
             ) : (
@@ -174,21 +203,41 @@ const HomePage = () => {
                 <Button
                   component={Link}
                   to={getDashboardPath(user.role)}
-                  variant="text"
+                  variant="contained"
+                  size="small"
                   sx={{
-                    color: '#111111',
+                    borderRadius: '24px',
+                    background: 'linear-gradient(135deg, #111111 0%, #262626 100%)',
+                    color: '#ffffff',
                     fontWeight: 700,
-                    minWidth: 'auto',
-                    px: { xs: 0.5, sm: 1 },
-                    transition: 'all 0.3s',
-                    '&:hover': { color: '#f59e0b' }
+                    fontSize: '0.88rem',
+                    fontFamily: '"Prompt", "Kanit", sans-serif',
+                    px: 2.5,
+                    py: 0.8,
+                    textTransform: 'none',
+                    border: '1px solid rgba(217, 119, 6, 0.4)',
+                    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '& .MuiButton-endIcon': {
+                      transition: 'transform 0.3s ease',
+                    },
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                      borderColor: '#d97706',
+                      boxShadow: '0 6px 20px rgba(217, 119, 6, 0.35)',
+                      '& .MuiButton-endIcon': {
+                        transform: 'translateX(4px)',
+                      }
+                    }
                   }}
+                  endIcon={<ArrowRightIcon style={{ width: 16, height: 16 }} />}
                 >
-                  Dashboard
+                  {user.role === 'student' ? 'ไปยื่นคำร้อง' : 'ไปยังแดชบอร์ด'}
                 </Button>
 
                 <IconButton onClick={handleOpenMenu} size="small" sx={{ p: 0.25 }}>
-                  <Avatar sx={{ width: 38, height: 38, background: '#111111', fontSize: '1rem', fontWeight: 700 }}>
+                  <Avatar sx={{ width: 38, height: 38, background: '#111111', color: '#f59e0b', border: '1.5px solid #d97706', fontSize: '1rem', fontWeight: 700 }}>
                     {(user?.name || user?.full_name || 'U').charAt(0).toUpperCase()}
                   </Avatar>
                 </IconButton>
