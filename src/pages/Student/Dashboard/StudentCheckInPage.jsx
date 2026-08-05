@@ -172,13 +172,30 @@ const StudentCheckInPage = () => {
   if (!user) return null;
 
   return (
-    <div className="dashboard-container">
-      <div className="mobile-top-navbar">
+    <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: '#ffffff', pt: '60px' }}>
+      {/* Mobile top navbar */}
+      <Box
+        component="nav"
+        className="mobile-top-navbar"
+        sx={{
+          display: 'flex',
+          position: 'fixed',
+          top: 0, left: 0, right: 0,
+          height: 60,
+          alignItems: 'center',
+          gap: 1.5,
+          px: '12px',
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #e5e7eb',
+          zIndex: 1080,
+        }}
+      >
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
         <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
-      </div>
+      </Box>
+
       <StudentSidebar
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -186,16 +203,31 @@ const StudentCheckInPage = () => {
         handleLogout={handleLogout}
       />
 
-      <main className="dashboard-main">
-        <header className="dashboard-header">
-          <div>
-            <h1>รายงานประจำวัน</h1>
-            <p>รายงานตัวและบันทึกประสบการณ์การทำงานในแต่ละวัน</p>
-          </div>
-          <div className="user-info">
+      {/* Main scrollable content */}
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          ml: { xs: 0, md: '260px' },
+          p: { xs: 2, sm: 3 },
+          pb: { xs: '6rem', sm: '6rem' },
+          pt: { xs: '5rem', md: 3 },
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          minWidth: 0,
+          minHeight: '100%',
+        }}
+      >
+        <Box component="header" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: '#111111', fontSize: { xs: '1.5rem', sm: '2rem' } }}>รายงานประจำวัน</Typography>
+            <Typography variant="body1" sx={{ color: '#333333', mt: 0.5 }}>รายงานตัวและบันทึกประสบการณ์การทำงานในแต่ละวัน</Typography>
+          </Box>
+          <Box className="user-info">
             <span>{user.full_name || user.name || user.username}</span>
-          </div>
-        </header>
+          </Box>
+        </Box>
 
         <div className="content-wrapper">
           {!canCheckIn ? (
@@ -221,7 +253,7 @@ const StudentCheckInPage = () => {
                   <Typography variant="body2" color="text.secondary">สถานะคำร้องปัจจุบัน:</Typography>
                   <StatusBadge status={currentRequestStatus} />
                 </Box>
-                <p>หน้านี้จะใช้งานได้เมื่อผู้ดูแลระบบกด “เริ่มฝึกงาน” ให้คุณแล้วเท่านั้น</p>
+                <p>หน้านี้จะใช้งานได้เมื่อผู้ดูแลระบบกด "เริ่มฝึกงาน" ให้คุณแล้วเท่านั้น</p>
                 <div className="checkin-actions" style={{ marginTop: '1.25rem' }}>
                   <Link to="/dashboard/my-requests" style={{ textDecoration: 'none' }}>
                     <ModernButton customVariant="primary">ไปที่คำร้องของฉัน</ModernButton>
@@ -424,10 +456,10 @@ const StudentCheckInPage = () => {
                               <TableCell>{entry.work_experience || entry.workExperience || entry.note || '-'}</TableCell>
                               <TableCell>
                                 {entry.supervisor_signature || entry.supervisorSignature ? (
-                                  <img 
-                                    src={entry.supervisor_signature || entry.supervisorSignature} 
-                                    alt="Supervisor Signature" 
-                                    style={{ maxHeight: 32, maxWidth: 100, objectFit: 'contain' }} 
+                                  <img
+                                    src={entry.supervisor_signature || entry.supervisorSignature}
+                                    alt="Supervisor Signature"
+                                    style={{ maxHeight: 32, maxWidth: 100, objectFit: 'contain' }}
                                   />
                                 ) : (
                                   '-'
@@ -445,8 +477,8 @@ const StudentCheckInPage = () => {
             </>
           )}
         </div>
-      </main>
-    </div>
+      </Box>
+    </Box>
   );
 };
 
