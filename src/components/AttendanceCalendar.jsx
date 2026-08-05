@@ -243,7 +243,7 @@ const AttendanceCalendar = ({ entries = [] }) => {
               <Box 
                 key={item.key} 
                 sx={{ 
-                  height: { xs: 48, sm: 68 }, 
+                  minHeight: { xs: 54, sm: 68 }, 
                   bgcolor: '#f8fafc', 
                   borderRadius: { xs: 1.5, sm: 2.5 }, 
                   border: '1px border-dashed #f1f5f9',
@@ -310,16 +310,16 @@ const AttendanceCalendar = ({ entries = [] }) => {
                 elevation={isSelected ? 3 : 0}
                 onClick={() => setSelectedDay(item)}
                 sx={{
-                  height: { xs: 48, sm: 68 },
-                  p: { xs: 0.5, sm: 0.75 },
-                  borderRadius: { xs: 1.5, sm: 2.5 },
+                  minHeight: { xs: 54, sm: 68 },
+                  p: { xs: 0.4, sm: 0.75 },
+                  borderRadius: { xs: 1.75, sm: 2.5 },
                   bgcolor: bgColor,
                   color: textColor,
                   border: `2px solid ${isSelected ? '#2563eb' : (item.isToday ? '#2563eb' : borderColor)}`,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  justify: 'space-between',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   transition: 'all 0.15s ease-in-out',
                   position: 'relative',
@@ -330,40 +330,40 @@ const AttendanceCalendar = ({ entries = [] }) => {
                   }
                 }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <Typography variant="body2" sx={{ fontWeight: item.isToday ? 900 : 700, fontSize: { xs: '0.775rem', sm: '0.9rem' } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', pt: 0.2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: item.isToday ? 900 : 700,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      width: item.isToday ? { xs: 20, sm: 24 } : 'auto',
+                      height: item.isToday ? { xs: 20, sm: 24 } : 'auto',
+                      borderRadius: item.isToday ? '50%' : 0,
+                      bgcolor: item.isToday ? '#2563eb' : 'transparent',
+                      color: item.isToday ? '#ffffff' : 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: 1,
+                    }}
+                  >
                     {item.dayNumber}
                   </Typography>
-                  {item.isToday && (
-                    <Box 
-                      sx={{ 
-                        fontSize: { xs: '0.55rem', sm: '0.65rem' }, 
-                        fontWeight: 800, 
-                        bgcolor: '#2563eb', 
-                        color: '#fff', 
-                        px: { xs: 0.4, sm: 0.75 }, 
-                        py: 0.1, 
-                        borderRadius: 1,
-                        lineHeight: 1
-                      }}
-                    >
-                      วันนี้
-                    </Box>
-                  )}
                 </Box>
 
                 {badgeText && (
                   <Box
                     sx={{
-                      fontSize: { xs: '0.575rem', sm: '0.7rem' },
+                      fontSize: { xs: '0.525rem', sm: '0.675rem' },
                       fontWeight: 800,
                       textAlign: 'center',
-                      py: 0.15,
-                      px: 0.25,
-                      borderRadius: 1.25,
+                      py: 0.25,
+                      px: 0.2,
+                      mt: 'auto',
+                      borderRadius: 1,
                       bgcolor: chipBg,
                       color: chipColor,
-                      lineHeight: 1.1,
+                      lineHeight: 1,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
