@@ -172,7 +172,7 @@ const StudentCheckInPage = () => {
   if (!user) return null;
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: '#ffffff', pt: '60px' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', bgcolor: '#ffffff' }}>
       {/* Mobile top navbar */}
       <Box
         component="nav"
@@ -203,20 +203,18 @@ const StudentCheckInPage = () => {
         handleLogout={handleLogout}
       />
 
-      {/* Main scrollable content */}
+      {/* Main content — natural document scroll (works on iOS/iPad) */}
       <Box
         component="main"
         sx={{
           flex: 1,
-          ml: { xs: 0, md: '260px' },
+          /* sidebar shows only above 1025px (landscape desktop) — match that here */
+          ml: { xs: 0, lg: '260px' },
           p: { xs: 2, sm: 3 },
           pb: { xs: '6rem', sm: '6rem' },
-          pt: { xs: '5rem', md: 3 },
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          WebkitOverflowScrolling: 'touch',
+          /* top padding = mobile navbar height + breathing room */
+          pt: { xs: '80px', lg: '32px' },
           minWidth: 0,
-          minHeight: '100%',
         }}
       >
         <Box component="header" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 3 }}>
