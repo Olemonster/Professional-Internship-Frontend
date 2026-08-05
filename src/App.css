@@ -20,6 +20,8 @@ body {
 /* Prevent MUI Modal scrollbar hiding & background layout shift */
 html {
   scrollbar-gutter: stable;
+  overflow-x: hidden;
+  /* overflow-y must remain unset so iOS/iPad can scroll vertically */
 }
 
 body.MuiModal-open {

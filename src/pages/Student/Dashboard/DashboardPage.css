@@ -4,6 +4,7 @@
   min-height: 100dvh;
   background: #ffffff;
   padding-top: 60px;
+  overflow-x: hidden;
 }
 
 /* Sidebar */

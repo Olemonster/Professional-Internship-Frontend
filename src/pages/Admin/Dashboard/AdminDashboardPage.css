@@ -200,8 +200,8 @@
   height: 290px;
 }
 
-/* Prevent the whole page from creating a horizontal scrollbar; tables should scroll internally */
-html, body, .admin-dashboard-container {
+/* Prevent horizontal scrollbar without breaking vertical scroll on iOS/iPad */
+.admin-dashboard-container {
   overflow-x: hidden;
 }
 
