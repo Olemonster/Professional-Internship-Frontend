@@ -90,7 +90,8 @@
   margin-left: 260px;
   padding: 2rem;
   padding-bottom: 6rem !important;
-  overflow-y: visible;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   min-width: 0;
 }
 

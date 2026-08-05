@@ -15,13 +15,18 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* 
+   * DO NOT set overflow-x: hidden on html or body!
+   * On iOS/iPad Safari (WebKit), overflow: hidden on the root elements
+   * blocks ALL scrolling — both x and y axes. 
+   * Use overflow-x: hidden on inner wrapper divs (.dashboard-container, .admin-dashboard-container) instead.
+   */
 }
 
 /* Prevent MUI Modal scrollbar hiding & background layout shift */
 html {
   scrollbar-gutter: stable;
-  overflow-x: hidden;
-  /* overflow-y must remain unset so iOS/iPad can scroll vertically */
+  /* overflow-x NOT set here — WebKit blocks vertical scroll if we do */
 }
 
 body.MuiModal-open {
