@@ -585,7 +585,7 @@ tbody tr:hover {
   display: block;
 }
 
-@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
+@media (max-width: 1199px) {
   .mobile-menu-btn {
     display: flex;
     margin-left: auto;

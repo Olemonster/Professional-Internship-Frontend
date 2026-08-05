@@ -172,7 +172,7 @@ const StudentCheckInPage = () => {
   if (!user) return null;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', bgcolor: '#ffffff' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', bgcolor: '#ffffff', pt: '60px' }}>
       {/* Mobile top navbar */}
       <Box
         component="nav"
@@ -208,12 +208,12 @@ const StudentCheckInPage = () => {
         component="main"
         sx={{
           flex: 1,
-          /* sidebar shows only above 1025px (landscape desktop) — match that here */
+          /* sidebar shows only at lg (≥1200px) — match that breakpoint */
           ml: { xs: 0, lg: '260px' },
           p: { xs: 2, sm: 3 },
           pb: { xs: '6rem', sm: '6rem' },
-          /* top padding = mobile navbar height + breathing room */
-          pt: { xs: '80px', lg: '32px' },
+          /* outer Box already has pt:'60px' for the fixed navbar — just add breathing room */
+          pt: { xs: 2, sm: 3 },
           minWidth: 0,
         }}
       >
