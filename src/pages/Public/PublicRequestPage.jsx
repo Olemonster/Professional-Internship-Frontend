@@ -14,6 +14,7 @@ const PublicRequestPage = () => {
   const [feedback, setFeedback] = useState({ message: '', severity: '' });
   const [rejectDialog, setRejectDialog] = useState({ open: false, reason: '' });
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [imageModal, setImageModal] = useState({ open: false, src: '', title: '' });
 
   useEffect(() => {
     api.get(`/public/requests/${id}`)
@@ -140,11 +141,15 @@ const PublicRequestPage = () => {
               </span>
             </div>
             {details.studentPhoto?.dataUrl && (
-              <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+              <div 
+                style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }}
+                onClick={() => setImageModal({ open: true, src: details.studentPhoto.dataUrl, title: `รูปถ่ายนักศึกษา: ${request.studentName}` })}
+                title="คลิกเพื่อดูรูปขนาดเต็ม"
+              >
                 <img 
                   src={details.studentPhoto.dataUrl} 
                   alt="รูปนักศึกษา" 
-                  style={{ width: '100px', height: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} 
+                  style={{ width: '100px', height: '120px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.12)', transition: 'transform 0.2s ease' }} 
                 />
               </div>
             )}
@@ -438,11 +443,34 @@ const PublicRequestPage = () => {
               </Box>
             )}
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setPreviewOpen(false)}>ปิด</Button>
-          </DialogActions>
         </Dialog>
       )}
+
+      {/* Image Preview Dialog */}
+      <Dialog 
+        open={imageModal.open} 
+        onClose={() => setImageModal({ open: false, src: '', title: '' })}
+        maxWidth="md"
+        disableScrollLock={true}
+        ModalProps={{ disableScrollLock: true }}
+        PaperProps={{ sx: { borderRadius: 3, p: 0.5, overflow: 'hidden' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: '1px solid #f1f5f9' }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+            {imageModal.title || 'ดูรูปขนาดเต็ม'}
+          </Typography>
+          <Button size="small" onClick={() => setImageModal({ open: false, src: '', title: '' })} sx={{ color: '#64748b', fontWeight: 700 }}>
+            ปิด
+          </Button>
+        </DialogTitle>
+        <DialogContent sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f8fafc' }}>
+          <img 
+            src={imageModal.src} 
+            alt="Enlarged preview" 
+            style={{ maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} 
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

@@ -122,7 +122,8 @@ const StudentDetailsPage = () => {
       'รอผู้ดูแลระบบตรวจสอบ': { bg: '#c3dafe', color: '#434190' },
       'รอผู้ดูแลระบบอนุมัติ': { bg: '#c3dafe', color: '#434190' },
       'รอสถานประกอบการตอบรับ': { bg: '#e2e8f0', color: '#2d3748' },
-      'อนุมัติแล้ว': { bg: '#d4edda', color: '#155724' },
+      'รออาจารย์อนุมัติเริ่มฝึกงาน': { bg: '#d1fae5', color: '#065f46', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
+      'อนุมัติแล้ว': { bg: '#d1fae5', color: '#065f46', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
       'ออกฝึกงาน': { bg: '#c4f1f9', color: '#0c4a6e' },
       'ประเมินเสร็จแล้ว': { bg: '#ddd6fe', color: '#4c1d95' },
       'ฝึกงานเสร็จแล้ว': { bg: '#fbcfe8', color: '#9d174d' },
@@ -131,7 +132,7 @@ const StudentDetailsPage = () => {
       'ปฏิเสธ': { bg: '#f8d7da', color: '#721c24' }
     };
     const style = statusStyles[status] || { bg: '#e2e3e5', color: '#383d41' };
-    return { ...style, label: status || 'ยังไม่ได้ยื่นคำร้อง' };
+    return { ...style, label: style.label || status || 'ยังไม่ได้ยื่นคำร้อง' };
   };
 
   const formatAddress = (address) => {
@@ -408,13 +409,20 @@ const StudentDetailsPage = () => {
         )}
 
         {/* Image Modal */}
-        <Dialog open={imageModal} onClose={() => setImageModal(false)} maxWidth="md">
-          <DialogContent style={{ padding: '0', backgroundColor: '#000', textAlign: 'center' }}>
+        <Dialog 
+          open={imageModal} 
+          onClose={() => setImageModal(false)} 
+          maxWidth="md"
+          disableScrollLock={true}
+          ModalProps={{ disableScrollLock: true }}
+          PaperProps={{ sx: { borderRadius: 3, p: 0.5, overflow: 'hidden' } }}
+        >
+          <DialogContent style={{ padding: '16px', backgroundColor: '#f8fafc', textAlign: 'center' }}>
             {details.studentPhoto?.dataUrl && (
               <img 
                 src={details.studentPhoto.dataUrl} 
                 alt="รูปนักศึกษา (Full)" 
-                style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
+                style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} 
               />
             )}
           </DialogContent>

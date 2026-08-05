@@ -5,8 +5,8 @@ const STATUS_STYLES = {
   'รอผู้ดูแลระบบตรวจสอบ': { bg: 'linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%)', color: '#ffffff' },
   'รอผู้ดูแลระบบอนุมัติ': { bg: 'linear-gradient(135deg, #7dd3fc 0%, #0284c7 100%)', color: '#ffffff' },
   'รอสถานประกอบการตอบรับ': { bg: 'linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%)', color: '#ffffff' },
-  'รออาจารย์อนุมัติเริ่มฝึกงาน': { bg: 'linear-gradient(135deg, #a7f3d0 0%, #34d399 100%)', color: '#064e3b' },
-  'อนุมัติแล้ว': { bg: 'linear-gradient(135deg, #86efac 0%, #22c55e 100%)', color: '#14532d' },
+  'รออาจารย์อนุมัติเริ่มฝึกงาน': { bg: 'linear-gradient(135deg, #a7f3d0 0%, #34d399 100%)', color: '#064e3b', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
+  'อนุมัติแล้ว': { bg: 'linear-gradient(135deg, #a7f3d0 0%, #34d399 100%)', color: '#064e3b', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
   'ประเมินเสร็จแล้ว': { bg: 'linear-gradient(135deg, #c7d2fe 0%, #6366f1 100%)', color: '#1e1b4b' },
   'ไม่อนุมัติ (อาจารย์)': { bg: 'linear-gradient(135deg, #fda4af 0%, #f43f5e 100%)', color: '#ffffff' },
   'ไม่อนุมัติ (Admin)': { bg: 'linear-gradient(135deg, #fb7185 0%, #e11d48 100%)', color: '#ffffff' },
@@ -18,12 +18,13 @@ const STATUS_STYLES = {
 const StatusBadge = ({ status, style = {}, className = '' }) => {
   const normalizedStatus = String(status || '').trim();
   const statusInfo = STATUS_STYLES[normalizedStatus] || { bg: 'linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)', color: '#111827' };
+  const displayLabel = statusInfo.label || normalizedStatus;
 
   return (
     <span
       className={className}
       style={{
-        background: statusInfo.bg, // using background for gradient
+        background: statusInfo.bg,
         color: statusInfo.color,
         display: 'inline-block',
         padding: '6px 12px',
@@ -34,7 +35,7 @@ const StatusBadge = ({ status, style = {}, className = '' }) => {
         ...style
       }}
     >
-      {normalizedStatus || 'ไม่ทราบสถานะ'}
+      {displayLabel || 'ไม่ทราบสถานะ'}
     </span>
   );
 };

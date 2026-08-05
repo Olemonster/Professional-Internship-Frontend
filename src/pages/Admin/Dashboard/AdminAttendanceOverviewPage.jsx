@@ -486,16 +486,20 @@ const AdminAttendanceOverviewPage = () => {
         onClose={() => setDetailsModal({ open: false, student: null })}
         fullWidth
         maxWidth="md"
-        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+        disableScrollLock={true}
+        ModalProps={{ disableScrollLock: true }}
+        PaperProps={{ sx: { borderRadius: { xs: 2.5, sm: 3 }, p: { xs: 0.5, sm: 1 }, m: { xs: 1, sm: 2 }, width: { xs: 'calc(100% - 16px)', sm: 'auto' } } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>ประวัติรายงานประจำวัน - {detailsModal.student?.studentName}</span>
+        <DialogTitle sx={{ fontWeight: 800, borderBottom: '1px solid #f3f4f6', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1.5, pb: 1.5 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '0.95rem', sm: '1.15rem' }, color: '#0f172a', lineHeight: 1.3 }}>
+            ประวัติรายงานประจำวัน - {detailsModal.student?.studentName}
+          </Typography>
           <ToggleButtonGroup
             value={modalViewMode}
             exclusive
             onChange={(e, nextView) => { if (nextView) setModalViewMode(nextView); }}
             size="small"
-            sx={{ bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2 }}
+            sx={{ bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2, display: 'flex', '& .MuiToggleButton-root': { flex: 1, justifyContent: 'center' } }}
           >
             <ToggleButton value="calendar" sx={{ py: 0.25, px: 1.25, fontWeight: 700, fontSize: '0.75rem', gap: 0.75, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb' } }}>
               <CalendarIcon style={{ width: 15, height: 15 }} /> ปฏิทิน
@@ -505,7 +509,7 @@ const AdminAttendanceOverviewPage = () => {
             </ToggleButton>
           </ToggleButtonGroup>
         </DialogTitle>
-        <DialogContent sx={{ p: 2 }}>
+        <DialogContent sx={{ p: { xs: 1, sm: 2 } }}>
           {modalViewMode === 'calendar' ? (
             <AttendanceCalendar entries={detailsModal.student?.entries || []} />
           ) : (

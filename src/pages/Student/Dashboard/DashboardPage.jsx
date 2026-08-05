@@ -504,6 +504,18 @@ const DashboardPage = () => {
                           <Typography variant="body2" sx={{ color: '#7f1d1d' }}>{request.advisor_comment}</Typography>
                         </Box>
                       )}
+                      {request.status !== 'ไม่อนุมัติ (Admin)' && request.status !== 'ไม่อนุมัติ (อาจารย์)' && request.admin_comment && (
+                        <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#eff6ff', borderRadius: '8px', borderLeft: '4px solid #2563eb' }}>
+                          <Typography variant="body2" sx={{ color: '#1e40af', fontWeight: 700, mb: 0.5 }}>📌 ข้อความ/คำแนะนำจากผู้ดูแลระบบ:</Typography>
+                          <Typography variant="body2" sx={{ color: '#1e3a8a' }}>{request.admin_comment}</Typography>
+                        </Box>
+                      )}
+                      {request.status !== 'ไม่อนุมัติ (Admin)' && request.status !== 'ไม่อนุมัติ (อาจารย์)' && request.advisor_comment && (
+                        <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#f0fdf4', borderRadius: '8px', borderLeft: '4px solid #16a34a' }}>
+                          <Typography variant="body2" sx={{ color: '#15803d', fontWeight: 700, mb: 0.5 }}>📌 ข้อความ/คำแนะนำจากอาจารย์ที่ปรึกษา:</Typography>
+                          <Typography variant="body2" sx={{ color: '#14532d' }}>{request.advisor_comment}</Typography>
+                        </Box>
+                      )}
                       {(request.status === 'ปฏิเสธ' && request.company_comment) && (
                         <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#fef2f2', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                           <Typography variant="body2" sx={{ color: '#b91c1c', fontWeight: 600, mb: 0.5 }}>เหตุผลที่ปฏิเสธ (บริษัท):</Typography>

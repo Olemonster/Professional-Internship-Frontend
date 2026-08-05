@@ -16,3 +16,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Prevent MUI Modal scrollbar hiding & background layout shift */
+html {
+  scrollbar-gutter: stable;
+}
+
+body.MuiModal-open {
+  overflow: auto !important;
+  overflow-y: scroll !important;
+  padding-right: 0px !important;
+}
+
+.MuiModal-root {
+  padding-right: 0px !important;
+}

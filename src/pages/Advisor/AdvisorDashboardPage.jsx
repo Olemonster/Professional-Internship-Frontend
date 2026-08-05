@@ -48,6 +48,13 @@ const AdvisorDashboardPage = () => {
     requestId: null,
     reason: ''
   });
+  const [approveModal, setApproveModal] = useState({
+    open: false,
+    requestId: null,
+    currentStatus: '',
+    comment: '',
+    submitting: false,
+  });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   const getDisplayStatus = (status) =>
@@ -89,14 +96,33 @@ const AdvisorDashboardPage = () => {
     return req.status === filter;
   });
   
-  const handleApprove = async (requestId, currentStatus) => {
+  const openApproveModal = (requestId, currentStatus) => {
+    setApproveModal({
+      open: true,
+      requestId,
+      currentStatus,
+      comment: '',
+      submitting: false,
+    });
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!approveModal.requestId) return;
+    setApproveModal((prev) => ({ ...prev, submitting: true }));
     try {
-      const nextStatus = currentStatus === 'รออาจารย์อนุมัติเริ่มฝึกงาน' ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
-      await api.patch(`/requests/${requestId}/status`, { status: nextStatus });
-      setAllRequests(allRequests.map(r => String(r.id) === String(requestId) ? { ...r, status: nextStatus } : r));
-      setToast({ open: true, message: nextStatus === 'ออกฝึกงาน' ? 'อนุมัติการเริ่มฝึกงานเรียบร้อย' : 'อนุมัติคำร้องเรียบร้อย และส่งต่อให้ผู้ดูแลระบบ', severity: 'success' });
+      const isStage2 = approveModal.currentStatus === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || approveModal.currentStatus === 'อนุมัติแล้ว';
+      const nextStatus = isStage2 ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
+      const payload = {
+        status: nextStatus,
+        advisor_comment: approveModal.comment.trim() || null,
+      };
+      await api.patch(`/requests/${approveModal.requestId}/status`, payload);
+      setAllRequests(allRequests.map(r => String(r.id) === String(approveModal.requestId) ? { ...r, status: nextStatus, advisor_comment: approveModal.comment.trim() || null } : r));
+      setToast({ open: true, message: nextStatus === 'ออกฝึกงาน' ? 'อนุมัติการเริ่มฝึกงานเรียบร้อยแล้ว (สถานะเปลี่ยนเป็นออกฝึกงาน)' : 'อนุมัติคำร้องเรียบร้อย และส่งต่อให้ผู้ดูแลระบบ', severity: 'success' });
+      setApproveModal({ open: false, requestId: null, currentStatus: '', comment: '', submitting: false });
     } catch (err) {
       setToast({ open: true, message: 'อัปเดตล้มเหลว: ' + (err.response?.data?.message || err.message), severity: 'error' });
+      setApproveModal((prev) => ({ ...prev, submitting: false }));
     }
   };
 
@@ -145,7 +171,7 @@ const AdvisorDashboardPage = () => {
   };
 
   const actionableRequests = filteredRequests.filter((r) =>
-    ['ประเมินเสร็จแล้ว', 'รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน'].includes(r.status)
+    ['ประเมินเสร็จแล้ว', 'รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(r.status)
   );
 
   const isAllSelected =
@@ -176,7 +202,7 @@ const AdvisorDashboardPage = () => {
   const selectedPendingCount = filteredRequests.filter(
     (r) =>
       selectedIds.includes(String(r.id)) &&
-      ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน'].includes(r.status)
+      ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(r.status)
   ).length;
 
   const handleBatchFinishInternship = async () => {
@@ -212,20 +238,20 @@ const AdvisorDashboardPage = () => {
     const targets = filteredRequests.filter(
       (r) =>
         selectedIds.includes(String(r.id)) &&
-        ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน'].includes(r.status)
+        ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(r.status)
     );
     if (targets.length === 0) return;
 
     try {
       await Promise.all(
         targets.map((r) => {
-          const nextStatus = r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
+          const nextStatus = (r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || r.status === 'อนุมัติแล้ว') ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
           return api.patch(`/requests/${r.id}/status`, { status: nextStatus });
         })
       );
       const targetMap = {};
       targets.forEach((r) => {
-        targetMap[String(r.id)] = r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
+        targetMap[String(r.id)] = (r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || r.status === 'อนุมัติแล้ว') ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
       });
       setAllRequests((prev) =>
         prev.map((r) => (targetMap[String(r.id)] ? { ...r, status: targetMap[String(r.id)] } : r))
@@ -309,7 +335,7 @@ const AdvisorDashboardPage = () => {
           </div>
 
           <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2 }}>
-            <strong>ข้อความแจ้งเตือนระบบ:</strong> หากอาจารย์ไม่ได้กดอนุมัติเสร็จสิ้นการฝึกงานด้วยตนเอง ระบบจะอนุมัติให้จบการฝึกงานให้อัตโนมัติภายใน 3 วัน หลังจากที่สถานประกอบการส่งผลประเมินเรียบร้อยแล้ว
+            <strong>ข้อความแจ้งเตือนระบบ:</strong> หากอาจารย์ไม่ได้กดอนุมัติเสร็จสิ้นการฝึกงานด้วยตนเอง (ขั้นตอนสุดท้าย) ระบบจะอนุมัติให้จบการฝึกงานให้อัตโนมัติภายใน 3 วัน หลังจากที่สถานประกอบการส่งผลประเมินเรียบร้อยแล้ว
           </Alert>
 
           {selectedIds.length > 0 && (
@@ -387,7 +413,7 @@ const AdvisorDashboardPage = () => {
                 {filteredRequests.map((request) => {
                   const normalizedStatus = String(request.status || '').trim();
                   const isPending = normalizedStatus === 'รออาจารย์ที่ปรึกษาอนุมัติ';
-                  const isWaitingToStart = normalizedStatus === 'รออาจารย์อนุมัติเริ่มฝึกงาน';
+                  const isWaitingToStart = normalizedStatus === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || normalizedStatus === 'อนุมัติแล้ว';
                   const isInterning = normalizedStatus === 'ออกฝึกงาน';
                   const isEvaluated = normalizedStatus === 'ประเมินเสร็จแล้ว';
                   const isActionable = isPending || isWaitingToStart || isEvaluated;
@@ -426,7 +452,7 @@ const AdvisorDashboardPage = () => {
                       <TableCell className="action-column">
                         {(isPending || isWaitingToStart) && (
                           <div className="advisor-action-buttons">
-                            <ModernButton size="small" customVariant="accept" onClick={() => handleApprove(request.id, normalizedStatus)}>
+                            <ModernButton size="small" customVariant="accept" onClick={() => openApproveModal(request.id, request.status || normalizedStatus)}>
                               {isWaitingToStart ? 'เริ่มฝึกงาน' : 'อนุมัติ'}
                             </ModernButton>
                             <ModernButton size="small" customVariant="reject" onClick={() => handleReject(request.id)}>
@@ -474,6 +500,46 @@ const AdvisorDashboardPage = () => {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleRejectClose}>ยกเลิก</Button>
           <Button variant="contained" color="error" onClick={handleRejectConfirm}>ยืนยันการปฏิเสธ</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Approve Modal */}
+      <Dialog 
+        open={approveModal.open} 
+        onClose={() => setApproveModal(prev => ({ ...prev, open: false }))} 
+        fullWidth 
+        maxWidth="sm"
+        disableScrollLock={true}
+        ModalProps={{ disableScrollLock: true }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>ยืนยันการอนุมัติคำร้อง</DialogTitle>
+        <DialogContent sx={{ py: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            ท่านสามารถระบุข้อความเพิ่มเติมหรือคำแนะนำให้นักศึกษาเตรียมเอกสาร/สิ่งต่างๆ มาเพิ่มได้ (ถ้ามี)
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="ข้อความเพิ่มเติม / คำแนะนำถึงนักศึกษา (ถ้ามี)"
+            value={approveModal.comment}
+            onChange={(e) => setApproveModal(prev => ({ ...prev, comment: e.target.value }))}
+            placeholder="เช่น ให้นักศึกษานำรูปถ่าย 2 นิ้ว 2 ใบมาให้ หรือเตรียมเอกสารข้อตกลงสถานประกอบการมารับหนังสือส่งตัว"
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setApproveModal(prev => ({ ...prev, open: false }))} disabled={approveModal.submitting}>
+            ยกเลิก
+          </Button>
+          <Button 
+            variant="contained" 
+            color="success" 
+            onClick={handleConfirmApprove} 
+            disabled={approveModal.submitting}
+            sx={{ fontWeight: 700, px: 3 }}
+          >
+            {approveModal.submitting ? 'กำลังอนุมัติ...' : 'ยืนยันอนุมัติ'}
+          </Button>
         </DialogActions>
       </Dialog>
 

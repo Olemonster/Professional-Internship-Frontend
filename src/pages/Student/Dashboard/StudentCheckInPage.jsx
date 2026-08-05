@@ -363,9 +363,9 @@ const StudentCheckInPage = () => {
               </div>
 
               {/* Attendance History Section (Calendar / Table Toggle) */}
-              <div className="checkin-table-wrapper" style={{ marginTop: '2rem', padding: '1.75rem', background: '#fff', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, gap: 1.5 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.15rem' }}>
+              <Box className="checkin-table-wrapper" sx={{ marginTop: '2rem', padding: { xs: '1rem', sm: '1.75rem' }, background: '#fff', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, mb: 2.5, gap: 1.5 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', fontSize: { xs: '1rem', sm: '1.15rem' } }}>
                     ประวัติรายงานประจำวัน
                   </Typography>
 
@@ -374,13 +374,13 @@ const StudentCheckInPage = () => {
                     exclusive
                     onChange={(e, nextView) => { if (nextView) setViewMode(nextView); }}
                     size="small"
-                    sx={{ bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2.5 }}
+                    sx={{ bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2.5, display: 'flex', '& .MuiToggleButton-root': { flex: 1, justifyContent: 'center' } }}
                   >
-                    <ToggleButton value="calendar" sx={{ py: 0.5, px: 1.5, fontWeight: 700, fontSize: '0.8rem', gap: 1, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } }}>
-                      <CalendarIcon style={{ width: 16, height: 16 }} /> ปฏิทินเช็คชื่อ
+                    <ToggleButton value="calendar" sx={{ py: 0.5, px: { xs: 1, sm: 1.5 }, fontWeight: 700, fontSize: { xs: '0.75rem', sm: '0.8rem' }, gap: 0.75, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } }}>
+                      <CalendarIcon style={{ width: 16, height: 16 }} /> ปฏิทิน
                     </ToggleButton>
-                    <ToggleButton value="table" sx={{ py: 0.5, px: 1.5, fontWeight: 700, fontSize: '0.8rem', gap: 1, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } }}>
-                      <TableCellsIcon style={{ width: 16, height: 16 }} /> ตารางประวัติ
+                    <ToggleButton value="table" sx={{ py: 0.5, px: { xs: 1, sm: 1.5 }, fontWeight: 700, fontSize: { xs: '0.75rem', sm: '0.8rem' }, gap: 0.75, '&.Mui-selected': { bgcolor: '#ffffff', color: '#2563eb', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } }}>
+                      <TableCellsIcon style={{ width: 16, height: 16 }} /> ตาราง
                     </ToggleButton>
                   </ToggleButtonGroup>
                 </Box>
@@ -441,7 +441,7 @@ const StudentCheckInPage = () => {
                     </Table>
                   </TableContainer>
                 )}
-              </div>
+              </Box>
             </>
           )}
         </div>

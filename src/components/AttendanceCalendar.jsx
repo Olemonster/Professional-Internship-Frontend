@@ -115,29 +115,29 @@ const AttendanceCalendar = ({ entries = [] }) => {
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
-          justify: 'space-between',
-          gap: 1.5,
-          p: 1.75,
+          justifyContent: 'space-between',
+          gap: 1,
+          p: { xs: 1.25, sm: 1.75 },
           mb: 2,
           borderRadius: 3,
           bgcolor: '#f8fafc',
           border: '1px solid #e2e8f0',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{ p: 0.75, borderRadius: 2, bgcolor: '#eff6ff', color: '#2563eb', display: 'flex' }}>
-            <CalendarIcon style={{ width: 20, height: 20 }} />
+            <CalendarIcon style={{ width: 18, height: 18 }} />
           </Box>
-          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.15rem', color: '#0f172a' }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '0.95rem', sm: '1.15rem' }, color: '#0f172a' }}>
             {monthNamesThai[month]} {year + 543}
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <IconButton
             size="small"
             onClick={handlePrevMonth}
-            sx={{ border: '1px solid #cbd5e1', bgcolor: '#fff', '&:hover': { bgcolor: '#f1f5f9' } }}
+            sx={{ border: '1px solid #cbd5e1', bgcolor: '#fff', '&:hover': { bgcolor: '#f1f5f9' }, p: 0.5 }}
           >
             <ChevronLeftIcon style={{ width: 16, height: 16, color: '#334155' }} />
           </IconButton>
@@ -147,13 +147,14 @@ const AttendanceCalendar = ({ entries = [] }) => {
             variant="outlined"
             onClick={() => setCurrentDate(new Date())}
             sx={{
-              fontSize: '0.775rem',
+              fontSize: '0.75rem',
               fontWeight: 700,
-              py: 0.5,
-              px: 1.5,
+              py: 0.25,
+              px: 1.25,
               borderColor: '#cbd5e1',
               color: '#334155',
               bgcolor: '#fff',
+              minWidth: 0,
               '&:hover': { borderColor: '#94a3b8', bgcolor: '#f8fafc' }
             }}
           >
@@ -163,7 +164,7 @@ const AttendanceCalendar = ({ entries = [] }) => {
           <IconButton
             size="small"
             onClick={handleNextMonth}
-            sx={{ border: '1px solid #cbd5e1', bgcolor: '#fff', '&:hover': { bgcolor: '#f1f5f9' } }}
+            sx={{ border: '1px solid #cbd5e1', bgcolor: '#fff', '&:hover': { bgcolor: '#f1f5f9' }, p: 0.5 }}
           >
             <ChevronRightIcon style={{ width: 16, height: 16, color: '#334155' }} />
           </IconButton>
@@ -176,33 +177,33 @@ const AttendanceCalendar = ({ entries = [] }) => {
           display: 'flex', 
           flexWrap: 'wrap', 
           alignItems: 'center',
-          gap: 2, 
-          mb: 2.5, 
-          px: 1,
-          fontSize: '0.825rem',
+          gap: { xs: 1, sm: 2 }, 
+          mb: 2, 
+          px: 0.5,
+          fontSize: { xs: '0.75rem', sm: '0.825rem' },
           color: '#475569',
           fontWeight: 600
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#10b981' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#10b981' }} />
           <span>มา</span>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#f59e0b' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#f59e0b' }} />
           <span>สาย</span>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#ef4444' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#ef4444' }} />
           <span>ขาด</span>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#94a3b8' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#94a3b8' }} />
           <span>ไม่ได้เช็คชื่อ</span>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, ml: 'auto' }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '3px', border: '1.5px dashed #cbd5e1' }} />
-          <span>วันหยุดเสาร์-อาทิตย์ / วันในอนาคต</span>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: { xs: '100%', sm: 'auto' }, ml: { sm: 'auto' } }}>
+          <Box sx={{ width: 10, height: 10, borderRadius: '3px', border: '1.5px dashed #cbd5e1' }} />
+          <span>เสาร์-อาทิตย์ / อนาคต</span>
         </Box>
       </Box>
 
@@ -211,12 +212,12 @@ const AttendanceCalendar = ({ entries = [] }) => {
         sx={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: 1, 
+          gap: { xs: 0.5, sm: 1.25 }, 
           textAlign: 'center',
           fontWeight: 800,
-          fontSize: '0.85rem',
+          fontSize: { xs: '0.75rem', sm: '0.85rem' },
           color: '#64748b',
-          mb: 1.25
+          mb: 1
         }}
       >
         <Box sx={{ color: '#ef4444' }}>อา.</Box>
@@ -233,7 +234,7 @@ const AttendanceCalendar = ({ entries = [] }) => {
         sx={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: 1.25
+          gap: { xs: 0.5, sm: 1.25 }
         }}
       >
         {calendarDays.map((item) => {
@@ -242,9 +243,9 @@ const AttendanceCalendar = ({ entries = [] }) => {
               <Box 
                 key={item.key} 
                 sx={{ 
-                  height: { xs: 56, sm: 68 }, 
+                  height: { xs: 48, sm: 68 }, 
                   bgcolor: '#f8fafc', 
-                  borderRadius: 2.5, 
+                  borderRadius: { xs: 1.5, sm: 2.5 }, 
                   border: '1px border-dashed #f1f5f9',
                   opacity: 0.3 
                 }} 
@@ -309,38 +310,41 @@ const AttendanceCalendar = ({ entries = [] }) => {
                 elevation={isSelected ? 3 : 0}
                 onClick={() => setSelectedDay(item)}
                 sx={{
-                  height: { xs: 58, sm: 70 },
-                  p: 1,
-                  borderRadius: 2.5,
+                  height: { xs: 48, sm: 68 },
+                  p: { xs: 0.5, sm: 0.75 },
+                  borderRadius: { xs: 1.5, sm: 2.5 },
                   bgcolor: bgColor,
                   color: textColor,
-                  border: `2px solid ${isSelected ? '#2563eb' : borderColor}`,
+                  border: `2px solid ${isSelected ? '#2563eb' : (item.isToday ? '#2563eb' : borderColor)}`,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   justify: 'space-between',
+                  alignItems: 'center',
                   transition: 'all 0.15s ease-in-out',
                   position: 'relative',
+                  overflow: 'hidden',
                   '&:hover': {
                     transform: 'translateY(-2px)',
                     boxShadow: '0 4px 14px rgba(0,0,0,0.07)'
                   }
                 }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ fontWeight: item.isToday ? 900 : 700, fontSize: '0.9rem' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <Typography variant="body2" sx={{ fontWeight: item.isToday ? 900 : 700, fontSize: { xs: '0.775rem', sm: '0.9rem' } }}>
                     {item.dayNumber}
                   </Typography>
                   {item.isToday && (
                     <Box 
                       sx={{ 
-                        fontSize: '0.65rem', 
+                        fontSize: { xs: '0.55rem', sm: '0.65rem' }, 
                         fontWeight: 800, 
                         bgcolor: '#2563eb', 
                         color: '#fff', 
-                        px: 0.75, 
+                        px: { xs: 0.4, sm: 0.75 }, 
                         py: 0.1, 
-                        borderRadius: 1 
+                        borderRadius: 1,
+                        lineHeight: 1
                       }}
                     >
                       วันนี้
@@ -351,15 +355,19 @@ const AttendanceCalendar = ({ entries = [] }) => {
                 {badgeText && (
                   <Box
                     sx={{
-                      fontSize: '0.7rem',
+                      fontSize: { xs: '0.575rem', sm: '0.7rem' },
                       fontWeight: 800,
                       textAlign: 'center',
-                      py: 0.2,
-                      px: 0.5,
-                      borderRadius: 1.5,
+                      py: 0.15,
+                      px: 0.25,
+                      borderRadius: 1.25,
                       bgcolor: chipBg,
                       color: chipColor,
-                      lineHeight: 1.2
+                      lineHeight: 1.1,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      width: '100%'
                     }}
                   >
                     {badgeText}

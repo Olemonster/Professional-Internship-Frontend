@@ -12,6 +12,7 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
@@ -36,7 +37,7 @@ import { BellIcon } from '@heroicons/react/24/solid';
 import { QRCodeSVG } from 'qrcode.react';
 import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './AdminDashboardPage.css';
-import { ClockIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, TrashIcon, DocumentTextIcon, CalendarIcon, CreditCardIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import AdminSidebar from '../../../components/AdminSidebar';
 import StatusBadge from '../../../components/StatusBadge';
 import StatCard from '../../../components/StatCard';
@@ -56,14 +57,22 @@ const AdminDashboardPage = () => {
   const [sortDir, setSortDir] = useState('asc');
   const [qrModal, setQrModal] = useState({ open: false, requestId: null, link: '' });
   const [dispatchModal, setDispatchModal] = useState({ open: false, requestId: null, file: null, submitting: false, error: '' });
-  const [semesterModal, setSemesterModal] = useState({ open: false, requestId: null });
   const pieChartRef = useRef(null);
   const dispatchFileInputRef = useRef(null);
   const [notifAnchor, setNotifAnchor] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    targetRequest: null,
+    deleteRequests: true,
+    deleteCheckins: true,
+    deletePayments: true,
+    submitting: false,
+  });
 
   const getAdminDisplayStatus = (status) => {
     if (status === 'รออาจารย์ที่ปรึกษาอนุมัติ') return 'รออาจารย์อนุมัติ';
     if (status === 'รอผู้ดูแลระบบตรวจสอบ' || status === 'รอผู้ดูแลระบบอนุมัติ') return 'รออนุมัติ';
+    if (status === 'อนุมัติแล้ว' || status === 'รออาจารย์อนุมัติเริ่มฝึกงาน') return 'รออาจารย์อนุมัติการออกฝึกงาน';
     return status;
   };
 
@@ -238,19 +247,44 @@ const AdminDashboardPage = () => {
     };
   }, [statusChartData, hasChartData]);
 
-  const handleDelete = async (id) => {
-    const confirmed = await window.showMuiConfirm('คุณต้องการลบคำร้องนี้ใช่หรือไม่?', {
-      title: 'ยืนยันการลบคำร้อง',
-      confirmText: 'ลบคำร้อง',
-      cancelText: 'ยกเลิก',
+  const openDeleteModal = (request) => {
+    setDeleteModal({
+      open: true,
+      targetRequest: request,
+      deleteRequests: true,
+      deleteCheckins: true,
+      deletePayments: true,
+      submitting: false,
     });
+  };
 
-    if (!confirmed) return;
+  const handleConfirmSelectiveDelete = async () => {
+    if (!deleteModal.targetRequest) return;
+    setDeleteModal(prev => ({ ...prev, submitting: true }));
+
+    const reqItem = deleteModal.targetRequest;
+    const reqId = reqItem.id;
+    const studentCode = reqItem.studentId || reqItem.student_code || reqItem.username;
+
     try {
-      await api.delete(`/requests/${id}`);
-      setAllRequests(allRequests.filter((req) => String(req.id) !== String(id)));
+      if (deleteModal.deleteRequests) {
+        await api.delete(`/requests/${reqId}`);
+      }
+
+      if (deleteModal.deleteCheckins && studentCode) {
+        await api.delete(`/checkins/student/${studentCode}`).catch(e => console.log('Notice checkins delete:', e.message));
+      }
+
+      if (deleteModal.deletePayments && studentCode) {
+        await api.delete(`/payment-proofs/student/${studentCode}`).catch(e => console.log('Notice payments delete:', e.message));
+      }
+
+      setAllRequests(prev => prev.filter(r => String(r.id) !== String(reqId)));
+      setDeleteModal({ open: false, targetRequest: null, deleteRequests: true, deleteCheckins: true, deletePayments: true, submitting: false });
     } catch (err) {
-      alert('ลบคำร้องล้มเหลว: ' + (err.response?.data?.message || err.message));
+      console.error('Selective delete failed:', err);
+      alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + (err.response?.data?.message || err.message));
+      setDeleteModal(prev => ({ ...prev, submitting: false }));
     }
   };
 
@@ -266,14 +300,14 @@ const AdminDashboardPage = () => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
     }
-    setDispatchModal({ open: true, requestId, file: null, submitting: false, error: '' });
+    setDispatchModal({ open: true, requestId, file: null, comment: '', submitting: false, error: '' });
   };
 
   const handleDispatchModalClose = () => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
     }
-    setDispatchModal({ open: false, requestId: null, file: null, submitting: false, error: '' });
+    setDispatchModal({ open: false, requestId: null, file: null, comment: '', submitting: false, error: '' });
   };
 
   const handleDispatchFileChange = (event) => {
@@ -303,6 +337,7 @@ const AdminDashboardPage = () => {
       const dataUrl = await fileToDataUrl(dispatchModal.file);
       const payload = {
         status: 'รอสถานประกอบการตอบรับ',
+        admin_comment: dispatchModal.comment?.trim() || null,
         dispatchLetter: {
           fileName: dispatchModal.file.name,
           mimeType: dispatchModal.file.type,
@@ -312,7 +347,7 @@ const AdminDashboardPage = () => {
       const requestId = dispatchModal.requestId;
       await api.patch(`/requests/${requestId}/status`, payload);
       setAllRequests(allRequests.map(r => String(r.id) === String(requestId)
-        ? { ...r, status: 'รอสถานประกอบการตอบรับ', dispatchLetter: { fileName: dispatchModal.file.name } }
+        ? { ...r, status: 'รอสถานประกอบการตอบรับ', admin_comment: dispatchModal.comment?.trim() || null, dispatchLetter: { fileName: dispatchModal.file.name } }
         : r));
       const link = `${window.location.origin}/public/request/${requestId}`;
       setQrModal({ open: true, requestId, link });
@@ -339,22 +374,6 @@ const AdminDashboardPage = () => {
       await api.patch(`/requests/${requestId}/status`, { status: newStatus });
       setAllRequests(allRequests.map(r => String(r.id) === String(requestId) ? {...r, status: newStatus} : r));
       alert(`อัปเดตสถานะเป็น "${newStatus}" เรียบร้อยแล้ว`);
-    } catch (err) {
-      alert('อัปเดตสถานะล้มเหลว: ' + (err.response?.data?.message || err.message));
-    }
-  };
-
-  const handleOpenSemesterModal = (requestId) => {
-    setSemesterModal({ open: true, requestId });
-  };
-
-  const handleConfirmStartInternship = async () => {
-    const requestId = semesterModal.requestId;
-    setSemesterModal({ open: false, requestId: null });
-    try {
-      await api.patch(`/requests/${requestId}/status`, { status: 'ออกฝึกงาน' });
-      setAllRequests(allRequests.map(r => String(r.id) === String(requestId) ? { ...r, status: 'ออกฝึกงาน' } : r));
-      alert('เริ่มฝึกงานเรียบร้อยแล้ว');
     } catch (err) {
       alert('อัปเดตสถานะล้มเหลว: ' + (err.response?.data?.message || err.message));
     }
@@ -600,7 +619,7 @@ const AdminDashboardPage = () => {
                         <div className="action-buttons" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
                           <button
                             className="btn-delete"
-                            onClick={() => handleDelete(request.id)}
+                            onClick={() => openDeleteModal(request)}
                             style={{ padding: '6px 12px', background: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}
                           >ลบ</button>
                           {(request.status === 'รอผู้ดูแลระบบตรวจสอบ' || request.status === 'รอผู้ดูแลระบบอนุมัติ') && (
@@ -608,9 +627,6 @@ const AdminDashboardPage = () => {
                               <button className="btn-approve" onClick={() => handleApprove(request.id)} title="อนุมัติคำร้อง" style={{ padding: '6px 12px', background: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>✓ อนุมัติ</button>
                               <button className="btn-reject" onClick={() => handleReject(request.id)} title="ไม่อนุมัติ" style={{ padding: '6px 12px', background: '#f43f5e', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>✗ ปฏิเสธ</button>
                             </>
-                          )}
-                          {request.status === 'อนุมัติแล้ว' && (
-                            <button className="btn-next-step" onClick={() => handleOpenSemesterModal(request.id)} style={{ padding: '6px 12px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>เริ่มฝึกงาน</button>
                           )}
                           {request.status === 'รอสถานประกอบการตอบรับ' && (
                             <button
@@ -668,46 +684,45 @@ const AdminDashboardPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Start Internship Confirm Modal */}
-      <Dialog open={semesterModal.open} onClose={() => setSemesterModal({ open: false, requestId: null })} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>ยืนยันการเริ่มฝึกงาน</DialogTitle>
-        <DialogContent sx={{ py: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            ต้องการเริ่มสถานะฝึกงานสำหรับคำร้องนี้หรือไม่?
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-          <Button variant="outlined" onClick={() => setSemesterModal({ open: false, requestId: null })}>ไม่ยืนยัน</Button>
-          <Button variant="contained" onClick={handleConfirmStartInternship} sx={{ bgcolor: '#667eea', '&:hover': { bgcolor: '#5a6fd6' } }}>
-            ยืนยัน
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Dispatch Letter Modal */}
       <Dialog open={dispatchModal.open} onClose={handleDispatchModalClose} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>แนบไฟล์หนังสือส่งตัวก่อนอนุมัติ</DialogTitle>
         <DialogContent sx={{ py: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            กรุณาอัปโหลดไฟล์หนังสือส่งตัว (PDF, JPG หรือ PNG) เพื่อแนบไปกับการอนุมัติคำร้อง
+            กรุณาอัปโหลดไฟล์หนังสือส่งตัว (PDF, JPG หรือ PNG) และสามารถระบุข้อความ/หมายเหตุเพิ่มเติมถึงนักศึกษาได้
           </Typography>
-          <Button variant="outlined" component="label" sx={{ mb: 2 }}>
-            เลือกไฟล์
-            <input
-              ref={dispatchFileInputRef}
-              type="file"
-              hidden
-              accept="application/pdf,image/jpeg,image/png,image/jpg"
-              onChange={handleDispatchFileChange}
-            />
-          </Button>
+
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="ข้อความเพิ่มเติม / หมายเหตุถึงนักศึกษา (ถ้ามี)"
+            placeholder="เช่น ให้นักศึกษานำรูปถ่าย 2 นิ้ว 2 ใบมาเพิ่ม หรือรายละเอียดวันเวลารับเอกสารเพิ่มเติม"
+            value={dispatchModal.comment || ''}
+            onChange={(e) => setDispatchModal((prev) => ({ ...prev, comment: e.target.value }))}
+            sx={{ mb: 2.5 }}
+          />
+
+          <Box sx={{ mb: 1.5 }}>
+            <Button variant="outlined" component="label">
+              เลือกไฟล์หนังสือส่งตัว
+              <input
+                ref={dispatchFileInputRef}
+                type="file"
+                hidden
+                accept="application/pdf,image/jpeg,image/png,image/jpg"
+                onChange={handleDispatchFileChange}
+              />
+            </Button>
+          </Box>
           {dispatchModal.file && (
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              ไฟล์ที่เลือก: <strong>{dispatchModal.file.name}</strong>
+            <Typography variant="body2" sx={{ mb: 1, color: '#059669', fontWeight: 600 }}>
+              ✓ ไฟล์ที่เลือก: <strong>{dispatchModal.file.name}</strong>
             </Typography>
           )}
           {dispatchModal.error && (
-            <Typography variant="body2" color="error">
+            <Typography variant="body2" color="error" sx={{ mt: 1 }}>
               {dispatchModal.error}
             </Typography>
           )}
@@ -787,6 +802,290 @@ const AdminDashboardPage = () => {
           ))}
         </Stack>
       </Popover>
+
+      {/* Selective Deletion Modal */}
+      <Dialog
+        open={deleteModal.open}
+        onClose={() => !deleteModal.submitting && setDeleteModal(prev => ({ ...prev, open: false }))}
+        maxWidth="sm"
+        fullWidth
+        disableScrollLock={true}
+        ModalProps={{ disableScrollLock: true }}
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: 3, sm: 4 },
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.12)',
+            m: { xs: 1.5, sm: 2 }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', bgcolor: '#ffffff', borderBottom: '1px solid #f1f5f9', py: 2.5, px: 3, display: 'flex', alignItems: 'center', gap: 1.75 }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: 3, bgcolor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', flexShrink: 0, border: '1px solid #fecaca' }}>
+            <TrashIcon style={{ width: 24, height: 24 }} />
+          </Box>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', lineHeight: 1.2, fontSize: '1.15rem' }}>
+              ยืนยันการลบข้อมูลคำร้อง
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+              เลือกรายการข้อมูลที่ต้องการลบออกอย่างถาวร
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: { xs: 2, sm: 3 }, pt: '20px !important', bgcolor: '#ffffff' }}>
+          {/* Warning & Target Info Header */}
+          <Box
+            sx={{
+              mt: 0.5,
+              mb: 2.5,
+              p: 2,
+              borderRadius: 3,
+              bgcolor: '#fff5f5',
+              border: '1.5px solid #fecaca',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.25,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ExclamationTriangleIcon style={{ width: 20, height: 20, color: '#dc2626', flexShrink: 0 }} />
+              <Typography variant="body2" sx={{ fontWeight: 800, color: '#991b1b', lineHeight: 1.3 }}>
+                คำเตือนความปลอดภัย: ข้อมูลที่ถูกลบจะไม่สามารถกู้คืนได้ โปรดเลือกรายการที่ต้องการลบ
+              </Typography>
+            </Box>
+
+            {deleteModal.targetRequest && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', pt: 1, borderTop: '1px dashed #fca5a5' }}>
+                <Typography variant="caption" sx={{ color: '#7f1d1d', fontWeight: 700 }}>
+                  คำร้องที่เลือก:
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: '#ffffff',
+                    px: 1.25,
+                    py: 0.35,
+                    borderRadius: 2,
+                    border: '1px solid #f87171',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                    {deleteModal.targetRequest.studentId || deleteModal.targetRequest.student_code || '-'} - {deleteModal.targetRequest.studentName}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.72rem' }}>
+                    ({deleteModal.targetRequest.company || deleteModal.targetRequest.department || '-'})
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          {/* Selective Cards */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {/* Card 1: Requests */}
+            <Paper
+              elevation={0}
+              onClick={() => setDeleteModal(prev => ({ ...prev, deleteRequests: !prev.deleteRequests }))}
+              sx={{
+                p: 1.75,
+                px: 2,
+                borderRadius: 3,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                bgcolor: deleteModal.deleteRequests ? '#ffffff' : '#f8fafc',
+                border: deleteModal.deleteRequests ? '2px solid #ef4444' : '1.5px solid #e2e8f0',
+                boxShadow: deleteModal.deleteRequests ? '0 4px 14px rgba(239, 68, 68, 0.12)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'space-between',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
+                <Checkbox
+                  checked={deleteModal.deleteRequests}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setDeleteModal(prev => ({ ...prev, deleteRequests: e.target.checked }));
+                  }}
+                  sx={{
+                    color: '#94a3b8',
+                    '&.Mui-checked': { color: '#ef4444' }
+                  }}
+                />
+                <Box sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2.5,
+                  bgcolor: deleteModal.deleteRequests ? '#eff6ff' : '#f1f5f9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  color: deleteModal.deleteRequests ? '#2563eb' : '#64748b',
+                  flexShrink: 0
+                }}>
+                  <DocumentTextIcon style={{ width: 22, height: 22 }} />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                    ลบคำร้องขอฝึกงาน
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                    คำร้องขอเข้าฝึกงาน + ผลการประเมินนิเทศงานทั้งหมด
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+
+            {/* Card 2: Daily Checkins */}
+            <Paper
+              elevation={0}
+              onClick={() => setDeleteModal(prev => ({ ...prev, deleteCheckins: !prev.deleteCheckins }))}
+              sx={{
+                p: 1.75,
+                px: 2,
+                borderRadius: 3,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                bgcolor: deleteModal.deleteCheckins ? '#ffffff' : '#f8fafc',
+                border: deleteModal.deleteCheckins ? '2px solid #ef4444' : '1.5px solid #e2e8f0',
+                boxShadow: deleteModal.deleteCheckins ? '0 4px 14px rgba(239, 68, 68, 0.12)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'space-between',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
+                <Checkbox
+                  checked={deleteModal.deleteCheckins}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setDeleteModal(prev => ({ ...prev, deleteCheckins: e.target.checked }));
+                  }}
+                  sx={{
+                    color: '#94a3b8',
+                    '&.Mui-checked': { color: '#ef4444' }
+                  }}
+                />
+                <Box sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2.5,
+                  bgcolor: deleteModal.deleteCheckins ? '#ecfdf5' : '#f1f5f9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  color: deleteModal.deleteCheckins ? '#059669' : '#64748b',
+                  flexShrink: 0
+                }}>
+                  <CalendarIcon style={{ width: 22, height: 22 }} />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                    ลบรายงานประจำวัน
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                    ประวัติการลงเวลาและบันทึกสมุดรายงานประจำวัน
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+
+            {/* Card 3: Payment Proofs */}
+            <Paper
+              elevation={0}
+              onClick={() => setDeleteModal(prev => ({ ...prev, deletePayments: !prev.deletePayments }))}
+              sx={{
+                p: 1.75,
+                px: 2,
+                borderRadius: 3,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                bgcolor: deleteModal.deletePayments ? '#ffffff' : '#f8fafc',
+                border: deleteModal.deletePayments ? '2px solid #ef4444' : '1.5px solid #e2e8f0',
+                boxShadow: deleteModal.deletePayments ? '0 4px 14px rgba(239, 68, 68, 0.12)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'space-between',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
+                <Checkbox
+                  checked={deleteModal.deletePayments}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setDeleteModal(prev => ({ ...prev, deletePayments: e.target.checked }));
+                  }}
+                  sx={{
+                    color: '#94a3b8',
+                    '&.Mui-checked': { color: '#ef4444' }
+                  }}
+                />
+                <Box sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2.5,
+                  bgcolor: deleteModal.deletePayments ? '#fef3c7' : '#f1f5f9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  color: deleteModal.deletePayments ? '#d97706' : '#64748b',
+                  flexShrink: 0
+                }}>
+                  <CreditCardIcon style={{ width: 22, height: 22 }} />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                    ลบหลักฐานการชำระเงิน
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                    สลิปโอนเงินและประวัติการชำระเงินค่าฝึกงาน
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, px: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', justifyContent: 'space-between' }}>
+          <Button
+            onClick={() => setDeleteModal(prev => ({ ...prev, open: false }))}
+            disabled={deleteModal.submitting}
+            variant="outlined"
+            sx={{ borderRadius: 2.5, px: 3, fontWeight: 700, color: '#334155', borderColor: '#cbd5e1', bgcolor: '#ffffff', '&:hover': { bgcolor: '#f1f5f9' } }}
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmSelectiveDelete}
+            startIcon={<TrashIcon style={{ width: 18, height: 18 }} />}
+            disabled={deleteModal.submitting || (!deleteModal.deleteRequests && !deleteModal.deleteCheckins && !deleteModal.deletePayments)}
+            sx={{
+              borderRadius: 2.5,
+              px: 3.5,
+              py: 1,
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                boxShadow: '0 6px 20px rgba(239, 68, 68, 0.45)',
+              },
+              '&.Mui-disabled': {
+                background: '#e2e8f0',
+                color: '#94a3b8',
+              }
+            }}
+          >
+            {deleteModal.submitting ? 'กำลังลบข้อมูล...' : 'ยืนยันการลบข้อมูลที่เลือก'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

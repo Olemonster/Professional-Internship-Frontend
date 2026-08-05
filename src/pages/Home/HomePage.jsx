@@ -15,7 +15,7 @@ import api from '../../api/axios';
 import './HomePage.css';
 import logo from '../../assets/LASC-SSKRU-1.png';
 import sskruBg from '../../assets/SSKRU_BG.png';
-import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
+import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon, DocumentPlusIcon, UserIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -171,30 +171,33 @@ const HomePage = () => {
                 variant="contained" 
                 size="small"
                 sx={{ 
-                  borderRadius: '24px',
+                  borderRadius: '20px',
                   background: 'linear-gradient(135deg, #111111 0%, #262626 100%)',
                   color: '#ffffff', 
                   fontWeight: 700, 
-                  fontSize: '0.88rem',
+                  fontSize: '0.78rem',
                   fontFamily: '"Prompt", "Kanit", sans-serif',
-                  px: 2.5, 
-                  py: 0.8, 
+                  px: 1.75, 
+                  py: 0.5, 
                   textTransform: 'none',
-                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid rgba(217, 119, 6, 0.4)',
+                  boxShadow: '0 3px 10px rgba(0, 0, 0, 0.12)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
                   '& .MuiButton-endIcon': {
                     transition: 'transform 0.3s ease',
+                    ml: 0.5,
                   },
                   '&:hover': { 
                     background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(217, 119, 6, 0.35)',
+                    borderColor: '#d97706',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 16px rgba(217, 119, 6, 0.35)',
                     '& .MuiButton-endIcon': {
-                      transform: 'translateX(4px)',
+                      transform: 'translateX(3px)',
                     }
                   } 
                 }}
-                endIcon={<ArrowRightIcon style={{ width: 16, height: 16 }} />}
+                endIcon={<ArrowRightIcon style={{ width: 14, height: 14 }} />}
               >
                 เข้าสู่ระบบ
               </Button>
@@ -206,38 +209,39 @@ const HomePage = () => {
                   variant="contained"
                   size="small"
                   sx={{
-                    borderRadius: '24px',
+                    borderRadius: '20px',
                     background: 'linear-gradient(135deg, #111111 0%, #262626 100%)',
                     color: '#ffffff',
                     fontWeight: 700,
-                    fontSize: '0.88rem',
+                    fontSize: '0.78rem',
                     fontFamily: '"Prompt", "Kanit", sans-serif',
-                    px: 2.5,
-                    py: 0.8,
+                    px: 1.75,
+                    py: 0.5,
                     textTransform: 'none',
                     border: '1px solid rgba(217, 119, 6, 0.4)',
-                    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+                    boxShadow: '0 3px 10px rgba(0, 0, 0, 0.12)',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '& .MuiButton-endIcon': {
                       transition: 'transform 0.3s ease',
+                      ml: 0.5,
                     },
                     '&:hover': {
-                      transform: 'translateY(-2px)',
+                      transform: 'translateY(-1px)',
                       background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
                       borderColor: '#d97706',
-                      boxShadow: '0 6px 20px rgba(217, 119, 6, 0.35)',
+                      boxShadow: '0 4px 16px rgba(217, 119, 6, 0.35)',
                       '& .MuiButton-endIcon': {
-                        transform: 'translateX(4px)',
+                        transform: 'translateX(3px)',
                       }
                     }
                   }}
-                  endIcon={<ArrowRightIcon style={{ width: 16, height: 16 }} />}
+                  endIcon={<ArrowRightIcon style={{ width: 14, height: 14 }} />}
                 >
-                  {user.role === 'student' ? 'ไปยื่นคำร้อง' : 'ไปยังแดชบอร์ด'}
+                  {user.role === 'student' ? 'ยื่นคำร้อง' : 'แดชบอร์ด'}
                 </Button>
 
                 <IconButton onClick={handleOpenMenu} size="small" sx={{ p: 0.25 }}>
-                  <Avatar sx={{ width: 38, height: 38, background: '#111111', color: '#f59e0b', border: '1.5px solid #d97706', fontSize: '1rem', fontWeight: 700 }}>
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: '#000000', color: '#fbbf24', border: '1.5px solid #000000', fontSize: '0.85rem', fontWeight: 800 }}>
                     {(user?.name || user?.full_name || 'U').charAt(0).toUpperCase()}
                   </Avatar>
                 </IconButton>
@@ -248,17 +252,92 @@ const HomePage = () => {
                   onClose={handleCloseMenu}
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  PaperProps={{
+                    sx: {
+                      mt: 1.5,
+                      width: 220,
+                      borderRadius: '16px',
+                      background: '#111111',
+                      border: '1px solid rgba(217, 119, 6, 0.35)',
+                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+                      color: '#ffffff',
+                      p: 1,
+                      overflow: 'visible',
+                      '&:before': {
+                        content: '""',
+                        display: 'block',
+                        position: 'absolute',
+                        top: 0,
+                        right: 14,
+                        width: 10,
+                        height: 10,
+                        bgcolor: '#111111',
+                        borderLeft: '1px solid rgba(217, 119, 6, 0.35)',
+                        borderTop: '1px solid rgba(217, 119, 6, 0.35)',
+                        transform: 'translateY(-50%) rotate(45deg)',
+                        zIndex: 0,
+                      },
+                    }
+                  }}
                 >
+                  {/* User Profile Header in Menu */}
+                  <Box sx={{ px: 1.5, py: 1.25, pb: 1.5, borderBottom: '1px solid rgba(255, 255, 255, 0.1)', mb: 0.75 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#ffffff', fontSize: '0.88rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user?.name || user?.full_name || 'ผู้ใช้งาน'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.75rem', display: 'block', mt: 0.25 }}>
+                      {user?.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : user?.role === 'advisor' ? 'อาจารย์ที่ปรึกษา' : 'นักศึกษา'}
+                    </Typography>
+                  </Box>
+
                   {getProfilePath(user.role) && (
                     <MenuItem
                       component={Link}
                       to={getProfilePath(user.role)}
                       onClick={handleCloseMenu}
+                      sx={{
+                        borderRadius: '10px',
+                        py: 1,
+                        px: 1.5,
+                        gap: 1.5,
+                        fontSize: '0.88rem',
+                        fontWeight: 600,
+                        color: '#f3f4f6',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: 'rgba(217, 119, 6, 0.18)',
+                          color: '#fbbf24',
+                          transform: 'translateX(3px)',
+                        }
+                      }}
                     >
+                      <UserIcon style={{ width: 18, height: 18, color: '#f59e0b' }} />
                       โปรไฟล์
                     </MenuItem>
                   )}
-                  <MenuItem className="logout-btn" onClick={handleLogout}>ออกจากระบบ</MenuItem>
+
+                  <MenuItem
+                    onClick={handleLogout}
+                    sx={{
+                      borderRadius: '10px',
+                      py: 1,
+                      px: 1.5,
+                      gap: 1.5,
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: '#f87171',
+                      mt: 0.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(239, 68, 68, 0.15)',
+                        color: '#ef4444',
+                        transform: 'translateX(3px)',
+                      }
+                    }}
+                  >
+                    <ArrowLeftOnRectangleIcon style={{ width: 18, height: 18, color: '#ef4444' }} />
+                    ออกจากระบบ
+                  </MenuItem>
                 </Menu>
               </>
             )}

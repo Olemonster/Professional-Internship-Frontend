@@ -963,7 +963,7 @@ const NewRequestPage = () => {
             <div className="form-section">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 style={{ margin: 0 }}>ข้อมูลสถานประกอบการ</h2>
-                <Button variant="outlined" size="small" onClick={handleOpenCompanyPicker} disabled={hasExistingRequest}>
+                <Button type="button" variant="outlined" size="small" onClick={handleOpenCompanyPicker} disabled={hasExistingRequest}>
                   เลือกจากรายการแนะนำ
                 </Button>
               </div>
@@ -1292,6 +1292,8 @@ const NewRequestPage = () => {
         fullWidth
         maxWidth="md"
         scroll="paper"
+        disableScrollLock={true}
+        ModalProps={{ disableScrollLock: true }}
         PaperProps={{ sx: { maxHeight: '85vh' } }}
       >
         <DialogTitle>เลือกสถานประกอบการแนะนำ</DialogTitle>

@@ -81,18 +81,22 @@ const RequestDetailsPage = () => {
     }
 
     if (userRole === 'admin') {
-      if (dispatchFileInputRef.current) {
-        dispatchFileInputRef.current.value = '';
-      }
-      setDispatchModal({ open: true, file: null, submitting: false, error: '' });
+      handleOpenDispatchModal();
     }
+  };
+
+  const handleOpenDispatchModal = () => {
+    if (dispatchFileInputRef.current) {
+      dispatchFileInputRef.current.value = '';
+    }
+    setDispatchModal({ open: true, file: null, comment: '', submitting: false, error: '' });
   };
 
   const handleDispatchModalClose = () => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
     }
-    setDispatchModal({ open: false, file: null, submitting: false, error: '' });
+    setDispatchModal({ open: false, file: null, comment: '', submitting: false, error: '' });
   };
 
   const handleDispatchFileChange = (event) => {
@@ -122,6 +126,7 @@ const RequestDetailsPage = () => {
       const dataUrl = await fileToDataUrl(dispatchModal.file);
       const payload = {
         status: 'รอสถานประกอบการตอบรับ',
+        admin_comment: dispatchModal.comment?.trim() || null,
         dispatchLetter: {
           fileName: dispatchModal.file.name,
           mimeType: dispatchModal.file.type,
@@ -129,7 +134,7 @@ const RequestDetailsPage = () => {
         },
       };
       await api.patch(`/requests/${id}/status`, payload);
-      const updated = { ...request, status: 'รอสถานประกอบการตอบรับ', dispatchLetter: { fileName: dispatchModal.file.name } };
+      const updated = { ...request, status: 'รอสถานประกอบการตอบรับ', admin_comment: dispatchModal.comment?.trim() || null, dispatchLetter: { fileName: dispatchModal.file.name } };
       setRequest(updated);
       setToast({ open: true, message: 'ตรวจสอบและส่งคำขอไปยังสถานประกอบการเรียบร้อยแล้ว', severity: 'success' });
       const link = `${window.location.origin}/public/request/${id}`;
@@ -195,7 +200,8 @@ const RequestDetailsPage = () => {
       'รอผู้ดูแลระบบตรวจสอบ': { bg: '#c3dafe', color: '#434190' },
       'รอผู้ดูแลระบบอนุมัติ': { bg: '#c3dafe', color: '#434190' }, // Legacy support
       'รอสถานประกอบการตอบรับ': { bg: '#e2e8f0', color: '#2d3748' },
-      'อนุมัติแล้ว': { bg: '#d4edda', color: '#155724' },
+      'รออาจารย์อนุมัติเริ่มฝึกงาน': { bg: '#d1fae5', color: '#065f46', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
+      'อนุมัติแล้ว': { bg: '#d1fae5', color: '#065f46', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
       'ออกฝึกงาน': { bg: '#c4f1f9', color: '#0c4a6e' },
       'ประเมินเสร็จแล้ว': { bg: '#ddd6fe', color: '#4c1d95' },
       'ฝึกงานเสร็จแล้ว': { bg: '#fbcfe8', color: '#9d174d' },
@@ -204,7 +210,7 @@ const RequestDetailsPage = () => {
       'ปฏิเสธ': { bg: '#f8d7da', color: '#721c24' }
     };
     const style = statusStyles[status] || { bg: '#e2e3e5', color: '#383d41' };
-    return { ...style, label: status };
+    return { ...style, label: style.label || status };
   };
 
   const formatAddress = (address) => {
@@ -551,25 +557,39 @@ const RequestDetailsPage = () => {
         <DialogTitle sx={{ fontWeight: 700 }}>แนบไฟล์หนังสือส่งตัวก่อนอนุมัติ</DialogTitle>
         <DialogContent sx={{ py: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ (JPG, PNG) เพื่อใช้เป็นหนังสือส่งตัวก่อนส่งคำขอไปยังสถานประกอบการ
+            กรุณาอัปโหลดไฟล์หนังสือส่งตัว (PDF, JPG หรือ PNG) และสามารถระบุข้อความ/หมายเหตุเพิ่มเติมถึงนักศึกษาได้
           </Typography>
-          <Button variant="outlined" component="label" sx={{ mb: 2 }}>
-            เลือกไฟล์
-            <input
-              ref={dispatchFileInputRef}
-              type="file"
-              hidden
-              accept="application/pdf,image/jpeg,image/png,image/jpg"
-              onChange={handleDispatchFileChange}
-            />
-          </Button>
+
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="ข้อความเพิ่มเติม / หมายเหตุถึงนักศึกษา (ถ้ามี)"
+            placeholder="เช่น ให้นักศึกษานำรูปถ่าย 2 นิ้ว 2 ใบมาเพิ่ม หรือรายละเอียดวันเวลารับเอกสารเพิ่มเติม"
+            value={dispatchModal.comment || ''}
+            onChange={(e) => setDispatchModal((prev) => ({ ...prev, comment: e.target.value }))}
+            sx={{ mb: 2.5 }}
+          />
+
+          <Box sx={{ mb: 1.5 }}>
+            <Button variant="outlined" component="label">
+              เลือกไฟล์หนังสือส่งตัว
+              <input
+                ref={dispatchFileInputRef}
+                type="file"
+                hidden
+                accept="application/pdf,image/jpeg,image/png,image/jpg"
+                onChange={handleDispatchFileChange}
+              />
+            </Button>
+          </Box>
           {dispatchModal.file && (
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              ไฟล์ที่เลือก: <strong>{dispatchModal.file.name}</strong>
+            <Typography variant="body2" sx={{ mb: 1, color: '#059669', fontWeight: 600 }}>
+              ✓ ไฟล์ที่เลือก: <strong>{dispatchModal.file.name}</strong>
             </Typography>
           )}
           {dispatchModal.error && (
-            <Typography variant="body2" color="error">
+            <Typography variant="body2" color="error" sx={{ mt: 1 }}>
               {dispatchModal.error}
             </Typography>
           )}
@@ -631,6 +651,32 @@ const RequestDetailsPage = () => {
         <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'center' }}>
           <Button variant="outlined" onClick={handleCloseQrModal}>ปิด</Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog 
+        open={imageModal} 
+        onClose={() => setImageModal(false)}
+        maxWidth="md"
+        disableScrollLock={true}
+        ModalProps={{ disableScrollLock: true }}
+        PaperProps={{ sx: { borderRadius: 3, p: 0.5, overflow: 'hidden' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: '1px solid #f1f5f9' }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+            รูปถ่ายนักศึกษา: {request?.studentName}
+          </Typography>
+          <Button size="small" onClick={() => setImageModal(false)} sx={{ color: '#64748b', fontWeight: 700 }}>
+            ปิด
+          </Button>
+        </DialogTitle>
+        <DialogContent sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f8fafc' }}>
+          <img 
+            src={request?.details?.studentPhoto?.dataUrl} 
+            alt="Student Photo" 
+            style={{ maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} 
+          />
+        </DialogContent>
       </Dialog>
 
       {(userRole === 'admin' || userRole === 'advisor') && (

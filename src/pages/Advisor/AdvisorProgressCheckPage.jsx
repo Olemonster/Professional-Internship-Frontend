@@ -292,23 +292,31 @@ const AdvisorProgressCheckPage = () => {
         </Paper>
       </main>
 
-      <Dialog open={historyDialog.open} onClose={closeHistoryDialog} fullWidth maxWidth="lg">
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, pb: 1, borderBottom: '1px solid #e2e8f0' }}>
+      <Dialog 
+        open={historyDialog.open} 
+        onClose={closeHistoryDialog} 
+        fullWidth 
+        maxWidth="lg"
+        disableScrollLock={true}
+        ModalProps={{ disableScrollLock: true }}
+        PaperProps={{ sx: { borderRadius: { xs: 2.5, sm: 3 }, p: { xs: 0.5, sm: 1 }, m: { xs: 1, sm: 2 }, width: { xs: 'calc(100% - 16px)', sm: 'auto' } } }}
+      >
+        <DialogTitle sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1.5, pb: 1.5, borderBottom: '1px solid #e2e8f0' }}>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', fontSize: { xs: '0.95rem', sm: '1.15rem' }, lineHeight: 1.3 }}>
               ประวัติรายงานประจำวัน: {historyDialog.studentName} ({historyDialog.studentId})
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1, backgroundColor: '#f1f5f9', p: 0.5, borderRadius: 2 }}>
+          <Box sx={{ display: 'flex', gap: 0.75, backgroundColor: '#f1f5f9', p: 0.5, borderRadius: 2, '& .MuiButton-root': { flex: 1 } }}>
             <Button
               size="small"
               variant={dialogView === 'calendar' ? 'contained' : 'text'}
               disableElevation
               onClick={() => setDialogView('calendar')}
               startIcon={<CalendarIcon style={{ width: 16, height: 16 }} />}
-              sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+              sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 700, fontSize: '0.75rem' }}
             >
-              มุมมองปฏิทิน
+              ปฏิทิน
             </Button>
             <Button
               size="small"
@@ -316,13 +324,13 @@ const AdvisorProgressCheckPage = () => {
               disableElevation
               onClick={() => setDialogView('table')}
               startIcon={<TableCellsIcon style={{ width: 16, height: 16 }} />}
-              sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+              sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 700, fontSize: '0.75rem' }}
             >
-              มุมมองตาราง
+              ตาราง
             </Button>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ p: 2.5, backgroundColor: '#f8fafc' }}>
+        <DialogContent sx={{ p: { xs: 1, sm: 2.5 }, backgroundColor: '#f8fafc' }}>
           {dialogView === 'calendar' ? (
             <Box sx={{ pt: 1 }}>
               <AttendanceCalendar entries={historyDialog.entries} />

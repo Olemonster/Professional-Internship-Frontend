@@ -178,34 +178,6 @@
 .form-group-profile {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-group-profile label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #64748b;
-}
-
-.form-group-profile input {
-    padding: 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    color: #1e293b;
-    font-size: 0.95rem;
-    transition: border-color 0.2s;
-}
-
-.form-group-profile input:disabled {
-    background: #f8fafc;
-    color: #475569;
-    cursor: default;
-}
-
-.form-group-profile input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 @media (max-width: 768px) {
