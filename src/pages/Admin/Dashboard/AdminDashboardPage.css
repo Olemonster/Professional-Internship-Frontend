@@ -89,6 +89,7 @@
   flex: 1;
   margin-left: 260px;
   padding: 2rem;
+  padding-bottom: 6rem !important;
   overflow-y: visible;
   min-width: 0;
 }
@@ -637,6 +638,7 @@ tbody tr:hover {
   .admin-main {
     margin-left: 0;
     padding-top: 5rem;
+    padding-bottom: 6rem !important;
   }
 
   /* Keep all role tables as horizontal-scroll tables on mobile */
