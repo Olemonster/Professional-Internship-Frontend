@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import lascLogo from '../../../assets/LASC-SSKRU-1.png';
+import { API_BASE } from '../../../api/axios';
 import {
   TrashIcon,
   ExclamationTriangleIcon,
@@ -68,8 +69,6 @@ const StudentListPage = () => {
   });
 
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
-
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
   const getToken = () => {
     try {

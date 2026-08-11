@@ -400,18 +400,6 @@ const RequestDetailsPage = () => {
           </section>
         )}
 
-        {/* Image Modal */}
-        <Dialog open={imageModal} onClose={() => setImageModal(false)} maxWidth="md">
-          <DialogContent style={{ padding: '0', backgroundColor: '#000', textAlign: 'center' }}>
-            {details.studentPhoto?.dataUrl && (
-              <img 
-                src={details.studentPhoto.dataUrl} 
-                alt="รูปนักศึกษา (Full)" 
-                style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
-              />
-            )}
-          </DialogContent>
-        </Dialog>
 
         {request.rejectReason && (
              <section className="detail-section" style={{ backgroundColor: '#fff5f5', padding: '15px', borderRadius: '8px', border: '1px solid #fed7d7' }}>
@@ -670,11 +658,11 @@ const RequestDetailsPage = () => {
             ปิด
           </Button>
         </DialogTitle>
-        <DialogContent sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f8fafc' }}>
+        <DialogContent sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f8fafc', overflow: 'hidden' }}>
           <img 
-            src={request?.details?.studentPhoto?.dataUrl} 
+            src={request?.details?.studentPhoto?.dataUrl || request?.details?.studentPhoto} 
             alt="Student Photo" 
-            style={{ maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} 
+            style={{ maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', display: 'block' }} 
           />
         </DialogContent>
       </Dialog>

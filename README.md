@@ -75,10 +75,30 @@ src/
 4. **Data Hooks & Helpers** — แต่ละหน้าใช้ `api/*Service` และ helper ใน `utils/` เพื่อจัดรูปแบบวันเวลา ตัวเลข และ export
 5. **Feedback & Validation** — ใช้ Material UI Snackbar/Dialog แจ้งผล และมี validation ฝั่ง client สำหรับฟอร์มสำคัญ
 
-## Deployment (Frontend เท่านั้น)
+## Deployment บน Railway
+
+### 1. การเชื่อมต่อกับ Backend บน Railway & Database ใหม่
+ตั้งค่า Environment Variable บน Railway หรือในไฟล์ `.env`:
+```env
+VITE_API_BASE_URL=https://<your-backend-railway-domain>.up.railway.app/api
+```
+
+> ⚠️ **ข้อควรระวัง**: Vite บันเดิลค่า `VITE_API_BASE_URL` ในขั้นตอน `build` ดังนั้นต้องกำหนด Variable นี้ใน Railway Environment Variables **ก่อนสั่ง Deploy/Build**
+
+### 2. การ Deploy บน Railway Web Service
+1. สร้าง **New Project / Web Service** บน Railway แล้วเชื่อมต่อกับ GitHub Repository นี้
+2. กำหนด **Environment Variable**:
+   - `VITE_API_BASE_URL` = `https://<your-backend-service-domain>.up.railway.app/api`
+3. Railway จะรันคำสั่งอัตโนมัติผ่าน `nixpacks.toml`:
+   - **Build**: `npm run build`
+   - **Start**: `npm start` (รัน `server.js` บน dynamic `$PORT` พร้อมรองรับ SPA Routing Fallback)
+
+---
+
+## Deployment (Static Hosting)**
 
 1. `npm run build`
-2. อัปโหลดโฟลเดอร์ `dist/` ไปยัง static hosting (Netlify, Vercel, S3 ฯลฯ)
+2. อัปโหลดโฟลเดอร์ `dist/` ไปยัง static hosting (Netlify, Vercel, Railway Static, S3 ฯลฯ)
 3. ตั้งค่า environment บนโฮสต์ให้ตรงกับ `.env` โดยเฉพาะ `VITE_API_BASE_URL`
 
 ## Flow Diagram (ข้อความ)

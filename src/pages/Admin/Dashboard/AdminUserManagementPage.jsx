@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import lascLogo from '../../../assets/LASC-SSKRU-1.png';
 import * as XLSX from 'xlsx';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+import { API_BASE } from '../../../api/axios';
 
 const getToken = () => {
   try {
