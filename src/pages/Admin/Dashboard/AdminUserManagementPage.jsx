@@ -61,17 +61,12 @@ const AdminUserManagementPage = () => {
   const [uploadSummary, setUploadSummary] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  // Form State
   const [formData, setFormData] = useState({
     username: '',
-    password: '',
+    email: '',
     name: '',
+    password: '',
     role: 'student',
-    studentId: '', // For students
-    department: '', // For students/advisors
-    address: '', // For companies
-    phone: '', // For companies/students
-    contactPerson: '' // For companies
   });
 
   useEffect(() => {
@@ -109,28 +104,20 @@ const AdminUserManagementPage = () => {
     if (user) {
       setEditingUser(user);
       setFormData({
-        username: user.username || user.email || '',
-        password: user.password || '',
-        name: user.name || user.full_name || '',
-        role: user.role || 'student',
-        studentId: user.studentId || user.student_code || '',
-        department: user.department || user.major || '',
-        address: user.address || '',
-        phone: user.phone || '',
-        contactPerson: user.contactPerson || ''
+        username: user.username || '',
+        email:    user.email || '',
+        name:     user.full_name || user.name || '',
+        password: '',
+        role:     user.role || 'student',
       });
     } else {
       setEditingUser(null);
       setFormData({
         username: '',
-        password: '',
+        email: '',
         name: '',
+        password: '',
         role: 'student',
-        studentId: '',
-        department: '',
-        address: '',
-        phone: '',
-        contactPerson: ''
       });
     }
     setIsModalOpen(true);
@@ -322,29 +309,42 @@ const AdminUserManagementPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate
-    if (!formData.username || !formData.name || !formData.role) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน (Username, ชื่อ, ตำแหน่ง)');
+    if (!formData.username || !formData.role) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน (Username, ตำแหน่ง)');
       return;
     }
 
     try {
       if (editingUser) {
-        const lockedRole = editingUser.role === 'student' || editingUser.role === 'advisor';
-        const nextRole = lockedRole ? editingUser.role : formData.role;
-        const payload = { ...formData, role: nextRole };
-        if (!payload.password) delete payload.password;
+        // แก้ไข: ส่งข้อมูลรวมชื่อ (ซิงค์ลง profile)
+        const payload = {
+          username: formData.username,
+          email:    formData.email || formData.username,
+          name:     formData.name,
+          role:     formData.role,
+        };
+        if (formData.password) payload.password = formData.password;
         await apiFetch(`/users/${editingUser.id}`, {
           method: 'PUT',
           body: JSON.stringify(payload),
         });
       } else {
+        // สร้างใหม่: ต้องมี password
+        if (!formData.password) {
+          alert('กรุณากรอกรหัสผ่านสำหรับผู้ใช้ใหม่');
+          return;
+        }
         await apiFetch('/users', {
           method: 'POST',
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            username: formData.username,
+            email:    formData.email || formData.username,
+            name:     formData.name,
+            password: formData.password,
+            role:     formData.role,
+          }),
         });
       }
-      // Reload users
       const usersData = await apiFetch('/users');
       setUsers(usersData.data || []);
       handleCloseModal();
@@ -666,7 +666,7 @@ const AdminUserManagementPage = () => {
                 })}
                 {filteredUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 2.5 }}>ไม่พบข้อมูลผู้ใช้</TableCell>
+                    <TableCell colSpan={6} align="center" sx={{ py: 2.5 }}>ไม่พบข้อมูลผู้ใช้</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -694,11 +694,30 @@ const AdminUserManagementPage = () => {
             <TextField
               fullWidth
               size="small"
-              label="ชื่อผู้ใช้ (Username/Email)"
+              label="ชื่อผู้ใช้ (Username)"
               name="username"
               value={formData.username}
               onChange={handleInputChange}
               required
+            />
+
+            <TextField
+              fullWidth
+              size="small"
+              type="email"
+              label="Email (เว้นว่างจะใช้ username แทน)"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+            />
+
+            <TextField
+              fullWidth
+              size="small"
+              label="ชื่อ-นามสกุล (Name)"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
             />
 
             <TextField
@@ -709,17 +728,8 @@ const AdminUserManagementPage = () => {
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              helperText={editingUser ? 'เว้นว่างหากไม่ต้องการเปลี่ยน' : 'หากไม่กรอกจะใช้ค่าเริ่มต้น'}
-            />
-
-            <TextField
-              fullWidth
-              size="small"
-              label="ชื่อ-นามสกุล"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
+              helperText={editingUser ? 'เว้นว่างหากไม่ต้องการเปลี่ยน' : 'จำเป็นสำหรับผู้ใช้ใหม่'}
+              required={!editingUser}
             />
 
             <TextField
@@ -730,41 +740,12 @@ const AdminUserManagementPage = () => {
               name="role"
               value={formData.role}
               onChange={handleInputChange}
-              disabled={Boolean(editingUser && (editingUser.role === 'student' || editingUser.role === 'advisor'))}
-              helperText={editingUser && (editingUser.role === 'student' || editingUser.role === 'advisor') ? 'บัญชีนักศึกษาและอาจารย์ไม่สามารถเปลี่ยนบทบาทได้' : ''}
             >
-              <MenuItem value="student">นักศึกษา</MenuItem>
+            <MenuItem value="student">นักศึกษา</MenuItem>
+              <MenuItem value="alumni">ศิษย์เก่า</MenuItem>
               <MenuItem value="advisor">อาจารย์ที่ปรึกษา</MenuItem>
               <MenuItem value="admin">ผู้ดูแลระบบ</MenuItem>
             </TextField>
-
-            {formData.role === 'student' && (
-              <TextField
-                fullWidth
-                size="small"
-                label="รหัสนักศึกษา"
-                name="studentId"
-                value={formData.studentId}
-                onChange={handleInputChange}
-              />
-            )}
-
-            {(formData.role === 'student' || formData.role === 'advisor') && (
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="สาขาวิชา"
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-              >
-                <MenuItem value="">เลือกสาขา</MenuItem>
-                {departmentOptions.map((dept) => (
-                  <MenuItem key={dept} value={dept}>{dept}</MenuItem>
-                ))}
-              </TextField>
-            )}
 
           </Box>
         </DialogContent>
