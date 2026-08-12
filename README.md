@@ -1,120 +1,131 @@
-# Professional Internship (Frontend)
+# Professional Internship Frontend
 
-เว็บแอปบริหารจัดการฝึกงานที่รองรับบทบาท Student / Company / Advisor / Admin ในระบบเดียว ใช้ **React 19 + Vite + Tailwind CSS + Material UI** เพื่อสร้างประสบการณ์ที่รวดเร็วและตอบสนองทุกอุปกรณ์
+เว็บแอปพลิเคชันระบบบริหารจัดการการฝึกงานนักศึกษา (Professional Internship Management System) พัฒนาด้วย **React + Vite + Material UI + Tailwind CSS** รองรับการทำงานแบบ Multi-role สำหรับ **นักศึกษา (Student)**, **อาจารย์ที่ปรึกษา (Advisor)**, **ผู้ดูแลระบบ (Admin)** และ **สถานประกอบการ (Company/Public)**
 
-## Highlights
+---
 
-- 🧩 Multi-role Dashboards — Layout และเมนูจะปรับตามบทบาทผู้ใช้
-- 📊 Insightful Cards & Charts — ใช้ amCharts5 + Material UI พร้อมปุ่ม export XLSX
-- 🔐 Auth-aware Navigation — มี route guard และซิงก์ state กับ localStorage
-- 📱 Responsive-first — ผสาน Tailwind + custom CSS รองรับ desktop / tablet / mobile
+## 🌟 จุดเด่นของระบบ (Highlights)
 
-## โครงสร้างโปรเจกต์ (ภาพรวม)
+- 🎨 **Modern & Premium UI**: ออกแบบด้วย Material UI (MUI v5/v6) ผสาน Tailwind CSS รองรับ Dark/Light theme และ Responsive ทุกขนาดหน้าจอ
+- 🔄 **Multi-Role Dynamic Dashboard**: เมนูและหน้าควบคุมจะปรับเปลี่ยนตามบทบาทของผู้ใช้งานอัตโนมัติ
+- 📋 **End-to-End Lifecycle Tracking**: ระบบติดตามขั้นตอนคำร้องฝึกงานแบบเรียลไทม์ (Process Tracker)
+- 📝 **Public Evaluation Portal**: สถานประกอบการสามารถประเมินผลนักศึกษาผ่านลิงก์เฉพาะโดยไม่ต้องสร้างบัญชี
+- 🕒 **Daily Check-in & Work Log**: ระบบลงเวลาเข้าฝึกงานและบันทึกรายงานการปฏิบัติงานรายวัน
+- 📊 **Interactive Analytics**: กราฟแสดงสถิติผลการประเมินและอัตราการรับเข้าทำงานแยกตามสาขาวิชา
+
+---
+
+## 📁 โครงสร้างโฟลเดอร์โปรเจกต์ (Project Structure)
 
 ```text
-src/
-├─ api/          # Axios wrapper + service layer
-├─ assets/       # โลโก้ รูปภาพ ฟอนต์ (@fontsource/kanit)
-├─ components/   # Sidebar, Widgets, Cards, Tables, Charts
-├─ pages/
-│  ├─ Home/      # Landing page
-│  ├─ LoginPage/ # ฟอร์มเข้าสู่ระบบ
-│  ├─ Admin/     # Users, Requests, Check-ins, Payments dashboards
-│  ├─ Advisor/   # Advisee overview + การอนุมัติคำร้อง
-│  ├─ Company/   # รายชื่อผู้ฝึกงาน + ฟอร์มเช็คชื่อ
-│  └─ Student/   # โปรไฟล์ + ส่งคำร้อง + เช็คชื่อ + แจ้งชำระเงิน
-├─ utils/        # formatter, validators, export helpers, auth guards
-├─ App.jsx       # Routing + Layout switching ตามบทบาท
-└─ main.jsx      # Entry point + providers + router
+Professional-Internship-Frontend/
+├── src/
+│   ├── assets/               # รูปภาพ, ไอคอน, โลโก้มหาวิทยาลัย
+│   ├── components/           # Reusable UI Components (Sidebar, Navbar, ProcessTracker, Modals)
+│   ├── pages/
+│   │   ├── Home/             # หน้าแรกและข่าวประชาสัมพันธ์
+│   │   │   └── HomePage.jsx
+│   │   ├── LoginPage.jsx     # หน้าเข้าสู่ระบบ
+│   │   │
+│   │   ├── Student/          # ส่วนของนักศึกษา
+│   │   │   ├── NewRequestPage.jsx       # ยื่นคำร้องขอฝึกงานใหม่
+│   │   │   └── Dashboard/
+│   │   │       ├── DashboardPage.jsx     # หน้าแดชบอร์ดนักศึกษา
+│   │   │       ├── ProfilePage.jsx       # ข้อมูลโปรไฟล์นักศึกษา
+│   │   │       ├── MyRequestsPage.jsx    # ประวัติคำร้องของฉัน
+│   │   │       ├── StudentCheckInPage.jsx# บันทึกเวลาเข้างานรายวัน
+│   │   │       └── PaymentProofPage.jsx  # อัปโหลดหลักฐานชำระเงิน
+│   │   │
+│   │   ├── Advisor/          # ส่วนของอาจารย์ที่ปรึกษา
+│   │   │   ├── AdvisorDashboardPage.jsx    # แดชบอร์ดคำร้องนักศึกษาในความดูแล
+│   │   │   ├── AdvisorStudentListPage.jsx  # รายชื่อนักศึกษาในสาขา
+│   │   │   ├── AdvisorSupervisionPage.jsx  # วางแผนและนัดหมายวันนิเทศงาน
+│   │   │   ├── AdvisorEvaluationPage.jsx   # แบบประเมินการนิเทศงาน
+│   │   │   └── AdvisorProgressCheckPage.jsx# ติดตามการเช็คชื่อของนักศึกษา
+│   │   │
+│   │   ├── Admin/            # ส่วนของผู้ดูแลระบบ
+│   │   │   ├── Dashboard/
+│   │   │   │   ├── AdminDashboardPage.jsx           # แดชบอร์ดภาพรวมคณะ
+│   │   │   │   ├── StudentListPage.jsx              # จัดการคำร้องและออกหนังสือส่งตัว
+│   │   │   │   ├── AdminUserManagementPage.jsx      # จัดการผู้ใช้และโปรไฟล์
+│   │   │   │   ├── AdminAttendanceOverviewPage.jsx  # ภาพรวมสถิติการเช็คชื่อ
+│   │   │   │   ├── AdminCheckInPage.jsx             # ตารางเช็คชื่อรายวัน
+│   │   │   │   ├── AdminReportsPage.jsx             # สถิติและผลการประเมิน
+│   │   │   │   ├── AdminAnnouncementsPage.jsx       # จัดการข่าวสารและประกาศ
+│   │   │   │   └── AdminProfilePage.jsx             # ข้อมูลโปรไฟล์แอดมิน
+│   │   │   └── Shared/
+│   │   │       ├── RequestDetailsPage.jsx           # รายละเอียดคำร้อง
+│   │   │       └── StudentDetailsPage.jsx           # รายละเอียดประวัตินักศึกษา
+│   │   │
+│   │   └── Public/           # ส่วนสำหรับบุคคลทั่วไปและสถานประกอบการ
+│   │       ├── PublicEvaluationPage.jsx   # แบบประเมินนักศึกษาสำหรับบริษัท
+│   │       ├── PublicRequestPage.jsx      # หน้าตอบรับการฝึกงานของสถานประกอบการ
+│   │       └── AnnouncementDetailPage.jsx # รายละเอียดข่าวสาร
+│   │
+│   ├── utils/                # apiFetch, auth helpers, formatters
+│   ├── App.jsx               # การจัดการ Route ทั้งหมด
+│   └── main.jsx              # Entry Point
+│
+├── index.html
+├── package.json
+└── vite.config.js
 ```
 
-## ความต้องการระบบ
+---
 
-- Node.js 18 LTS ขึ้นไป
-- npm 9 ขึ้นไป (หรือจัดการแพ็กเกจอื่นที่เทียบเท่า)
+## ⚙️ ความต้องการของระบบ (Prerequisites)
 
-## ขั้นตอนใช้งานสำหรับนักพัฒนา
+- **Node.js**: v18 LTS ขึ้นไป (แนะนำ Node.js v20 หรือ v22)
+- **npm**: v9+ หรือ **pnpm** / **yarn**
 
-1. ติดตั้ง dependencies
-   ```bash
-   npm install
-   ```
-2. ตั้งค่า Environment (สร้างไฟล์ `.env` ที่ root)
-   ```env
-   VITE_API_BASE_URL=http://localhost:5000
-   VITE_MAPS_KEY=<optional>
-   ```
-3. รันโหมดพัฒนา
-   ```bash
-   npm run dev
-   ```
-4. สร้าง production build และพรีวิว
-   ```bash
-   npm run build
-   npm run preview
-   ```
+---
 
-## สคริปต์ NPM
+## 🚀 การติดตั้งและเริ่มต้นใช้งาน (Getting Started)
 
-| คำสั่ง | รายละเอียด |
-|---------|-------------|
-| `npm run dev` | เปิด Vite dev server (hot reload) |
-| `npm run build` | บันเดิลไฟล์ production ลง `dist/` |
-| `npm run preview` | เปิดเซิร์ฟเวอร์พรีวิว build บน localhost |
-| `npm run lint` | ตรวจโค้ดด้วย ESLint |
+### 1. ติดตั้ง Dependencies
+```bash
+npm install
+```
 
-## Frontend Flow
-
-1. **Login & Role Resolution** — `LoginPage` รับ credential → เรียก service → บันทึก token + role ลง context และ localStorage
-2. **Layout & Navigation** — `App.jsx` ตรวจ role ก่อน render layout (Admin / Advisor / Company / Student) เพื่อเลือก sidebar/header ที่ตรงกับสิทธิ์
-3. **Modules ตามบทบาท**
-   - **Admin**: Dashboard รวมสถิติ + ตารางผู้ใช้/คำร้อง/เช็คชื่อ/การชำระเงิน พร้อม action (approve / reject / export)
-   - **Student**: โปรไฟล์, ส่งคำร้อง, เช็คชื่อรายวัน, อัปโหลดสลิปการชำระเงิน, ติดตามสถานะ
-   - **Advisor**: ภาพรวม advisee, ตรวจคำร้อง, ให้ความคิดเห็นหรืออนุมัติ
-   - **Company**: รายชื่อผู้ฝึกงาน, ฟอร์มเช็คชื่อรายวัน/รายสัปดาห์
-4. **Data Hooks & Helpers** — แต่ละหน้าใช้ `api/*Service` และ helper ใน `utils/` เพื่อจัดรูปแบบวันเวลา ตัวเลข และ export
-5. **Feedback & Validation** — ใช้ Material UI Snackbar/Dialog แจ้งผล และมี validation ฝั่ง client สำหรับฟอร์มสำคัญ
-
-## Deployment บน Railway
-
-### 1. การเชื่อมต่อกับ Backend บน Railway & Database ใหม่
-ตั้งค่า Environment Variable บน Railway หรือในไฟล์ `.env`:
+### 2. ตั้งค่า Environment Variables
+สร้างไฟล์ `.env` ที่โฟลเดอร์หลัก:
 ```env
-VITE_API_BASE_URL=https://<your-backend-railway-domain>.up.railway.app/api
+VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
-> ⚠️ **ข้อควรระวัง**: Vite บันเดิลค่า `VITE_API_BASE_URL` ในขั้นตอน `build` ดังนั้นต้องกำหนด Variable นี้ใน Railway Environment Variables **ก่อนสั่ง Deploy/Build**
+### 3. รันโหมดพัฒนา (Development Mode)
+```bash
+npm run dev
+```
+เว็บแอปจะพร้อมใช้งานที่ `http://localhost:5173`
 
-### 2. การ Deploy บน Railway Web Service
-1. สร้าง **New Project / Web Service** บน Railway แล้วเชื่อมต่อกับ GitHub Repository นี้
-2. กำหนด **Environment Variable**:
-   - `VITE_API_BASE_URL` = `https://<your-backend-service-domain>.up.railway.app/api`
-3. Railway จะรันคำสั่งอัตโนมัติผ่าน `nixpacks.toml`:
-   - **Build**: `npm run build`
-   - **Start**: `npm start` (รัน `server.js` บน dynamic `$PORT` พร้อมรองรับ SPA Routing Fallback)
+### 4. การ Build สำหรับ Production
+```bash
+# Build ไฟล์
+npm run build
+
+# พรีวิว Production Build ในเครื่อง
+npm run preview
+```
 
 ---
 
-## Deployment (Static Hosting)**
+## 🌐 การ Deploy บน Railway / Vercel / Netlify
 
-1. `npm run build`
-2. อัปโหลดโฟลเดอร์ `dist/` ไปยัง static hosting (Netlify, Vercel, Railway Static, S3 ฯลฯ)
-3. ตั้งค่า environment บนโฮสต์ให้ตรงกับ `.env` โดยเฉพาะ `VITE_API_BASE_URL`
-
-## Flow Diagram (ข้อความ)
-
-```
-Login → ตรวจ role → Render layout เฉพาะบทบาท
-  ├─ Admin → Dashboards → Approve/Reject/Export
-  ├─ Advisor → Advisee Overview → Review Requests
-  ├─ Company → Intern List → Daily Check-in Forms
-  └─ Student → Profile → Requests / Check-ins / Payments
+### การตั้งค่า Environment Variable บน Cloud
+กำหนดตัวแปรในหน้า Dashboard ของโฮสติ้งก่อนทำการ Build:
+```env
+VITE_API_BASE_URL=https://<your-backend-domain>.up.railway.app/api
 ```
 
-## แหล่งอ้างอิงเพิ่มเติม
-
-- ฟอนต์หลัก: [Kanit](https://fonts.google.com/specimen/Kanit) + Material UI Theme + Tailwind Utilities
-- โครงสร้าง component: ดูเพิ่มเติมที่ `src/components/` และไฟล์ role-specific ภายใต้ `src/pages/`
+> ⚠️ **ข้อสำคัญ**: Vite จะฝังค่า `VITE_API_BASE_URL` ลงในโค้ด JavaScript ในขั้นตอน `npm run build` จึงต้องตั้งค่านี้บน Server ให้ถูกต้องก่อนเริ่ม Deploy
 
 ---
-พบปัญหาหรืออยากเสนอฟีเจอร์ใหม่? เปิด issue หรือแจ้งทีมพัฒนาได้เลย 🙌
+
+## 🔑 บัญชีสำหรับทดสอบระบบ (Test Accounts)
+
+| บทบาท (Role) | Username | Password | ความสามารถ |
+|---|---|---|---|
+| **Student** | `student6501` | `student123` | ยื่นคำร้อง, เช็คชื่อประจำวัน, อัปโหลดสลิป |
+| **Advisor** | `advisor01` | `advisor123` | อนุมัติคำร้อง, นัดหมายนิเทศ, ประเมินการนิเทศ |
+| **Admin** | `admin` | `admin123` | จัดการผู้ใช้, ออกหนังสือส่งตัว, อนุมัติสลิป, ดู Analytics |
