@@ -9,7 +9,10 @@ import {
   FormControlLabel,
   TextField,
   Typography,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import api from '../api/axios';
 import './LoginPage.css';
 import lascLogo from '../assets/LASC-SSKRU-1.png';
@@ -17,6 +20,7 @@ import sskruLogo from '../assets/SSKRU-logo-400x400-1-192x192.png';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -140,12 +144,33 @@ const LoginPage = () => {
                 <TextField
                   fullWidth
                   variant="standard"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   label="Password (รหัสผ่าน)"
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  SlotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                            size="small"
+                            tabIndex={-1}
+                          >
+                            {showPassword ? (
+                              <EyeSlashIcon style={{ width: 20, height: 20, color: '#666' }} />
+                            ) : (
+                              <EyeIcon style={{ width: 20, height: 20, color: '#666' }} />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                 />
 
                 <FormControlLabel
