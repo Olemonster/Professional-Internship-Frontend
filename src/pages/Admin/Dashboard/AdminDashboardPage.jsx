@@ -276,7 +276,7 @@ const AdminDashboardPage = () => {
       }
 
       if (deleteModal.deletePayments && studentCode) {
-        await api.delete(`/payment-proofs/student/${studentCode}`).catch(e => console.log('Notice payments delete:', e.message));
+        await api.delete(`/payments/student/${studentCode}`).catch(e => console.log('Notice payments delete:', e.message));
       }
 
       setAllRequests(prev => prev.filter(r => String(r.id) !== String(reqId)));
