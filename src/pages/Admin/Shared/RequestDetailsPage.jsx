@@ -81,6 +81,19 @@ const RequestDetailsPage = () => {
     }
 
     if (userRole === 'admin') {
+      const isStartInternshipWaiting = ['รออาจารย์อนุมัติเริ่มฝึกงาน', 'รอแอดมินอนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(request?.status);
+      if (isStartInternshipWaiting) {
+        try {
+          await api.patch(`/requests/${id}/status`, { status: 'ออกฝึกงาน' });
+          setRequest({ ...request, status: 'ออกฝึกงาน' });
+          setToast({ open: true, message: 'อนุมัติการออกฝึกงานเรียบร้อยแล้ว', severity: 'success' });
+          navigate(-1);
+        } catch (err) {
+          setToast({ open: true, message: 'อัปเดตล้มเหลว: ' + (err.response?.data?.message || err.message), severity: 'error' });
+        }
+        return;
+      }
+
       handleOpenDispatchModal();
     }
   };
@@ -200,8 +213,9 @@ const RequestDetailsPage = () => {
       'รอผู้ดูแลระบบตรวจสอบ': { bg: '#c3dafe', color: '#434190' },
       'รอผู้ดูแลระบบอนุมัติ': { bg: '#c3dafe', color: '#434190' }, // Legacy support
       'รอสถานประกอบการตอบรับ': { bg: '#e2e8f0', color: '#2d3748' },
-      'รออาจารย์อนุมัติเริ่มฝึกงาน': { bg: '#d1fae5', color: '#065f46', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
-      'อนุมัติแล้ว': { bg: '#d1fae5', color: '#065f46', label: 'รออาจารย์อนุมัติการออกฝึกงาน' },
+      'รออาจารย์อนุมัติเริ่มฝึกงาน': { bg: '#d1fae5', color: '#065f46', label: 'รอแอดมินอนุมัติการออกฝึกงาน' },
+      'รอแอดมินอนุมัติเริ่มฝึกงาน': { bg: '#d1fae5', color: '#065f46', label: 'รอแอดมินอนุมัติการออกฝึกงาน' },
+      'อนุมัติแล้ว': { bg: '#d1fae5', color: '#065f46', label: 'รอแอดมินอนุมัติการออกฝึกงาน' },
       'ออกฝึกงาน': { bg: '#c4f1f9', color: '#0c4a6e' },
       'ประเมินเสร็จแล้ว': { bg: '#ddd6fe', color: '#4c1d95' },
       'ฝึกงานเสร็จแล้ว': { bg: '#fbcfe8', color: '#9d174d' },
