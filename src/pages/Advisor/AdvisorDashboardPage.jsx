@@ -171,7 +171,7 @@ const AdvisorDashboardPage = () => {
   };
 
   const actionableRequests = filteredRequests.filter((r) =>
-    ['ประเมินเสร็จแล้ว', 'รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(r.status)
+    ['ประเมินเสร็จแล้ว', 'รออาจารย์ที่ปรึกษาอนุมัติ'].includes(r.status)
   );
 
   const isAllSelected =
@@ -200,9 +200,7 @@ const AdvisorDashboardPage = () => {
   ).length;
 
   const selectedPendingCount = filteredRequests.filter(
-    (r) =>
-      selectedIds.includes(String(r.id)) &&
-      ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(r.status)
+    (r) => selectedIds.includes(String(r.id)) && r.status === 'รออาจารย์ที่ปรึกษาอนุมัติ'
   ).length;
 
   const handleBatchFinishInternship = async () => {
@@ -236,27 +234,32 @@ const AdvisorDashboardPage = () => {
 
   const handleBatchApprovePending = async () => {
     const targets = filteredRequests.filter(
-      (r) =>
-        selectedIds.includes(String(r.id)) &&
-        ['รออาจารย์ที่ปรึกษาอนุมัติ', 'รออาจารย์อนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(r.status)
+      (r) => selectedIds.includes(String(r.id)) && r.status === 'รออาจารย์ที่ปรึกษาอนุมัติ'
     );
     if (targets.length === 0) return;
 
     try {
       await Promise.all(
-        targets.map((r) => {
-          const nextStatus = (r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || r.status === 'อนุมัติแล้ว') ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
-          return api.patch(`/requests/${r.id}/status`, { status: nextStatus });
-        })
+        targets.map((r) => api.patch(`/requests/${r.id}/status`, { status: 'รอผู้ดูแลระบบอนุมัติ' }))
       );
-      const targetMap = {};
-      targets.forEach((r) => {
-        targetMap[String(r.id)] = (r.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || r.status === 'อนุมัติแล้ว') ? 'ออกฝึกงาน' : 'รอผู้ดูแลระบบอนุมัติ';
-      });
+      const targetIds = targets.map((r) => String(r.id));
       setAllRequests((prev) =>
-        prev.map((r) => (targetMap[String(r.id)] ? { ...r, status: targetMap[String(r.id)] } : r))
+        prev.map((r) => (targetIds.includes(String(r.id)) ? { ...r, status: 'รอผู้ดูแลระบบอนุมัติ' } : r))
       );
-      setSelectedIds((prev) => prev.filter((id) => !targetMap[id]));
+      setSelectedIds((prev) => prev.filter((id) => !targetIds.includes(id)));
+      setToast({
+        open: true,
+        message: `อนุมัติคำร้อง ${targets.length} รายการเรียบร้อยแล้ว`,
+        severity: 'success',
+      });
+    } catch (err) {
+      setToast({
+        open: true,
+        message: 'เกิดข้อผิดพลาดในการอนุมัติ: ' + (err.response?.data?.message || err.message),
+        severity: 'error',
+      });
+    }
+  };
       setToast({
         open: true,
         message: `อนุมัติคำร้อง ${targets.length} รายการเรียบร้อยแล้ว`,
@@ -413,10 +416,8 @@ const AdvisorDashboardPage = () => {
                 {filteredRequests.map((request) => {
                   const normalizedStatus = String(request.status || '').trim();
                   const isPending = normalizedStatus === 'รออาจารย์ที่ปรึกษาอนุมัติ';
-                  const isWaitingToStart = normalizedStatus === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || normalizedStatus === 'อนุมัติแล้ว';
-                  const isInterning = normalizedStatus === 'ออกฝึกงาน';
                   const isEvaluated = normalizedStatus === 'ประเมินเสร็จแล้ว';
-                  const isActionable = isPending || isWaitingToStart || isEvaluated;
+                  const isActionable = isPending || isEvaluated;
                   const isSelected = selectedIds.includes(String(request.id));
 
                   return (
@@ -450,22 +451,22 @@ const AdvisorDashboardPage = () => {
                         </Button>
                       </TableCell>
                       <TableCell className="action-column">
-                        {(isPending || isWaitingToStart) && (
+                        {isPending && (
                           <div className="advisor-action-buttons">
                             <ModernButton size="small" customVariant="accept" onClick={() => openApproveModal(request.id, request.status || normalizedStatus)}>
-                              {isWaitingToStart ? 'เริ่มฝึกงาน' : 'อนุมัติ'}
+                              อนุมัติ
                             </ModernButton>
                             <ModernButton size="small" customVariant="reject" onClick={() => handleReject(request.id)}>
                               ปฏิเสธ
                             </ModernButton>
                           </div>
                         )}
-                        {!isPending && !isWaitingToStart && !isInterning && isEvaluated && (
+                        {!isPending && isEvaluated && (
                           <ModernButton size="small" customVariant="primary" onClick={() => handleFinishInternship(request.id)}>
                             เสร็จสิ้นการฝึกงาน
                           </ModernButton>
                         )}
-                        {!isPending && !isWaitingToStart && !isInterning && !isEvaluated && (
+                        {!isPending && !isEvaluated && (
                           <span className="muted-action">-</span>
                         )}
                       </TableCell>
