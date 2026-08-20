@@ -104,12 +104,7 @@ const StudentListPage = () => {
       const rawStudents = usersData.data || [];
       const studentList = rawStudents.filter(student => {
         const code = String(student.student_code || student.studentId || student.username || '').trim();
-        const hasYear66 = code.startsWith('66');
-        const deptId = student.department_id;
-        const hasNumericDeptId = deptId !== null && deptId !== undefined && deptId !== '' && !isNaN(deptId) && Number(deptId) > 0;
-        const deptName = String(student.department || student.major || '').trim();
-        const hasDeptName = deptName !== '' && deptName !== '-';
-        return hasYear66 || hasNumericDeptId || hasDeptName;
+        return code.startsWith('66') || code.startsWith('student');
       });
       const requestsList = reqsData.data || [];
       const paymentsList = paysData.data || [];
