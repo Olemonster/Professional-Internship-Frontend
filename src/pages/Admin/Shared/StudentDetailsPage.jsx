@@ -471,12 +471,12 @@ const StudentDetailsPage = () => {
           </section>
         )}
 
-        {evaluation && userRole === 'student' && (
+        {(evaluation || request?.hasCompanyEval) && userRole === 'student' && (
           <section className="detail-section" style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
              <h3 style={{ color: '#166534', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-               <ChartBarIcon style={{ width: 20, height: 20, color: '#16a34a' }} /> ผลการประเมินจากสถานประกอบการ
+               <ChartBarIcon style={{ width: 20, height: 20, color: '#16a34a' }} /> สถานประกอบการประเมินเสร็จแล้ว
              </h3>
-             <p style={{ margin: '8px 0 0 0', color: '#15803d', fontWeight: 600 }}>
+             <p style={{ margin: '8px 0 0 0', color: '#15803d', fontWeight: 500, fontSize: '0.95rem' }}>
                สถานประกอบการได้ทำการประเมินผลการปฏิบัติงานของคุณเรียบร้อยแล้ว
              </p>
           </section>
