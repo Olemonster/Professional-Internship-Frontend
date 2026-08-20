@@ -743,11 +743,13 @@ const StudentListPage = () => {
         {/* Payment Slip Dialog */}
         <Dialog open={slipModal.open} onClose={() => setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null })} maxWidth="sm" fullWidth>
           <DialogContent sx={{ textAlign: 'center', p: 3 }}>
-            <img 
-              src={slipModal.imageUrl} 
-              alt="Payment Slip" 
-              style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }} 
-            />
+            {slipModal.imageUrl ? (
+              <img 
+                src={slipModal.imageUrl} 
+                alt="Payment Slip" 
+                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }} 
+              />
+            ) : null}
           </DialogContent>
           <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
             <Button variant="outlined" color="primary" onClick={handleDownloadSlip}>ดาวน์โหลดสลิป</Button>
