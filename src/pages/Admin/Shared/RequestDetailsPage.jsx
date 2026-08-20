@@ -14,6 +14,7 @@ const RequestDetailsPage = () => {
   const [userRole, setUserRole] = useState(null);
   const [request, setRequest] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
+  const [advisorEvaluation, setAdvisorEvaluation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [rejectModal, setRejectModal] = useState({ open: false, reason: '' });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
@@ -42,11 +43,13 @@ const RequestDetailsPage = () => {
     // 2. Load Request and Evaluation Details from API
     Promise.all([
       api.get(`/requests/${id}`),
-      api.get(`/evaluations/request/${id}`).catch(() => ({ data: { data: null } }))
-    ]).then(([reqRes, evalRes]) => {
+      api.get(`/evaluations/request/${id}`).catch(() => ({ data: { data: null } })),
+      api.get(`/advisor-evaluations/request/${id}`).catch(() => ({ data: { data: null } }))
+    ]).then(([reqRes, evalRes, advisorEvalRes]) => {
       if (reqRes.data.data) {
         setRequest(reqRes.data.data);
         setEvaluation(evalRes.data.data);
+        setAdvisorEvaluation(advisorEvalRes.data.data);
       } else {
         setToast({ open: true, message: 'ไม่พบข้อมูลคำร้อง', severity: 'error' });
         navigate(-1);
@@ -483,6 +486,72 @@ const RequestDetailsPage = () => {
                     <span className="detail-value" style={{ display: 'block', fontWeight: '600' }}>{evaluation.overallScore || '-'}</span>
                  </div>
                </div>
+            </div>
+          </section>
+        )}
+
+        {advisorEvaluation && (userRole === 'admin' || userRole === 'advisor') && (
+          <section className="detail-section" style={{ marginTop: '30px', padding: '24px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ color: '#166534', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ChartBarIcon style={{ width: 20, height: 20 }} /> ผลการนิเทศและประเมิน (โดยอาจารย์ที่ปรึกษา)
+                </span>
+              </h3>
+              <span style={{ fontSize: '0.85rem', color: '#15803d', fontWeight: 600, backgroundColor: '#dcfce7', padding: '4px 12px', borderRadius: '999px' }}>
+                ผู้ประเมิน: {advisorEvaluation.advisorName || 'อาจารย์ที่ปรึกษา'}
+              </span>
+            </div>
+
+            {(() => {
+              let cScore = 0, cCount = 0;
+              let sScore = 0, sCount = 0;
+              for (let i = 1; i <= 17; i++) {
+                const val = parseInt(advisorEvaluation[`c${i}`]);
+                if (!isNaN(val)) { cScore += val; cCount++; }
+              }
+              for (let i = 1; i <= 20; i++) {
+                const val = parseInt(advisorEvaluation[`s${i}`]);
+                if (!isNaN(val)) { sScore += val; sCount++; }
+              }
+
+              const totalScore = cScore + sScore;
+              const maxTotal = (cCount * 5) + (sCount * 5);
+              const percent = maxTotal > 0 ? ((totalScore / maxTotal) * 100).toFixed(2) : 0;
+
+              let gradeColor = '#10b981';
+              if (percent < 50) gradeColor = '#ef4444';
+              else if (percent < 70) gradeColor = '#f59e0b';
+              else if (percent < 80) gradeColor = '#3b82f6';
+
+              return (
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'flex-end' }}>
+                    <span style={{ fontWeight: '600', color: '#166534', fontSize: '1rem' }}>คะแนนรวมการนิเทศงาน (Advisor Supervision Grading)</span>
+                    <span style={{ fontWeight: '800', color: gradeColor, fontSize: '1.5rem' }}>
+                      {totalScore} <span style={{ fontSize: '1rem', color: '#64748b' }}>/ {maxTotal}</span> ({percent}%)
+                    </span>
+                  </div>
+                  <div style={{ height: '12px', backgroundColor: '#dcfce7', borderRadius: '6px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${percent}%`, backgroundColor: gradeColor, transition: 'width 1s ease-in-out' }}></div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="detail-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
+              {advisorEvaluation.companyComments && (
+                <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
+                  <span className="detail-label" style={{ color: '#166534', fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>ความคิดเห็นต่อสถานประกอบการ</span>
+                  <span className="detail-value" style={{ display: 'block', lineHeight: 1.5 }}>{advisorEvaluation.companyComments}</span>
+                </div>
+              )}
+              {advisorEvaluation.studentComments && (
+                <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
+                  <span className="detail-label" style={{ color: '#166534', fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>ข้อเสนอแนะต่อนักศึกษา</span>
+                  <span className="detail-value" style={{ display: 'block', lineHeight: 1.5 }}>{advisorEvaluation.studentComments}</span>
+                </div>
+              )}
             </div>
           </section>
         )}
