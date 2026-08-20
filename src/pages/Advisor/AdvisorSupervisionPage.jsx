@@ -75,7 +75,7 @@ const AdvisorSupervisionPage = () => {
         return date >= startOfWeek && date <= endOfWeek;
     };
     const getSupervisionStatus = (request) => {
-        if (request.supervisionReport) return 'นิเทศแล้ว';
+        if (request.supervisionReport || request.hasAdvisorEval) return 'นิเทศเสร็จสิ้น';
 
         const hasAppointment = Boolean(request.supervisionAppointment?.date);
         if (!hasAppointment) return 'ยังไม่กำหนดวัน';
@@ -201,6 +201,7 @@ const AdvisorSupervisionPage = () => {
         'ยังไม่กำหนดวัน': 'warning',
         'นัดแล้ว': 'info',
         'นิเทศแล้ว': 'success',
+        'นิเทศเสร็จสิ้น': 'success',
         'รอส่งรายงาน': 'warning'
     };
 
@@ -314,11 +315,11 @@ const AdvisorSupervisionPage = () => {
                                                         )}
                                                         <Button 
                                                             size="small" 
-                                                            variant={supervisionStatus === 'นิเทศแล้ว' ? 'outlined' : 'contained'} 
-                                                            color={supervisionStatus === 'นิเทศแล้ว' ? 'success' : 'primary'}
+                                                            variant={(supervisionStatus === 'นิเทศเสร็จสิ้น' || supervisionStatus === 'นิเทศแล้ว' || request.hasAdvisorEval) ? 'outlined' : 'contained'} 
+                                                            color={(supervisionStatus === 'นิเทศเสร็จสิ้น' || supervisionStatus === 'นิเทศแล้ว' || request.hasAdvisorEval) ? 'success' : 'primary'}
                                                             onClick={() => navigate(`/advisor-dashboard/supervision/evaluate/${request.id}`)}
                                                         >
-                                                            {supervisionStatus === 'นิเทศแล้ว' ? 'ดู/แก้ไขผลนิเทศ' : 'บันทึกผลนิเทศ'}
+                                                            {(supervisionStatus === 'นิเทศเสร็จสิ้น' || supervisionStatus === 'นิเทศแล้ว' || request.hasAdvisorEval) ? 'นิเทศเสร็จสิ้น' : 'บันทึกผลนิเทศ'}
                                                         </Button>
                                                     </Stack>
                                                 </TableCell>
