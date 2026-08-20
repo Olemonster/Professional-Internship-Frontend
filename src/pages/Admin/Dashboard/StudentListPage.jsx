@@ -129,10 +129,13 @@ const StudentListPage = () => {
 
         const phoneFromForm = reqDetails.studentPhone || reqDetails.student_info?.phone || reqDetails.phone || reqDetails.mobile || reqDetails.tel;
         const phone = phoneFromForm || student.phone || student.mobile || '-';
+        const department = student.major || student.department || latestReq?.department || '';
 
         return {
           ...student,
           phone,
+          department,
+          major: department,
           requestStatus: latestReq ? latestReq.status : 'ยังไม่ยื่นคำร้อง',
           paymentStatus: latestPay ? latestPay.status : 'ยังไม่ชำระเงิน',
           paymentSlip: latestPay ? latestPay.slipDataUrl : null,
