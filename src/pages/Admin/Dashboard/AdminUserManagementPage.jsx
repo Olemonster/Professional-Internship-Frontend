@@ -65,6 +65,7 @@ const AdminUserManagementPage = () => {
     username: '',
     email: '',
     name: '',
+    department: '',
     password: '',
     role: 'student',
   });
@@ -104,11 +105,12 @@ const AdminUserManagementPage = () => {
     if (user) {
       setEditingUser(user);
       setFormData({
-        username: user.username || '',
-        email:    user.email || '',
-        name:     user.full_name || user.name || '',
-        password: '',
-        role:     user.role || 'student',
+        username:   user.username || '',
+        email:      user.email || '',
+        name:       user.full_name || user.name || '',
+        department: user.department || user.major || (user.department_id ? departmentOptions[user.department_id - 1] : ''),
+        password:   '',
+        role:       user.role || 'student',
       });
     } else {
       setEditingUser(null);
@@ -116,6 +118,7 @@ const AdminUserManagementPage = () => {
         username: '',
         email: '',
         name: '',
+        department: '',
         password: '',
         role: 'student',
       });
@@ -316,12 +319,13 @@ const AdminUserManagementPage = () => {
 
     try {
       if (editingUser) {
-        // แก้ไข: ส่งข้อมูลรวมชื่อ (ซิงค์ลง profile)
+        // แก้ไข: ส่งข้อมูลรวมชื่อและสาขาวิชา (ซิงค์ลง profile)
         const payload = {
-          username: formData.username,
-          email:    formData.email || formData.username,
-          name:     formData.name,
-          role:     formData.role,
+          username:   formData.username,
+          email:      formData.email || formData.username,
+          name:       formData.name,
+          department: formData.department,
+          role:       formData.role,
         };
         if (formData.password) payload.password = formData.password;
         await apiFetch(`/users/${editingUser.id}`, {
@@ -337,11 +341,12 @@ const AdminUserManagementPage = () => {
         await apiFetch('/users', {
           method: 'POST',
           body: JSON.stringify({
-            username: formData.username,
-            email:    formData.email || formData.username,
-            name:     formData.name,
-            password: formData.password,
-            role:     formData.role,
+            username:   formData.username,
+            email:      formData.email || formData.username,
+            name:       formData.name,
+            department: formData.department,
+            password:   formData.password,
+            role:       formData.role,
           }),
         });
       }
@@ -719,6 +724,23 @@ const AdminUserManagementPage = () => {
               value={formData.name}
               onChange={handleInputChange}
             />
+
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="สาขาวิชา (Department)"
+              name="department"
+              value={formData.department}
+              onChange={handleInputChange}
+            >
+              <MenuItem value="">-- เลือกสาขาวิชา --</MenuItem>
+              {departmentOptions.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <TextField
               fullWidth
