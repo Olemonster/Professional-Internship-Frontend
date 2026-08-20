@@ -325,7 +325,7 @@ const AdvisorDashboardPage = () => {
           </div>
 
           <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2 }}>
-            <strong>ข้อความแจ้งเตือนระบบ:</strong> หากอาจารย์ไม่ได้กดอนุมัติเสร็จสิ้นการฝึกงานด้วยตนเอง (ขั้นตอนสุดท้าย) ระบบจะอนุมัติให้จบการฝึกงานให้อัตโนมัติภายใน 3 วัน หลังจากที่สถานประกอบการส่งผลประเมินเรียบร้อยแล้ว
+            <strong>ข้อความแจ้งเตือนระบบ:</strong> หากอาจารย์ไม่ได้กดเสร็จสิ้นการฝึกงานด้วยตนเอง (ขั้นตอนสุดท้าย) ระบบจะอนุมัติให้จบการฝึกงานให้อัตโนมัติภายใน 3 วัน หลังจากที่สถานประกอบการส่งผลประเมินเรียบร้อยแล้ว
           </Alert>
 
           {selectedIds.length > 0 && (
@@ -357,7 +357,7 @@ const AdvisorDashboardPage = () => {
                     onClick={handleBatchFinishInternship}
                     sx={{ fontWeight: 600 }}
                   >
-                    อนุมัติเสร็จสิ้นฝึกงาน ({selectedEvaluatedCount})
+                    เสร็จสิ้นการฝึกงาน ({selectedEvaluatedCount})
                   </Button>
                 )}
                 {selectedPendingCount > 0 && (
