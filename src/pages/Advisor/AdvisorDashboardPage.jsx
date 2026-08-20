@@ -260,19 +260,6 @@ const AdvisorDashboardPage = () => {
       });
     }
   };
-      setToast({
-        open: true,
-        message: `อนุมัติคำร้อง ${targets.length} รายการเรียบร้อยแล้ว`,
-        severity: 'success',
-      });
-    } catch (err) {
-      setToast({
-        open: true,
-        message: 'เกิดข้อผิดพลาดในการอนุมัติ: ' + (err.response?.data?.message || err.message),
-        severity: 'error',
-      });
-    }
-  };
 
   return (
     <div className="admin-dashboard-container">
