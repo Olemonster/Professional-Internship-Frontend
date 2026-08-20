@@ -272,9 +272,7 @@ const AdvisorProgressCheckPage = () => {
                       </TableCell>
                       <TableCell>{row.company || row.companyName || '-'}</TableCell>
                       <TableCell>
-                        {(row.startDate || row.details?.startDate || '-')}
-                        {' - '}
-                        {(row.endDate || row.details?.endDate || '-')}
+                        {row.startDate || row.details?.startDate ? new Date(row.startDate || row.details?.startDate).toLocaleDateString('th-TH') : (row.submittedDate ? new Date(row.submittedDate).toLocaleDateString('th-TH') : '-')}
                       </TableCell>
                       <TableCell>{row.checkinCount}</TableCell>
                       <TableCell>{row.latestCheckinDate}</TableCell>

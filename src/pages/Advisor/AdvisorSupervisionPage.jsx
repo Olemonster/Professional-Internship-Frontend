@@ -285,7 +285,7 @@ const AdvisorSupervisionPage = () => {
                                                     </Stack>
                                                 </TableCell>
                                                 <TableCell>{request.company || request.companyName || '-'}</TableCell>
-                                                <TableCell>{formatDate(request.startDate || request.details?.startDate || request.details?.internship_info?.startDate)}</TableCell>
+                                                <TableCell>{formatDate(request.startDate || request.details?.startDate || request.details?.internship_info?.startDate || request.submittedDate || request.created_at)}</TableCell>
                                                 <TableCell>
                                                     <Alert severity={statusChipMap[supervisionStatus] || 'default'} sx={{ py: 0, px: 1 }} icon={false}>
                                                         {supervisionStatus}
