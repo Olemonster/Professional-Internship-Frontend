@@ -296,6 +296,16 @@ const AdminDashboardPage = () => {
     reader.readAsDataURL(file);
   });
 
+  const handleApproveStartInternship = async (requestId) => {
+    try {
+      await api.patch(`/requests/${requestId}/status`, { status: 'ออกฝึกงาน' });
+      setAllRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'ออกฝึกงาน' } : r));
+      alert('อนุมัติการออกฝึกงานเรียบร้อยแล้ว');
+    } catch (err) {
+      alert('อัปเดตล้มเหลว: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   const handleApprove = (requestId) => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
@@ -627,6 +637,9 @@ const AdminDashboardPage = () => {
                               <button className="btn-approve" onClick={() => handleApprove(request.id)} title="อนุมัติคำร้อง" style={{ padding: '6px 12px', background: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>✓ อนุมัติ</button>
                               <button className="btn-reject" onClick={() => handleReject(request.id)} title="ไม่อนุมัติ" style={{ padding: '6px 12px', background: '#f43f5e', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>✗ ปฏิเสธ</button>
                             </>
+                          )}
+                          {(request.status === 'รออาจารย์อนุมัติเริ่มฝึกงาน' || request.status === 'รอแอดมินอนุมัติเริ่มฝึกงาน' || request.status === 'อนุมัติแล้ว') && (
+                            <button className="btn-approve" onClick={() => handleApproveStartInternship(request.id)} title="อนุมัติการออกฝึกงาน" style={{ padding: '6px 12px', background: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap' }}>✓ อนุมัติออกฝึกงาน</button>
                           )}
                           {request.status === 'รอสถานประกอบการตอบรับ' && (
                             <button
