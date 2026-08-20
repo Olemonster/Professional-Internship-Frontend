@@ -8,10 +8,45 @@ import './DashboardPage.css'; // Reusing layout
 import './PaymentProofPage.css'; // New styles
 import StudentSidebar from '../../../components/StudentSidebar';
 
-const toDataUrl = (file) =>
+const compressImage = (file, maxWidth = 1920, maxHeight = 1920, quality = 0.85) =>
   new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
+      reader.readAsDataURL(file);
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        resolve(canvas.toDataURL(mimeType, quality));
+      };
+      img.onerror = () => reject(new Error('ไม่สามารถโหลดไฟล์รูปภาพได้'));
+      img.src = e.target.result;
+    };
     reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพได้'));
     reader.readAsDataURL(file);
   });
@@ -85,7 +120,7 @@ const PaymentProofPage = () => {
     setUploading(true);
     setUploadError(false);
     try {
-      const slipDataUrl = await toDataUrl(file);
+      const slipDataUrl = await compressImage(file);
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : {};
       const studentId = user.student_code || user.studentId || user.username || '65xxxxx';
