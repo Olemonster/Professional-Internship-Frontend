@@ -810,7 +810,6 @@ const AdminDashboardPage = () => {
         maxWidth="sm"
         fullWidth
         disableScrollLock={true}
-        ModalProps={{ disableScrollLock: true }}
         PaperProps={{
           sx: {
             borderRadius: { xs: 3, sm: 4 },

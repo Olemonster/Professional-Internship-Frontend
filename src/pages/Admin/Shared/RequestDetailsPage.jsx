@@ -647,11 +647,10 @@ const RequestDetailsPage = () => {
         onClose={() => setImageModal(false)}
         maxWidth="md"
         disableScrollLock={true}
-        ModalProps={{ disableScrollLock: true }}
         PaperProps={{ sx: { borderRadius: 3, p: 0.5, overflow: 'hidden' } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: '1px solid #f1f5f9' }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+        <DialogTitle component="div" sx={{ fontWeight: 800, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: '1px solid #f1f5f9' }}>
+          <Typography component="span" variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
             รูปถ่ายนักศึกษา: {request?.studentName}
           </Typography>
           <Button size="small" onClick={() => setImageModal(false)} sx={{ color: '#64748b', fontWeight: 700 }}>

@@ -1293,7 +1293,6 @@ const NewRequestPage = () => {
         maxWidth="md"
         scroll="paper"
         disableScrollLock={true}
-        ModalProps={{ disableScrollLock: true }}
         PaperProps={{ sx: { maxHeight: '85vh' } }}
       >
         <DialogTitle>เลือกสถานประกอบการแนะนำ</DialogTitle>

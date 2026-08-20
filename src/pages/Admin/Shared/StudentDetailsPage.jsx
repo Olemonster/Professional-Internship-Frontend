@@ -414,7 +414,6 @@ const StudentDetailsPage = () => {
           onClose={() => setImageModal(false)} 
           maxWidth="md"
           disableScrollLock={true}
-          ModalProps={{ disableScrollLock: true }}
           PaperProps={{ sx: { borderRadius: 3, p: 0.5, overflow: 'hidden' } }}
         >
           <DialogContent style={{ padding: '16px', backgroundColor: '#f8fafc', textAlign: 'center' }}>

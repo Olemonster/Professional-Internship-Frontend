@@ -150,26 +150,24 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  SlotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={() => setShowPassword(!showPassword)}
-                            edge="end"
-                            size="small"
-                            tabIndex={-1}
-                          >
-                            {showPassword ? (
-                              <EyeSlashIcon style={{ width: 20, height: 20, color: '#666' }} />
-                            ) : (
-                              <EyeIcon style={{ width: 20, height: 20, color: '#666' }} />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    },
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          size="small"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? (
+                            <EyeSlashIcon style={{ width: 20, height: 20, color: '#666' }} />
+                          ) : (
+                            <EyeIcon style={{ width: 20, height: 20, color: '#666' }} />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
                   }}
                 />
 
