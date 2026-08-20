@@ -401,7 +401,7 @@ const RequestDetailsPage = () => {
                   fontWeight: 'bold', 
                   color: (request.supervisionReport || request.hasAdvisorEval) ? '#10b981' : '#f59e0b' 
                 }}>
-                  {(request.supervisionReport || request.hasAdvisorEval) ? 'นิเทศและประเมินเรียบร้อยแล้ว' : 'รอนิเทศงาน'}
+                  {(request.supervisionReport || request.hasAdvisorEval) ? 'นิเทศเสร็จแล้ว' : 'รอนิเทศงาน'}
                 </span>
               </div>
               {request.supervisionAppointment.note && (
