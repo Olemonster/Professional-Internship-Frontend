@@ -102,9 +102,10 @@ const StudentListPage = () => {
       ]);
 
       const rawStudents = usersData.data || [];
+      const allowedPrefixes = ['66', '67', '68', '69'];
       const studentList = rawStudents.filter(student => {
         const code = String(student.student_code || student.studentId || student.username || '').trim();
-        return code.startsWith('66') || code.startsWith('student');
+        return allowedPrefixes.some(prefix => code.startsWith(prefix)) || code.startsWith('student');
       });
       const requestsList = reqsData.data || [];
       const paymentsList = paysData.data || [];
