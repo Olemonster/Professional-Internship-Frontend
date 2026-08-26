@@ -27,7 +27,49 @@ import api from '../../api/axios';
 import './NewRequestPage.css';
 import './Dashboard/DashboardPage.css'; // Import dashboard styles
 import StudentSidebar from '../../components/StudentSidebar';
+import UserProfileMenu from '../../components/UserProfileMenu';
 import ModernButton from '../../components/ModernButton';
+const compressImage = (file, maxWidth = 1200, maxHeight = 1200, quality = 0.75) =>
+  new Promise((resolve, reject) => {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('ไม่สามารถโหลดไฟล์รูปภาพได้'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพได้'));
+    reader.readAsDataURL(file);
+  });
 
 const NewRequestPage = () => {
   const DIGIT_ONLY_FIELDS = new Set(['studentId', 'studentYear', 'studentPhone', 'supervisorPhone', 'homePostal', 'companyPostal']);
@@ -424,12 +466,7 @@ const NewRequestPage = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       let photoData = null;
       if (studentPhoto) {
-        photoData = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(studentPhoto);
-        });
+        photoData = await compressImage(studentPhoto, 1200, 1200, 0.75);
       }
 
       const details = {
@@ -639,7 +676,10 @@ const NewRequestPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <StudentSidebar
         isMenuOpen={isMenuOpen}

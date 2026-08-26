@@ -15,15 +15,22 @@ import api from '../../api/axios';
 import './HomePage.css';
 import logo from '../../assets/LASC-SSKRU-1.png';
 import sskruBg from '../../assets/SSKRU_BG.png';
-import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon, DocumentPlusIcon, UserIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import { PhoneIcon, EnvelopeIcon, MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon, DocumentPlusIcon, UserIcon, ArrowLeftOnRectangleIcon, BuildingOffice2Icon, BriefcaseIcon, SparklesIcon, MagnifyingGlassIcon, GlobeAltIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Chip, TextField } from '@mui/material';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [companySearch, setCompanySearch] = useState('');
+  const [companyProvince, setCompanyProvince] = useState('all');
+  const [selectedCompanyModal, setSelectedCompanyModal] = useState(null);
   const carouselRef = useRef(null);
+  const companyCarouselRef = useRef(null);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+  const [isCompanyCarouselHovered, setIsCompanyCarouselHovered] = useState(false);
 
   const scrollCarousel = (direction) => {
     if (carouselRef.current) {
@@ -47,6 +54,34 @@ const HomePage = () => {
     }
   };
 
+  const scrollCompanyCarousel = (direction) => {
+    if (companyCarouselRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = companyCarouselRef.current;
+      const cardNode = companyCarouselRef.current.querySelector('.company-carousel-card');
+      const scrollAmount = cardNode ? cardNode.offsetWidth + 24 : 344;
+      
+      if (direction === 'left') {
+        if (scrollLeft <= 10) {
+          companyCarouselRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
+        } else {
+          companyCarouselRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        }
+      } else {
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          companyCarouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          companyCarouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+    }
+  };
+
+  const [contactInfo, setContactInfo] = useState({
+    phone: '',
+    email: '',
+    name: ''
+  });
+
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -63,9 +98,23 @@ const HomePage = () => {
     api.get('/public/announcements')
       .then(res => setAnnouncements(res.data.data || []))
       .catch(() => setAnnouncements([]));
+
+    // Fetch companies
+    api.get('/public/companies')
+      .then(res => setCompanies(res.data.data || []))
+      .catch(() => setCompanies([]));
+
+    // Fetch dynamic admin contact info
+    api.get('/public/contact')
+      .then(res => {
+        if (res.data && res.data.data) {
+          setContactInfo(res.data.data);
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  // Autoplay Carousel Effect
+  // Autoplay News Carousel Effect
   useEffect(() => {
     let interval;
     if (!isCarouselHovered && announcements.length > 0) {
@@ -75,6 +124,17 @@ const HomePage = () => {
     }
     return () => clearInterval(interval);
   }, [isCarouselHovered, announcements]);
+
+  // Autoplay Company Carousel Effect
+  useEffect(() => {
+    let interval;
+    if (!isCompanyCarouselHovered && companies.length > 0) {
+      interval = setInterval(() => {
+        scrollCompanyCarousel('right');
+      }, 4000);
+    }
+    return () => clearInterval(interval);
+  }, [isCompanyCarouselHovered, companies]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -107,10 +167,10 @@ const HomePage = () => {
       {/* Utility Bar */}
       <Box sx={{ background: '#ffffff', color: '#111111', py: 0.8, px: { xs: 2, md: 4 }, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, fontSize: '0.85rem' }}>
         <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PhoneIcon style={{ width: 16, height: 16 }} /> ติดต่อสอบถาม 02-XXX-XXXX
+          <PhoneIcon style={{ width: 16, height: 16 }} /> {contactInfo.phone ? `ติดต่อสอบถาม ${contactInfo.phone}` : 'ติดต่อสอบถาม 02-XXX-XXXX'}
         </Typography>
         <Typography variant="caption" sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
-          <EnvelopeIcon style={{ width: 16, height: 16 }} /> contact@example.com
+          <EnvelopeIcon style={{ width: 16, height: 16 }} /> {contactInfo.email || 'contact@example.com'}
         </Typography>
       </Box>
 
@@ -431,6 +491,92 @@ const HomePage = () => {
           </div>
         </section>
       )}
+
+      {/* Recommended Companies Gateway Section (ปุ่มกดเข้าสู่หน้ารายชื่อสถานประกอบการแนะนำ) */}
+      <section className="features-section" style={{ background: '#ffffff', padding: '3rem 5%', borderTop: '1px solid #f1f5f9' }}>
+        <div
+          onClick={() => navigate('/companies')}
+          style={{
+            maxWidth: '100%',
+            margin: '0 auto',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderLeft: '6px solid #f59e0b',
+            borderRadius: '16px',
+            padding: '2.25rem 2.5rem',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1.5rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 18px rgba(0, 0, 0, 0.05)',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 28px rgba(245, 158, 11, 0.15)';
+            e.currentTarget.style.borderColor = '#f59e0b';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 18px rgba(0, 0, 0, 0.05)';
+            e.currentTarget.style.borderColor = '#e2e8f0';
+            e.currentTarget.style.borderLeftColor = '#f59e0b';
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: '1 1 500px' }}>
+            <div style={{
+              width: 60,
+              height: 60,
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+              border: '1px solid #fde68a',
+              color: '#d97706',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(217, 119, 6, 0.12)',
+            }}>
+              <BuildingOffice2Icon style={{ width: 32, height: 32, color: '#d97706' }} />
+            </div>
+
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', padding: '2px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, marginBottom: 6 }}>
+                <SparklesIcon style={{ width: 14, height: 14 }} /> แนะนำที่ฝึกงานจากรุ่นพี่
+              </div>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>
+                สถานประกอบการแนะนำ
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.92rem', color: '#64748b', lineHeight: 1.5 }}>
+                ค้นหาและดูรายชื่อสถานที่ฝึกงานจริงจากรุ่นพี่ที่ผ่านการฝึกงาน เพื่อเป็นแนวทางในการเลือกสถานที่ฝึกประสบการณ์วิชาชีพ
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#111111',
+                color: '#fbbf24',
+                fontWeight: 800,
+                fontSize: '0.95rem',
+                padding: '12px 24px',
+                borderRadius: '10px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              ดูสถานประกอบการทั้งหมด
+              <ArrowRightIcon style={{ width: 18, height: 18 }} />
+            </span>
+          </div>
+        </div>
+      </section>
 
       <section className="how-it-works" style={{ padding: '4rem 5%', borderTop: '1px solid #e2e8f0' }}>
         <h2 className="section-title">กำหนดการสำคัญ</h2>

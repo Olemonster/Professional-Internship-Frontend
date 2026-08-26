@@ -8,6 +8,7 @@ import api from '../../../api/axios';
 import './DashboardPage.css';
 import '../../Admin/Shared/CheckInPage.css';
 import StudentSidebar from '../../../components/StudentSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 import StatusBadge from '../../../components/StatusBadge';
 import ModernButton from '../../../components/ModernButton';
 import AttendanceCalendar from '../../../components/AttendanceCalendar';
@@ -22,6 +23,7 @@ const StudentCheckInPage = () => {
   const [message, setMessage] = useState('');
   const [canCheckIn, setCanCheckIn] = useState(false);
   const [currentRequestStatus, setCurrentRequestStatus] = useState('ไม่มีคำร้อง');
+  const [internshipStartDate, setInternshipStartDate] = useState(null);
   const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'table'
   const [showSignature, setShowSignature] = useState(false);
   const [form, setForm] = useState({
@@ -93,6 +95,11 @@ const StudentCheckInPage = () => {
       const isInternshipStarted = ownRequests.some((request) => request.status === 'ออกฝึกงาน');
       const isInternshipCompleted = ['ฝึกงานเสร็จแล้ว', 'ประเมินจากสถานประกอบการแล้ว', 'ประเมินจากอาจารย์แล้ว', 'เสร็จสิ้นสมบูรณ์'].includes(latestRequest?.status);
       setCanCheckIn(isInternshipStarted);
+
+      const approvedRequest = ownRequests.find(r => r.status === 'ออกฝึกงาน' || ['ฝึกงานเสร็จแล้ว', 'ประเมินจากสถานประกอบการแล้ว', 'ประเมินจากอาจารย์แล้ว', 'เสร็จสิ้นสมบูรณ์'].includes(r.status)) || latestRequest;
+      const sDate = approvedRequest?.internship_start_date 
+        || (approvedRequest?.status === 'ออกฝึกงาน' ? String(approvedRequest.updated_at || approvedRequest.submittedDate || '').split('T')[0] : null);
+      setInternshipStartDate(sDate);
 
       if (!isInternshipStarted && !isInternshipCompleted) {
         setMessage('ยังไม่สามารถใช้งานรายงานประจำวันได้ กรุณารอให้ผู้ดูแลระบบกดเริ่มฝึกงานก่อน');
@@ -193,7 +200,10 @@ const StudentCheckInPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </Box>
 
       <StudentSidebar
@@ -351,7 +361,7 @@ const StudentCheckInPage = () => {
                       sx={{ gap: 1, color: showSignature ? '#2563eb' : '#64748b', fontWeight: 700, p: 0 }}
                     >
                       <PencilSquareIcon style={{ width: 18, height: 18 }} />
-                      {showSignature ? 'ซ่อนช่องลายเซ็นพี่เลี้ยง / ผู้ดูแล' : '+ แนบลายเซ็นยืนยันจากพี่เลี้ยง / ผู้ดูแลสถานประกอบการ (ไม่บังคับ / เผื่อไว้)'}
+                      {showSignature ? 'ซ่อนช่องลายเซ็นพี่เลี้ยง / ผู้ดูแล' : 'แนบลายเซ็นยืนยันจากพี่เลี้ยง / ผู้ดูแลสถานประกอบการ (ไม่บังคับ)'}
                     </Button>
 
                     {showSignature && (
@@ -416,7 +426,26 @@ const StudentCheckInPage = () => {
                 </Box>
 
                 {viewMode === 'calendar' ? (
-                  <AttendanceCalendar entries={entries} />
+                  <AttendanceCalendar
+                    entries={entries}
+                    studentId={user.student_code || user.studentId || user.username || user.email}
+                    studentName={user.full_name || user.name || user.username || 'นักศึกษา'}
+                    internshipStartDate={internshipStartDate}
+                    onBatchSign={(updatedData) => {
+                      if (Array.isArray(updatedData)) {
+                        updatedData.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+                        setEntries(updatedData);
+                      } else {
+                        // Refresh from API
+                        const studentId = user.student_code || user.studentId || user.username || user.email;
+                        api.get(`/checkins?studentId=${studentId}`).then(checkinRes => {
+                          const ownEntries = checkinRes.data.data || [];
+                          ownEntries.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+                          setEntries(ownEntries);
+                        });
+                      }
+                    }}
+                  />
                 ) : (
                   <TableContainer className="checkin-table-container">
                     <Table size="small" className="checkin-table" stickyHeader>
@@ -426,7 +455,7 @@ const StudentCheckInPage = () => {
                           <TableCell>สถานะ</TableCell>
                           <TableCell>ประสบการณ์ / กิจกรรมที่ทำ</TableCell>
                           <TableCell>ลายเซ็นพี่เลี้ยง</TableCell>
-                          <TableCell>หมายเหตุ</TableCell>
+                          <TableCell>ผู้รับรอง / ความเห็น</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -454,16 +483,22 @@ const StudentCheckInPage = () => {
                               <TableCell>{entry.work_experience || entry.workExperience || entry.note || '-'}</TableCell>
                               <TableCell>
                                 {entry.supervisor_signature || entry.supervisorSignature ? (
-                                  <img
-                                    src={entry.supervisor_signature || entry.supervisorSignature}
-                                    alt="Supervisor Signature"
-                                    style={{ maxHeight: 32, maxWidth: 100, objectFit: 'contain' }}
-                                  />
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <img
+                                      src={entry.supervisor_signature || entry.supervisorSignature}
+                                      alt="Supervisor Signature"
+                                      style={{ maxHeight: 36, maxWidth: 110, objectFit: 'contain', border: '1px solid #fecdd3', borderRadius: 4, padding: 2, bgcolor: '#fff' }}
+                                    />
+                                  </Box>
                                 ) : (
-                                  '-'
+                                  <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>- ยังไม่มีลายเซ็น -</span>
                                 )}
                               </TableCell>
-                              <TableCell>{entry.note && (entry.work_experience || entry.workExperience) ? entry.note : '-'}</TableCell>
+                              <TableCell sx={{ fontSize: '0.825rem', color: '#475569' }}>
+                                {entry.supervisor_name && <div><strong>พี่เลี้ยง:</strong> {entry.supervisor_name}</div>}
+                                {entry.supervisor_comment && <div><strong>ความเห็น:</strong> {entry.supervisor_comment}</div>}
+                                {!entry.supervisor_name && !entry.supervisor_comment && (entry.note ? entry.note : '-')}
+                              </TableCell>
                             </TableRow>
                           ))
                         )}

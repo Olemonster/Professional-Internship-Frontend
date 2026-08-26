@@ -22,6 +22,7 @@ import api from '../../../api/axios';
 import './DashboardPage.css'; // Shared dashboard layout
 import './ProfilePage.css';
 import StudentSidebar from '../../../components/StudentSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 
 const ProfilePage = () => {
   const departmentOptions = [
@@ -246,7 +247,10 @@ const ProfilePage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <StudentSidebar
         isMenuOpen={isMenuOpen}

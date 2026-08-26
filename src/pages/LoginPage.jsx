@@ -65,20 +65,21 @@ const LoginPage = () => {
       <Box className="login-wrapper">
         <Card
           className="login-card-redesigned"
-          elevation={3}
+          elevation={4}
           sx={{
             width: '100%',
-            maxWidth: 900,
-            borderRadius: 2,
+            maxWidth: { xs: '330px', sm: '380px', md: '840px' },
+            borderRadius: { xs: '16px', md: '24px' },
             position: 'relative',
             overflow: 'hidden',
+            mx: 'auto',
             '&::after': {
               content: '""',
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-              height: '15px',
+              height: { xs: '8px', md: '12px' },
               backgroundColor: '#000000',
             },
           }}
@@ -88,7 +89,7 @@ const LoginPage = () => {
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               minHeight: { xs: 'auto', md: 500 },
-              pb: { xs: 2, md: 3 },
+              pb: { xs: 1, md: 3 },
             }}
           >
             <Box className="left-panel">
@@ -96,10 +97,11 @@ const LoginPage = () => {
                 variant="h5"
                 className="panel-title"
                 sx={{
-                  fontWeight: 600,
+                  fontWeight: 700,
                   color: '#f8fafc',
-                  mb: { xs: 1.25, md: 0.5 },
-                  fontSize: { xs: '1.35rem', md: '1.6rem' },
+                  mb: { xs: 0.5, md: 0.75 },
+                  fontSize: { xs: '1.15rem', sm: '1.35rem', md: '1.6rem' },
+                  letterSpacing: '-0.2px',
                 }}
               >
                 Professional Internship
@@ -108,11 +110,11 @@ const LoginPage = () => {
                 className="panel-tagline"
                 sx={{
                   color: 'rgba(248, 250, 252, 0.85)',
-                  fontSize: { xs: '0.92rem', md: '1rem' },
-                  mb: { xs: 3, md: 5 },
+                  fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                  mb: { xs: 1.5, md: 4 },
                   textAlign: 'center',
-                  letterSpacing: 0.3,
-                  lineHeight: 1.4,
+                  letterSpacing: 0.2,
+                  lineHeight: 1.3,
                 }}
               >
                 ( ระบบยื่นคำร้องขอเข้าฝึกประสบการณ์วิชาชีพ )
@@ -125,7 +127,7 @@ const LoginPage = () => {
             <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', md: 'block' }, borderColor: '#e5e7eb' }} />
 
             <Box className="right-panel">
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 4, color: '#111111' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: { xs: 2, md: 3.5 }, fontSize: { xs: '1.05rem', md: '1.25rem' }, color: '#111111' }}>
                 ยินดีต้อนรับ
               </Typography>
 

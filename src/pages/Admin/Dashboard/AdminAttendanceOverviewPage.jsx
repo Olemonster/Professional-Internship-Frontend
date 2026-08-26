@@ -27,6 +27,7 @@ import './AdminDashboardPage.css';
 import '../Shared/CheckInPage.css';
 import './AdminAttendanceOverviewPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 import StatCard from '../../../components/StatCard';
 import AttendanceCalendar from '../../../components/AttendanceCalendar';
 
@@ -86,6 +87,8 @@ const AdminAttendanceOverviewPage = () => {
     return map;
   };
 
+  const [requestsMap, setRequestsMap] = useState({});
+
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
@@ -101,6 +104,19 @@ const AdminAttendanceOverviewPage = () => {
     api.get('/checkins').then(res => {
       setEntries(res.data.data || []);
     }).catch(err => console.error('Failed to load checkins:', err));
+    
+    api.get('/requests').then(res => {
+      const reqList = res.data.data || [];
+      const rMap = {};
+      reqList.forEach(r => {
+        const sId = String(r.studentId || r.student_code || '');
+        if (sId) {
+          rMap[sId] = r;
+        }
+      });
+      setRequestsMap(rMap);
+    }).catch(err => console.error('Failed to load requests for overview:', err));
+
     buildDepartmentMap();
   }, [navigate]);
 
@@ -132,6 +148,7 @@ const AdminAttendanceOverviewPage = () => {
           total: 0,
           datesMap: new Set(),
           minDate: null,
+          startDate: null,
         };
       }
       map[key].entries.push(entry);
@@ -147,8 +164,15 @@ const AdminAttendanceOverviewPage = () => {
     });
 
     Object.values(map).forEach((s) => {
-      if (s.minDate) {
-        let curr = new Date(s.minDate);
+      const studentReq = requestsMap[s.studentId];
+      const officialStartDate = studentReq?.internship_start_date 
+        || (studentReq?.status === 'ออกฝึกงาน' ? String(studentReq.updated_at || studentReq.submittedDate || '').split('T')[0] : null)
+        || s.minDate;
+
+      s.startDate = officialStartDate;
+
+      if (officialStartDate) {
+        let curr = new Date(officialStartDate);
         const end = new Date(todayStr);
         let countUnchecked = 0;
         while (curr <= end) {
@@ -170,7 +194,7 @@ const AdminAttendanceOverviewPage = () => {
       const nameB = b.studentName || '';
       return nameA.localeCompare(nameB, 'th-TH');
     });
-  }, [entries]);
+  }, [entries, requestsMap]);
 
   const getAttendanceRate = (s) => {
     const grandTotal = s.present + s.late + s.absent + s.unchecked;
@@ -263,7 +287,10 @@ const AdminAttendanceOverviewPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <AdminSidebar
         isMenuOpen={isMenuOpen}
@@ -511,7 +538,20 @@ const AdminAttendanceOverviewPage = () => {
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 1, sm: 2 } }}>
           {modalViewMode === 'calendar' ? (
-            <AttendanceCalendar entries={detailsModal.student?.entries || []} />
+            <AttendanceCalendar
+              entries={detailsModal.student?.entries || []}
+              studentId={detailsModal.student?.studentId}
+              studentName={detailsModal.student?.studentName}
+              internshipStartDate={detailsModal.student?.startDate}
+              onBatchSign={(updatedEntries) => {
+                setDetailsModal(prev => ({
+                  ...prev,
+                  student: prev.student ? { ...prev.student, entries: updatedEntries } : null
+                }));
+                // Refresh list
+                loadCheckinData();
+              }}
+            />
           ) : (
             <TableContainer>
               <Table size="small" stickyHeader>

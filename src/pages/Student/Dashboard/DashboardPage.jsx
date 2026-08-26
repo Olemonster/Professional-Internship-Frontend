@@ -14,13 +14,68 @@ import {
   Alert,
   Stack,
   LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './ProcessTracker.css';
-import { PencilSquareIcon, EnvelopeIcon, CheckCircleIcon, DocumentTextIcon, CalendarIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import {
+  PencilSquareIcon,
+  EnvelopeIcon,
+  CheckCircleIcon,
+  DocumentTextIcon,
+  CalendarIcon,
+  ExclamationTriangleIcon,
+  ClockIcon,
+  EyeIcon,
+  ArrowDownTrayIcon,
+} from '@heroicons/react/24/outline';
 import StudentSidebar from '../../../components/StudentSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 import StatCard from '../../../components/StatCard';
 import StatusBadge from '../../../components/StatusBadge';
+
+const dataUrlToBlobUrl = (dataUrl) => {
+  if (!dataUrl) return '';
+  try {
+    const arr = dataUrl.split(',');
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    const blob = new Blob([u8arr], { type: mime });
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error('Failed to convert dataUrl to blob:', err);
+    return dataUrl;
+  }
+};
+
+const handleDownloadFile = (dataUrl, fileName = 'หนังสือส่งตัวฝึกงาน.pdf') => {
+  if (!dataUrl) return;
+  try {
+    const blobUrl = dataUrlToBlobUrl(dataUrl);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (err) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+};
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -28,6 +83,7 @@ const DashboardPage = () => {
   const [studentAvatar, setStudentAvatar] = useState(null);
   const [internshipRequests, setInternshipRequests] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [docModal, setDocModal] = useState({ open: false, dataUrl: '', fileName: '', blobUrl: '' });
   // chart refs removed
 
   useEffect(() => {
@@ -221,7 +277,10 @@ const DashboardPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <StudentSidebar
         isMenuOpen={isMenuOpen}
@@ -231,21 +290,150 @@ const DashboardPage = () => {
       />
 
       <main className="dashboard-main">
-        <header className="dashboard-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div className="profile-img-container" style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
-               {studentAvatar ? (
-                 <img src={studentAvatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-               ) : (
-                 <div style={{ width: '100%', height: '100%', background: '#cbd5e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>{(studentName || 'U').charAt(0).toUpperCase()}</div>
-               )}
-            </div>
-            <div>
-              <h1>สวัสดี {studentName}</h1>
-              <p>จัดการและติดตามคำร้องฝึกงานของคุณ</p>
-            </div>
-          </div>
-        </header>
+        {/* Timeline & Important Schedule Card */}
+        <Paper
+          elevation={0}
+          sx={{
+            mb: 3,
+            p: { xs: 2, sm: 2.5 },
+            borderRadius: 3,
+            bgcolor: '#ffffff',
+            border: '1px solid #fde68a',
+            borderLeft: '5px solid #f59e0b',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1.75 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  bgcolor: '#fffbeb',
+                  border: '1px solid #fde68a',
+                  color: '#d97706',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CalendarIcon style={{ width: 22, height: 22 }} />
+              </Box>
+              <div>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+                  กำหนดการสำคัญการฝึกประสบการณ์วิชาชีพ
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  ข้อมูลและกรอบระยะเวลาสำคัญที่นักศึกษาต้องติดตาม
+                </Typography>
+              </div>
+            </Box>
+            <Chip
+              label="ปีการศึกษา 2569"
+              size="small"
+              sx={{
+                bgcolor: '#fef3c7',
+                color: '#92400e',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                border: '1px solid #fde68a',
+              }}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+              gap: 1.5,
+              pt: 1,
+              borderTop: '1px dashed #f1f5f9',
+            }}
+          >
+            {/* Timeline Item 1 */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1.5,
+                  bgcolor: '#eff6ff',
+                  color: '#2563eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  mt: 0.25,
+                }}
+              >
+                <ClockIcon style={{ width: 18, height: 18 }} />
+              </Box>
+              <div>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block' }}>
+                  ระยะเวลาฝึกงาน
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#1e293b' }}>
+                  1 ธันวาคม 2569 – 31 มีนาคม 2570
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mt: 0.25 }}>
+                  ปฏิบัติงานจริง ณ สถานประกอบการที่ได้รับการอนุมัติ
+                </Typography>
+              </div>
+            </Box>
+
+            {/* Timeline Item 2 */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1.5,
+                  bgcolor: '#fef2f2',
+                  color: '#dc2626',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  mt: 0.25,
+                }}
+              >
+                <DocumentTextIcon style={{ width: 18, height: 18 }} />
+              </Box>
+              <div>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block' }}>
+                  กำหนดส่งเอกสารประเมิน / เล่มรายงาน
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#dc2626' }}>
+                  ภายในวันที่ 15 เมษายน 2570
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mt: 0.25 }}>
+                  ส่งแบบประเมินและเล่มรายงานการฝึกงานฉบับสมบูรณ์
+                </Typography>
+              </div>
+            </Box>
+          </Box>
+        </Paper>
 
         {currentRequest?.supervisionAppointment?.date && (() => {
           const isCompleted = Boolean(currentRequest.supervisionReport || currentRequest.hasAdvisorEval);
@@ -523,6 +711,105 @@ const DashboardPage = () => {
                         </Box>
                       )}
 
+                      {request.dispatchLetter && (
+                        <Box
+                          sx={{
+                            mt: 2,
+                            p: 2,
+                            bgcolor: '#fff1f2',
+                            borderRadius: '12px',
+                            border: '1.5px solid #fecdd3',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 1.5,
+                            boxShadow: '0 2px 10px rgba(225, 29, 72, 0.06)'
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '10px',
+                                bgcolor: '#ffe4e6',
+                                color: '#be185d',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                              }}
+                            >
+                              <DocumentTextIcon style={{ width: 22, height: 22 }} />
+                            </Box>
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#881337', fontSize: '0.92rem' }}>
+                                เอกสารหนังสือส่งตัวฝึกงาน (Dispatch Letter)
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#be185d', display: 'block', fontWeight: 500 }}>
+                                {request.dispatchLetter.fileName || 'หนังสือส่งตัวจากผู้ดูแลระบบ'}
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          {request.dispatchLetter.dataUrl && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                startIcon={<EyeIcon style={{ width: 16, height: 16 }} />}
+                                onClick={() => {
+                                  const letter = request.dispatchLetter;
+                                  const blobUrl = dataUrlToBlobUrl(letter.dataUrl);
+                                  setDocModal({
+                                    open: true,
+                                    dataUrl: letter.dataUrl,
+                                    fileName: letter.fileName || 'หนังสือส่งตัวฝึกงาน.pdf',
+                                    blobUrl,
+                                  });
+                                }}
+                                sx={{
+                                  bgcolor: '#be185d',
+                                  '&:hover': { bgcolor: '#9d174d' },
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  fontSize: '0.85rem',
+                                  borderRadius: 2,
+                                  px: 2,
+                                  py: 0.6,
+                                  boxShadow: '0 2px 6px rgba(190, 24, 93, 0.25)'
+                                }}
+                              >
+                                ดูเอกสาร
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<ArrowDownTrayIcon style={{ width: 16, height: 16 }} />}
+                                onClick={() => {
+                                  const letter = request.dispatchLetter;
+                                  handleDownloadFile(letter.dataUrl, letter.fileName || 'หนังสือส่งตัวฝึกงาน.pdf');
+                                }}
+                                sx={{
+                                  borderColor: '#be185d',
+                                  color: '#be185d',
+                                  '&:hover': { borderColor: '#9d174d', bgcolor: '#fff1f2' },
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  fontSize: '0.85rem',
+                                  borderRadius: 2,
+                                  px: 1.75,
+                                  py: 0.6,
+                                }}
+                              >
+                                ดาวน์โหลด
+                              </Button>
+                            </Box>
+                          )}
+                        </Box>
+                      )}
+
                       <Box className="request-footer" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', paddingTop: '0.75rem' }}>
                         <div className="request-date">
                           <span className="request-date-label"> ยื่นเมื่อ</span>
@@ -551,6 +838,71 @@ const DashboardPage = () => {
             )}
           </div>
         </div>
+
+        {/* Document Preview Modal */}
+        <Dialog
+          open={docModal.open}
+          onClose={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })}
+          maxWidth="md"
+          fullWidth
+          disableScrollLock={true}
+          PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
+        >
+          <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: '1px solid #f1f5f9' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '8px',
+                  bgcolor: '#ffe4e6',
+                  color: '#be185d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <DocumentTextIcon style={{ width: 18, height: 18 }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+                {docModal.fileName || 'หนังสือส่งตัวฝึกงาน'}
+              </Typography>
+            </Box>
+            <Button size="small" onClick={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })} sx={{ color: '#64748b', fontWeight: 700 }}>
+              ปิด
+            </Button>
+          </DialogTitle>
+          <DialogContent sx={{ p: 2, bgcolor: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '65vh' }}>
+            {docModal.open && (docModal.blobUrl || docModal.dataUrl) && (
+              docModal.dataUrl?.startsWith('data:image/') ? (
+                <img
+                  src={docModal.dataUrl}
+                  alt={docModal.fileName}
+                  style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
+                />
+              ) : (
+                <iframe
+                  src={docModal.blobUrl || docModal.dataUrl}
+                  title={docModal.fileName}
+                  style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '8px', backgroundColor: '#fff' }}
+                />
+              )
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 1.5, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}>
+            <Button
+              variant="contained"
+              startIcon={<ArrowDownTrayIcon style={{ width: 18, height: 18 }} />}
+              onClick={() => handleDownloadFile(docModal.dataUrl, docModal.fileName)}
+              sx={{ bgcolor: '#be185d', '&:hover': { bgcolor: '#9d174d' }, fontWeight: 700, borderRadius: 2, textTransform: 'none', px: 2.5 }}
+            >
+              ดาวน์โหลดไฟล์
+            </Button>
+            <Button variant="outlined" onClick={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })} sx={{ borderRadius: 2, textTransform: 'none', color: '#64748b', borderColor: '#cbd5e1' }}>
+              ปิดหน้าต่าง
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         <footer className="dashboard-footer">
           <div className="footer-inner">© 2026 ระบบคำร้องฝึกงานวิชาชีพ. All rights reserved.</div>

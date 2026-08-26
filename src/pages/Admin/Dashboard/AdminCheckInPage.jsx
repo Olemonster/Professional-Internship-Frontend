@@ -20,6 +20,7 @@ import {
 import './AdminDashboardPage.css';
 import '../Shared/CheckInPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 
 const AdminCheckInPage = () => {
   const navigate = useNavigate();
@@ -210,7 +211,10 @@ const AdminCheckInPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <AdminSidebar
         isMenuOpen={isMenuOpen}

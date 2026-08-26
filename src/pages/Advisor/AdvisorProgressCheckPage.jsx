@@ -25,6 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import AdvisorSidebar from '../../components/AdvisorSidebar';
+import UserProfileMenu from '../../components/UserProfileMenu';
 import '../Admin/Dashboard/AdminDashboardPage.css';
 
 const AdvisorProgressCheckPage = () => {
@@ -177,10 +178,12 @@ const AdvisorProgressCheckPage = () => {
   };
 
   const openHistoryDialog = (row) => {
+    const sDate = row.internship_start_date || (row.status === 'ออกฝึกงาน' ? String(row.updated_at || row.submittedDate || '').split('T')[0] : null);
     setHistoryDialog({
       open: true,
       studentName: row.studentName || '-',
       studentId: row.studentId || '-',
+      internshipStartDate: sDate,
       entries: row.checkinEntries,
     });
   };
@@ -190,6 +193,7 @@ const AdvisorProgressCheckPage = () => {
       open: false,
       studentName: '',
       studentId: '',
+      internshipStartDate: null,
       entries: [],
     });
   };
@@ -200,7 +204,10 @@ const AdvisorProgressCheckPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <AdvisorSidebar
         isMenuOpen={isMenuOpen}
@@ -331,7 +338,20 @@ const AdvisorProgressCheckPage = () => {
         <DialogContent sx={{ p: { xs: 1, sm: 2.5 }, backgroundColor: '#f8fafc' }}>
           {dialogView === 'calendar' ? (
             <Box sx={{ pt: 1 }}>
-              <AttendanceCalendar entries={historyDialog.entries} />
+              <AttendanceCalendar
+                entries={historyDialog.entries}
+                studentId={historyDialog.studentId}
+                studentName={historyDialog.studentName}
+                internshipStartDate={historyDialog.internshipStartDate}
+                onBatchSign={(updatedEntries) => {
+                  setHistoryDialog(prev => ({
+                    ...prev,
+                    entries: updatedEntries
+                  }));
+                  // Also refresh parent list
+                  loadProgress();
+                }}
+              />
             </Box>
           ) : (
             <TableContainer component={Paper} elevation={0} sx={{ mt: 1, border: '1px solid #e2e8f0', borderRadius: 2 }}>

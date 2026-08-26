@@ -7,6 +7,7 @@ import './DashboardPage.css'; // Reusing layout styles
 import './MyRequestsPage.css';
 import { ClockIcon } from '@heroicons/react/24/outline'; // Specific styles for this page
 import StudentSidebar from '../../../components/StudentSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 import StatusBadge from '../../../components/StatusBadge';
 
 const MyRequestsPage = () => {
@@ -99,7 +100,10 @@ const MyRequestsPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <StudentSidebar
         isMenuOpen={isMenuOpen}

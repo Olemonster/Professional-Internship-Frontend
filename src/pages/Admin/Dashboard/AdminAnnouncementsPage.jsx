@@ -10,6 +10,7 @@ import {
 import api from '../../../api/axios';
 import '../Dashboard/AdminDashboardPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 import ImageEditorModal from '../../../components/ImageEditorModal';
 import { MegaphoneIcon, MapPinIcon, PencilSquareIcon, PencilIcon, PhotoIcon, XMarkIcon, GlobeAltIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
@@ -147,7 +148,10 @@ const AdminAnnouncementsPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <AdminSidebar
         isMenuOpen={isMenuOpen}

@@ -1,17 +1,58 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Typography, Snackbar, Alert as MuiAlert } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import { useReactToPrint } from 'react-to-print';
 import api from '../../../api/axios';
 import './RequestDetailsPage.css';
 import PrintableEvaluationForm from '../../../components/PrintableEvaluationForm';
-import { ChartBarIcon, PrinterIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, PrinterIcon, EyeIcon, ArrowDownTrayIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+
+const dataUrlToBlobUrl = (dataUrl) => {
+  if (!dataUrl) return '';
+  try {
+    const arr = dataUrl.split(',');
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    const blob = new Blob([u8arr], { type: mime });
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error('Failed to convert dataUrl to blob:', err);
+    return dataUrl;
+  }
+};
+
+const handleDownloadFile = (dataUrl, fileName = 'หนังสือส่งตัวฝึกงาน.pdf') => {
+  if (!dataUrl) return;
+  try {
+    const blobUrl = dataUrlToBlobUrl(dataUrl);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (err) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+};
 
 const RequestDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState(null);
+  const location = useLocation();
+  const [userRole, setUserRole] = useState('student');
   const [request, setRequest] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
   const [advisorEvaluation, setAdvisorEvaluation] = useState(null);
@@ -19,8 +60,9 @@ const RequestDetailsPage = () => {
   const [rejectModal, setRejectModal] = useState({ open: false, reason: '' });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
   const [qrModal, setQrModal] = useState({ open: false, link: '' });
-  const [dispatchModal, setDispatchModal] = useState({ open: false, file: null, submitting: false, error: '' });
+  const [dispatchModal, setDispatchModal] = useState({ open: false, file: null, comment: '', submitting: false, error: '' });
   const [imageModal, setImageModal] = useState(false);
+  const [docModal, setDocModal] = useState({ open: false, dataUrl: '', fileName: '', blobUrl: '' });
   const dispatchFileInputRef = useRef(null);
   const printRef = useRef(null);
 
@@ -84,19 +126,6 @@ const RequestDetailsPage = () => {
     }
 
     if (userRole === 'admin') {
-      const isStartInternshipWaiting = ['รออาจารย์อนุมัติเริ่มฝึกงาน', 'รอแอดมินอนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(request?.status);
-      if (isStartInternshipWaiting) {
-        try {
-          await api.patch(`/requests/${id}/status`, { status: 'ออกฝึกงาน' });
-          setRequest({ ...request, status: 'ออกฝึกงาน' });
-          setToast({ open: true, message: 'อนุมัติการออกฝึกงานเรียบร้อยแล้ว', severity: 'success' });
-          navigate(-1);
-        } catch (err) {
-          setToast({ open: true, message: 'อัปเดตล้มเหลว: ' + (err.response?.data?.message || err.message), severity: 'error' });
-        }
-        return;
-      }
-
       handleOpenDispatchModal();
     }
   };
@@ -140,8 +169,11 @@ const RequestDetailsPage = () => {
     setDispatchModal((prev) => ({ ...prev, submitting: true, error: '' }));
     try {
       const dataUrl = await fileToDataUrl(dispatchModal.file);
+      const isStartInternshipWaiting = ['รออาจารย์อนุมัติเริ่มฝึกงาน', 'รอแอดมินอนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(request?.status);
+      const newStatus = isStartInternshipWaiting ? 'ออกฝึกงาน' : 'รอสถานประกอบการตอบรับ';
+
       const payload = {
-        status: 'รอสถานประกอบการตอบรับ',
+        status: newStatus,
         admin_comment: dispatchModal.comment?.trim() || null,
         dispatchLetter: {
           fileName: dispatchModal.file.name,
@@ -150,12 +182,26 @@ const RequestDetailsPage = () => {
         },
       };
       await api.patch(`/requests/${id}/status`, payload);
-      const updated = { ...request, status: 'รอสถานประกอบการตอบรับ', admin_comment: dispatchModal.comment?.trim() || null, dispatchLetter: { fileName: dispatchModal.file.name } };
+      const updated = {
+        ...request,
+        status: newStatus,
+        admin_comment: dispatchModal.comment?.trim() || null,
+        dispatchLetter: { fileName: dispatchModal.file.name, dataUrl }
+      };
       setRequest(updated);
-      setToast({ open: true, message: 'ตรวจสอบและส่งคำขอไปยังสถานประกอบการเรียบร้อยแล้ว', severity: 'success' });
-      const link = `${window.location.origin}/public/request/${id}`;
-      setQrModal({ open: true, link });
+      setToast({
+        open: true,
+        message: isStartInternshipWaiting ? 'อนุมัติการออกฝึกงานและแนบหนังสือส่งตัวเรียบร้อยแล้ว' : 'ตรวจสอบและส่งคำขอไปยังสถานประกอบการเรียบร้อยแล้ว',
+        severity: 'success'
+      });
       handleDispatchModalClose();
+
+      if (!isStartInternshipWaiting) {
+        const link = `${window.location.origin}/public/request/${id}`;
+        setQrModal({ open: true, link });
+      } else {
+        navigate(-1);
+      }
     } catch (err) {
       setDispatchModal((prev) => ({ ...prev, submitting: false, error: err.response?.data?.message || err.message || 'อัปเดตล้มเหลว' }));
     }
@@ -417,7 +463,6 @@ const RequestDetailsPage = () => {
           </section>
         )}
 
-
         {request.rejectReason && (
              <section className="detail-section" style={{ backgroundColor: '#fff5f5', padding: '15px', borderRadius: '8px', border: '1px solid #fed7d7' }}>
                <h3 style={{ color: '#c53030', borderLeftColor: '#c53030' }}>เหตุผลที่ไม่อนุมัติ</h3>
@@ -556,7 +601,7 @@ const RequestDetailsPage = () => {
           </section>
         )}
 
-        {(evaluation || request?.hasCompanyEval) && userRole === 'student' && (
+        {Boolean(evaluation || request?.hasCompanyEval) && userRole === 'student' && (
           <section className="detail-section">
             <h3 style={{ color: '#10b981' }}>การประเมินผลจากสถานประกอบการ</h3>
             <div className="detail-grid">
@@ -769,6 +814,71 @@ const RequestDetailsPage = () => {
             style={{ maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', display: 'block' }} 
           />
         </DialogContent>
+      </Dialog>
+
+      {/* Document Preview Modal */}
+      <Dialog
+        open={docModal.open}
+        onClose={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })}
+        maxWidth="md"
+        fullWidth
+        disableScrollLock={true}
+        PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: '1px solid #f1f5f9' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: '8px',
+                bgcolor: '#ffe4e6',
+                color: '#be185d',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <DocumentTextIcon style={{ width: 18, height: 18 }} />
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+              {docModal.fileName || 'หนังสือส่งตัวฝึกงาน'}
+            </Typography>
+          </Box>
+          <Button size="small" onClick={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })} sx={{ color: '#64748b', fontWeight: 700 }}>
+            ปิด
+          </Button>
+        </DialogTitle>
+        <DialogContent sx={{ p: 2, bgcolor: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '65vh' }}>
+          {docModal.open && (docModal.blobUrl || docModal.dataUrl) && (
+            docModal.dataUrl?.startsWith('data:image/') ? (
+              <img
+                src={docModal.dataUrl}
+                alt={docModal.fileName}
+                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
+              />
+            ) : (
+              <iframe
+                src={docModal.blobUrl || docModal.dataUrl}
+                title={docModal.fileName}
+                style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '8px', backgroundColor: '#fff' }}
+              />
+            )
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 1.5, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}>
+          <Button
+            variant="contained"
+            startIcon={<ArrowDownTrayIcon style={{ width: 18, height: 18 }} />}
+            onClick={() => handleDownloadFile(docModal.dataUrl, docModal.fileName)}
+            sx={{ bgcolor: '#be185d', '&:hover': { bgcolor: '#9d174d' }, fontWeight: 700, borderRadius: 2, textTransform: 'none', px: 2.5 }}
+          >
+            ดาวน์โหลดไฟล์
+          </Button>
+          <Button variant="outlined" onClick={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })} sx={{ borderRadius: 2, textTransform: 'none', color: '#64748b', borderColor: '#cbd5e1' }}>
+            ปิดหน้าต่าง
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {(userRole === 'admin' || userRole === 'advisor') && (

@@ -6,6 +6,7 @@ import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, Tab
 import '../Admin/Dashboard/AdminDashboardPage.css'; // Reuse styles
 import '../Admin/Dashboard/StudentListPage.css';
 import AdvisorSidebar from '../../components/AdvisorSidebar';
+import UserProfileMenu from '../../components/UserProfileMenu';
 import StatusBadge from '../../components/StatusBadge';
 
 const AdvisorStudentListPage = () => {
@@ -78,7 +79,10 @@ const AdvisorStudentListPage = () => {
                 <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
                     <img src={lascLogo} alt="LASC Logo" />
                 </Link>
-                <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+                <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+                    <UserProfileMenu />
+                    <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+                </div>
             </div>
             <AdvisorSidebar
                 isMenuOpen={isMenuOpen}

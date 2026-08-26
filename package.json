@@ -21,6 +21,7 @@
     "axios": "^1.13.2",
     "express": "^4.19.2",
     "jspdf": "^4.1.0",
+    "jszip": "^3.10.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import lascLogo from '../assets/LASC-SSKRU-1.png';
 import {
   HomeIcon,
   DocumentPlusIcon,
@@ -15,6 +14,7 @@ import {
   MegaphoneIcon,
   IdentificationIcon,
   CheckCircleIcon,
+  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 
 const MENU_CONFIG = {
@@ -44,6 +44,7 @@ const MENU_CONFIG = {
       { path: '/admin-dashboard', label: 'หน้าหลัก', icon: HomeIcon },
       { path: '/admin-dashboard/students', label: 'นักศึกษา', icon: AcademicCapIcon },
       { path: '/admin-dashboard/users', label: 'จัดการผู้ใช้', icon: UsersIcon },
+      { path: '/admin-dashboard/companies', label: 'สถานประกอบการ', icon: BuildingOffice2Icon },
       { path: '/admin-dashboard/checkins', label: 'รายงานประจำวัน', icon: CalendarDaysIcon },
       { path: '/admin-dashboard/attendance-overview', label: 'ภาพรวมรายบุคคล', icon: UserIcon },
       { path: '/admin-dashboard/reports', label: 'รายงาน', icon: DocumentTextIcon },
@@ -97,14 +98,8 @@ const AppSidebar = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '12px',
           }}
         >
-          <img
-            src={lascLogo}
-            alt="LASC Logo"
-            style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
-          />
           <h2 style={{ margin: 0 }}>{roleConfig.title}</h2>
         </div>
         <nav className="sidebar-nav">

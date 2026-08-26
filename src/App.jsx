@@ -13,6 +13,7 @@ import AdminReportsPage from './pages/Admin/Dashboard/AdminReportsPage';
 import AdminAnnouncementsPage from './pages/Admin/Dashboard/AdminAnnouncementsPage';
 import AdminUserManagementPage from './pages/Admin/Dashboard/AdminUserManagementPage';
 import AdminProfilePage from './pages/Admin/Dashboard/AdminProfilePage';
+import AdminCompanyManagementPage from './pages/Admin/Dashboard/AdminCompanyManagementPage';
 import AdvisorStudentListPage from './pages/Advisor/AdvisorStudentListPage';
 import AdvisorSupervisionPage from './pages/Advisor/AdvisorSupervisionPage';
 import AdvisorProgressCheckPage from './pages/Advisor/AdvisorProgressCheckPage';
@@ -25,6 +26,7 @@ import AdminAttendanceOverviewPage from './pages/Admin/Dashboard/AdminAttendance
 import PublicRequestPage from './pages/Public/PublicRequestPage';
 import PublicEvaluationPage from './pages/Public/PublicEvaluationPage';
 import AnnouncementDetailPage from './pages/Public/AnnouncementDetailPage';
+import PublicCompaniesPage from './pages/Public/PublicCompaniesPage';
 import './App.css';
 
 function App() {
@@ -45,6 +47,7 @@ function App() {
         <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin-dashboard/students" element={<StudentListPage />} />
         <Route path="/admin-dashboard/users" element={<AdminUserManagementPage />} />
+        <Route path="/admin-dashboard/companies" element={<AdminCompanyManagementPage />} />
         <Route path="/admin-dashboard/checkins" element={<AdminCheckInPage />} />
         <Route path="/admin-dashboard/attendance-overview" element={<AdminAttendanceOverviewPage />} />
         <Route path="/admin-dashboard/reports" element={<AdminReportsPage />} />
@@ -58,6 +61,7 @@ function App() {
         <Route path="/public/request/:id" element={<PublicRequestPage />} />
         <Route path="/public/evaluate/:id" element={<PublicEvaluationPage />} />
         <Route path="/news/:id" element={<AnnouncementDetailPage />} />
+        <Route path="/companies" element={<PublicCompaniesPage />} />
       </Routes>
     </Router>
   );

@@ -39,6 +39,7 @@ import { STAT_EMOJI } from '../../../utils/statEmojis';
 import './AdminDashboardPage.css';
 import { ClockIcon, TrashIcon, DocumentTextIcon, CalendarIcon, CreditCardIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import AdminSidebar from '../../../components/AdminSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 import StatusBadge from '../../../components/StatusBadge';
 import StatCard from '../../../components/StatCard';
 
@@ -296,28 +297,25 @@ const AdminDashboardPage = () => {
     reader.readAsDataURL(file);
   });
 
-  const handleApproveStartInternship = async (requestId) => {
-    try {
-      await api.patch(`/requests/${requestId}/status`, { status: 'ออกฝึกงาน' });
-      setAllRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'ออกฝึกงาน' } : r));
-      alert('อนุมัติการออกฝึกงานเรียบร้อยแล้ว');
-    } catch (err) {
-      alert('อัปเดตล้มเหลว: ' + (err.response?.data?.message || err.message));
+  const handleApproveStartInternship = (requestId) => {
+    if (dispatchFileInputRef.current) {
+      dispatchFileInputRef.current.value = '';
     }
+    setDispatchModal({ open: true, requestId, targetStatus: 'ออกฝึกงาน', file: null, comment: '', submitting: false, error: '' });
   };
 
   const handleApprove = (requestId) => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
     }
-    setDispatchModal({ open: true, requestId, file: null, comment: '', submitting: false, error: '' });
+    setDispatchModal({ open: true, requestId, targetStatus: 'รอสถานประกอบการตอบรับ', file: null, comment: '', submitting: false, error: '' });
   };
 
   const handleDispatchModalClose = () => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
     }
-    setDispatchModal({ open: false, requestId: null, file: null, comment: '', submitting: false, error: '' });
+    setDispatchModal({ open: false, requestId: null, targetStatus: null, file: null, comment: '', submitting: false, error: '' });
   };
 
   const handleDispatchFileChange = (event) => {
@@ -345,8 +343,13 @@ const AdminDashboardPage = () => {
     setDispatchModal((prev) => ({ ...prev, submitting: true, error: '' }));
     try {
       const dataUrl = await fileToDataUrl(dispatchModal.file);
+      const requestId = dispatchModal.requestId;
+      const targetRequest = allRequests.find(r => String(r.id) === String(requestId));
+      const isStartInternship = dispatchModal.targetStatus === 'ออกฝึกงาน' || ['รออาจารย์อนุมัติเริ่มฝึกงาน', 'รอแอดมินอนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(targetRequest?.status);
+      const newStatus = isStartInternship ? 'ออกฝึกงาน' : 'รอสถานประกอบการตอบรับ';
+
       const payload = {
-        status: 'รอสถานประกอบการตอบรับ',
+        status: newStatus,
         admin_comment: dispatchModal.comment?.trim() || null,
         dispatchLetter: {
           fileName: dispatchModal.file.name,
@@ -354,14 +357,19 @@ const AdminDashboardPage = () => {
           dataUrl,
         },
       };
-      const requestId = dispatchModal.requestId;
       await api.patch(`/requests/${requestId}/status`, payload);
       setAllRequests(allRequests.map(r => String(r.id) === String(requestId)
-        ? { ...r, status: 'รอสถานประกอบการตอบรับ', admin_comment: dispatchModal.comment?.trim() || null, dispatchLetter: { fileName: dispatchModal.file.name } }
+        ? { ...r, status: newStatus, admin_comment: dispatchModal.comment?.trim() || null, dispatchLetter: { fileName: dispatchModal.file.name, dataUrl } }
         : r));
-      const link = `${window.location.origin}/public/request/${requestId}`;
-      setQrModal({ open: true, requestId, link });
+      
       handleDispatchModalClose();
+
+      if (!isStartInternship) {
+        const link = `${window.location.origin}/public/request/${requestId}`;
+        setQrModal({ open: true, requestId, link });
+      } else {
+        alert('อนุมัติการออกฝึกงานและแนบหนังสือส่งตัวให้นักศึกษาเรียบร้อยแล้ว');
+      }
     } catch (err) {
       setDispatchModal((prev) => ({ ...prev, submitting: false, error: err.response?.data?.message || err.message || 'อัปเดตสถานะล้มเหลว' }));
     }
@@ -428,7 +436,7 @@ const AdminDashboardPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
           <IconButton
             onClick={(e) => setNotifAnchor(e.currentTarget)}
             size="small"
@@ -451,6 +459,7 @@ const AdminDashboardPage = () => {
               <BellIcon style={{ width: 18, height: 18, color: statusCounts.pendingAdmin > 0 ? '#d97706' : '#64748b' }} />
             </Badge>
           </IconButton>
+          <UserProfileMenu />
           <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
         </div>
       </div>

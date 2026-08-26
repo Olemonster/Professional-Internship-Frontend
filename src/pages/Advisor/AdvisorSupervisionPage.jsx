@@ -29,6 +29,7 @@ import {
 import { STAT_EMOJI } from '../../utils/statEmojis';
 import '../Admin/Dashboard/AdminDashboardPage.css';
 import AdvisorSidebar from '../../components/AdvisorSidebar';
+import UserProfileMenu from '../../components/UserProfileMenu';
 import StatCard from '../../components/StatCard';
 
 const AdvisorSupervisionPage = () => {
@@ -211,7 +212,10 @@ const AdvisorSupervisionPage = () => {
                 <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
                     <img src={lascLogo} alt="LASC Logo" />
                 </Link>
-                <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+                <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+                    <UserProfileMenu />
+                    <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+                </div>
             </div>
             <AdvisorSidebar
                 isMenuOpen={isMenuOpen}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import lascLogo from '../../../assets/LASC-SSKRU-1.png';
 import { API_BASE } from '../../../api/axios';
@@ -8,6 +8,8 @@ import {
   DocumentTextIcon,
   CalendarIcon,
   CreditCardIcon,
+  ArrowDownTrayIcon,
+  PrinterIcon,
 } from '@heroicons/react/24/outline';
 import {
   Box,
@@ -25,14 +27,34 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  IconButton,
+  Tooltip,
   Checkbox,
   Typography,
   Alert,
   Snackbar,
 } from '@mui/material';
+import JSZip from 'jszip';
+import { useReactToPrint } from 'react-to-print';
+import PrintablePaymentReceipt from '../../../components/PrintablePaymentReceipt';
 import './AdminDashboardPage.css';
 import './StudentListPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
+
+const dataUrlToBlob = (dataUrl) => {
+  if (!dataUrl) return null;
+  const arr = dataUrl.split(',');
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
 
 const StudentListPage = () => {
   const navigate = useNavigate();
@@ -53,11 +75,31 @@ const StudentListPage = () => {
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exportingSlips, setExportingSlips] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedStudentCodes, setSelectedStudentCodes] = useState([]);
-  const [slipModal, setSlipModal] = useState({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null });
+  const [slipModal, setSlipModal] = useState({ open: false, imageUrl: '', paymentId: null, studentCode: null, studentName: null, paymentStatus: null });
   
+  const [receiptStudents, setReceiptStudents] = useState([]);
+  const printReceiptRef = useRef(null);
+  const handlePrintReceipt = useReactToPrint({
+    contentRef: printReceiptRef,
+    documentTitle: 'ใบสำคัญรับเงิน_ฝึกงาน',
+  });
+
+  const handleExportReceipts = (targetStudents) => {
+    const list = targetStudents || [];
+    if (list.length === 0) {
+      setToast({ open: true, message: 'ไม่มีรายชื่อนักศึกษาที่เลือก', severity: 'warning' });
+      return;
+    }
+    setReceiptStudents(list);
+    setTimeout(() => {
+      handlePrintReceipt();
+    }, 150);
+  };
+
   const [deleteModal, setDeleteModal] = useState({
     open: false,
     targetStudents: [],
@@ -186,6 +228,18 @@ const StudentListPage = () => {
     return filteredStudents.every(s => selectedStudentCodes.includes(s.student_code || s.username));
   }, [filteredStudents, selectedStudentCodes]);
 
+  const selectedStudents = useMemo(() => {
+    return students.filter(s => selectedStudentCodes.includes(s.student_code || s.username));
+  }, [students, selectedStudentCodes]);
+
+  const selectedWithSlips = useMemo(() => {
+    return selectedStudents.filter(s => Boolean(s.paymentSlip));
+  }, [selectedStudents]);
+
+  const filteredWithSlips = useMemo(() => {
+    return filteredStudents.filter(s => Boolean(s.paymentSlip));
+  }, [filteredStudents]);
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       const allCodes = filteredStudents.map(s => s.student_code || s.username).filter(Boolean);
@@ -266,12 +320,92 @@ const StudentListPage = () => {
     }
   };
 
-  const handleDownloadSlip = () => {
+  // Export single slip
+  const handleDownloadSingleSlip = (student) => {
+    if (!student || !student.paymentSlip) {
+      setToast({ open: true, message: 'นักศึกษาคนนี้ยังไม่ได้แนบสลิปการชำระเงิน', severity: 'warning' });
+      return;
+    }
+    const studentCode = student.student_code || student.username || 'student';
+    const studentName = (student.full_name || '').replace(/[\/\\]/g, '_').trim();
+    const ext = student.paymentSlip.includes('image/jpeg') ? 'jpg' : (student.paymentSlip.includes('image/png') ? 'png' : 'jpg');
+    const fileName = `สลิป_${studentCode}_${studentName || 'นักศึกษา'}.${ext}`;
+
+    const blob = dataUrlToBlob(student.paymentSlip);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      setToast({ open: true, message: `ดาวน์โหลดสลิปของ ${student.full_name || studentCode} เรียบร้อยแล้ว`, severity: 'success' });
+    }
+  };
+
+  // Export multiple slips (ZIP)
+  const handleExportBatchSlips = async (targetStudentList) => {
+    const listWithSlips = (targetStudentList || []).filter(s => Boolean(s.paymentSlip));
+    if (listWithSlips.length === 0) {
+      setToast({ open: true, message: 'ไม่มีหลักฐานสลิปการชำระเงินของนักศึกษาที่เลือก', severity: 'warning' });
+      return;
+    }
+
+    if (listWithSlips.length === 1) {
+      handleDownloadSingleSlip(listWithSlips[0]);
+      return;
+    }
+
+    setExportingSlips(true);
+    try {
+      const zip = new JSZip();
+
+      listWithSlips.forEach((student, idx) => {
+        const studentCode = student.student_code || student.username || `student_${idx + 1}`;
+        const studentName = (student.full_name || '').replace(/[\/\\]/g, '_').trim();
+        const ext = student.paymentSlip.includes('image/jpeg') ? 'jpg' : (student.paymentSlip.includes('image/png') ? 'png' : 'jpg');
+        const fileName = `สลิป_${studentCode}_${studentName || 'นักศึกษา'}.${ext}`;
+
+        const base64Data = student.paymentSlip.split(',')[1] || student.paymentSlip;
+        zip.file(fileName, base64Data, { base64: true });
+      });
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const nowStr = new Date().toISOString().slice(0, 10);
+      const zipName = `สลิปชำระเงิน_นักศึกษา_${nowStr}.zip`;
+
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = zipName;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setToast({ open: true, message: `Export สลีปเรียบร้อยแล้ว (${listWithSlips.length} ไฟล์)`, severity: 'success' });
+    } catch (err) {
+      console.error('Export slips error:', err);
+      setToast({ open: true, message: 'เกิดข้อผิดพลาดในการ Export สลีป', severity: 'error' });
+    } finally {
+      setExportingSlips(false);
+    }
+  };
+
+  const handleDownloadSlipFromModal = () => {
     if (!slipModal.imageUrl) return;
-    const anchor = document.createElement('a');
-    anchor.href = slipModal.imageUrl;
-    anchor.download = `หลักฐานการชำระค่าออกฝึกงาน_${slipModal.studentCode || 'ไม่ทราบรหัส'}.png`;
-    anchor.click();
+    const studentCode = slipModal.studentCode || 'student';
+    const studentName = (slipModal.studentName || '').replace(/[\/\\]/g, '_').trim();
+    const ext = slipModal.imageUrl.includes('image/jpeg') ? 'jpg' : (slipModal.imageUrl.includes('image/png') ? 'png' : 'jpg');
+    const fileName = `สลิป_${studentCode}_${studentName || 'นักศึกษา'}.${ext}`;
+
+    const blob = dataUrlToBlob(slipModal.imageUrl);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleUpdatePaymentStatus = async (action) => {
@@ -294,7 +428,7 @@ const StudentListPage = () => {
         return s;
       }));
       
-      setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null });
+      setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, studentName: null, paymentStatus: null });
       setToast({ open: true, message: 'อัปเดตสถานะการชำระเงินเรียบร้อยแล้ว', severity: 'success' });
     } catch (err) {
       alert(err.message);
@@ -307,7 +441,10 @@ const StudentListPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <AdminSidebar
         isMenuOpen={isMenuOpen}
@@ -347,23 +484,97 @@ const StudentListPage = () => {
               </TextField>
             </div>
 
-            {selectedStudentCodes.length > 0 && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: '#fef2f2', p: 1, px: 2, borderRadius: 2, border: '1px solid #fecaca' }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: '#991b1b' }}>
-                  เลือกแล้ว {selectedStudentCodes.length} รายการ
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={handleOpenDeleteBatch}
-                  startIcon={<TrashIcon style={{ width: 16, height: 16 }} />}
-                  sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none' }}
-                >
-                  ลบข้อมูลนักศึกษาที่เลือก ({selectedStudentCodes.length})
-                </Button>
-              </Box>
-            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+              {selectedStudentCodes.length > 0 ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: '#f8fafc', p: 0.75, px: 1.5, borderRadius: 2, border: '1.5px solid #e2e8f0', flexWrap: 'wrap' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>
+                    เลือกแล้ว {selectedStudentCodes.length} คน
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => handleExportReceipts(selectedStudents)}
+                    startIcon={<PrinterIcon style={{ width: 16, height: 16 }} />}
+                    sx={{ 
+                      borderRadius: 1.75, 
+                      fontWeight: 700, 
+                      textTransform: 'none',
+                      bgcolor: '#166534',
+                      '&:hover': { bgcolor: '#14532d' }
+                    }}
+                  >
+                    Export ใบสำคัญรับเงิน ({selectedStudents.length})
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={selectedWithSlips.length === 0 || exportingSlips}
+                    onClick={() => handleExportBatchSlips(selectedStudents)}
+                    startIcon={<ArrowDownTrayIcon style={{ width: 16, height: 16 }} />}
+                    sx={{ 
+                      borderRadius: 1.75, 
+                      fontWeight: 700, 
+                      textTransform: 'none',
+                      bgcolor: '#0284c7',
+                      '&:hover': { bgcolor: '#0369a1' }
+                    }}
+                  >
+                    {exportingSlips ? 'กำลัง Export...' : `Export สลีป (${selectedWithSlips.length})`}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={handleOpenDeleteBatch}
+                    startIcon={<TrashIcon style={{ width: 16, height: 16 }} />}
+                    sx={{ borderRadius: 1.75, fontWeight: 700, textTransform: 'none' }}
+                  >
+                    ลบข้อมูลที่เลือก ({selectedStudentCodes.length})
+                  </Button>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={filteredStudents.length === 0}
+                    onClick={() => handleExportReceipts(filteredStudents)}
+                    startIcon={<PrinterIcon style={{ width: 16, height: 16 }} />}
+                    sx={{
+                      borderRadius: 2,
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      borderColor: '#166534',
+                      color: '#166534',
+                      bgcolor: '#f0fdf4',
+                      '&:hover': { borderColor: '#14532d', bgcolor: '#dcfce7' },
+                      '&.Mui-disabled': { borderColor: '#e2e8f0', color: '#94a3b8', bgcolor: '#f8fafc' }
+                    }}
+                  >
+                    Export ใบสำคัญรับเงินทั้งหมด ({filteredStudents.length})
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={filteredWithSlips.length === 0 || exportingSlips}
+                    onClick={() => handleExportBatchSlips(filteredStudents)}
+                    startIcon={<ArrowDownTrayIcon style={{ width: 16, height: 16 }} />}
+                    sx={{
+                      borderRadius: 2,
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      borderColor: '#0284c7',
+                      color: '#0284c7',
+                      bgcolor: '#f0f9ff',
+                      '&:hover': { borderColor: '#0369a1', bgcolor: '#e0f2fe' },
+                      '&.Mui-disabled': { borderColor: '#e2e8f0', color: '#94a3b8', bgcolor: '#f8fafc' }
+                    }}
+                  >
+                    {exportingSlips ? 'กำลัง Export...' : `Export สลีปทั้งหมด (${filteredWithSlips.length})`}
+                  </Button>
+                </Box>
+              )}
+            </Box>
           </div>
 
           <TableContainer component={Box} className="compact-table">
@@ -418,7 +629,7 @@ const StudentListPage = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span className="status-badge" style={{ 
                             background: student.paymentStatus === 'approved' ? '#dcfce7' : student.paymentStatus === 'rejected' ? '#fee2e2' : student.paymentStatus === 'pending' ? '#fef3c7' : '#f3f4f6', 
                             color: student.paymentStatus === 'approved' ? '#166534' : student.paymentStatus === 'rejected' ? '#991b1b' : student.paymentStatus === 'pending' ? '#92400e' : '#4b5563',
@@ -427,13 +638,33 @@ const StudentListPage = () => {
                             {student.paymentStatus === 'approved' ? 'ชำระเงินแล้ว' : student.paymentStatus === 'pending' ? 'รอตรวจสอบ' : student.paymentStatus === 'rejected' ? 'ไม่อนุมัติ' : 'ยังไม่ชำระเงิน'}
                           </span>
                           {student.paymentSlip && (
-                            <button 
-                              onClick={() => setSlipModal({ open: true, imageUrl: student.paymentSlip, paymentId: student.paymentId, studentCode: student.student_code, paymentStatus: student.paymentStatus })}
-                              style={{ border: 'none', background: 'none', color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px', padding: 0 }}
-                            >
-                              ดูสลิป
-                            </button>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <button 
+                                onClick={() => setSlipModal({ open: true, imageUrl: student.paymentSlip, paymentId: student.paymentId, studentCode: student.student_code, studentName: student.full_name, paymentStatus: student.paymentStatus })}
+                                style={{ border: 'none', background: 'none', color: '#be185d', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: 700 }}
+                              >
+                                ดูสลิป
+                              </button>
+                              <Tooltip title="ดาวน์โหลดสลิป (Export Image)" arrow>
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => handleDownloadSingleSlip(student)}
+                                  sx={{ p: 0.25, color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
+                                >
+                                  <ArrowDownTrayIcon style={{ width: 15, height: 15 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
                           )}
+                          <Tooltip title="พิมพ์/Export ใบสำคัญรับเงิน (Receipt)" arrow>
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleExportReceipts([student])}
+                              sx={{ p: 0.25, color: '#166534', '&:hover': { bgcolor: '#dcfce7' } }}
+                            >
+                              <PrinterIcon style={{ width: 15, height: 15 }} />
+                            </IconButton>
+                          </Tooltip>
                         </div>
                       </TableCell>
                       <TableCell align="center">
@@ -749,26 +980,60 @@ const StudentListPage = () => {
         </Dialog>
 
         {/* Payment Slip Dialog */}
-        <Dialog open={slipModal.open} onClose={() => setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null })} maxWidth="sm" fullWidth>
-          <DialogContent sx={{ textAlign: 'center', p: 3 }}>
+        <Dialog open={slipModal.open} onClose={() => setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, studentName: null, paymentStatus: null })} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', borderBottom: '1px solid #f1f5f9', pb: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CreditCardIcon style={{ width: 20, height: 20, color: '#0284c7' }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                หลักฐานการชำระเงิน {slipModal.studentName ? `(${slipModal.studentName})` : ''}
+              </Typography>
+            </Box>
+            <Button size="small" onClick={() => setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, studentName: null, paymentStatus: null })} sx={{ color: '#64748b' }}>
+              ปิด
+            </Button>
+          </DialogTitle>
+          <DialogContent sx={{ textAlign: 'center', p: 3, bgcolor: '#f8fafc' }}>
             {slipModal.imageUrl ? (
               <img 
                 src={slipModal.imageUrl} 
                 alt="Payment Slip" 
-                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }} 
+                style={{ maxWidth: '100%', maxHeight: '68vh', objectFit: 'contain', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }} 
               />
             ) : null}
           </DialogContent>
-          <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
-            <Button variant="outlined" color="primary" onClick={handleDownloadSlip}>ดาวน์โหลดสลิป</Button>
+          <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2, bgcolor: '#ffffff', borderTop: '1px solid #f1f5f9' }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                variant="contained" 
+                onClick={handleDownloadSlipFromModal}
+                startIcon={<ArrowDownTrayIcon style={{ width: 16, height: 16 }} />}
+                sx={{ bgcolor: '#0284c7', '&:hover': { bgcolor: '#0369a1' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+              >
+                ดาวน์โหลดสลิป
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={() => {
+                  const s = students.find(x => (x.student_code || x.username) === slipModal.studentCode) || {
+                    student_code: slipModal.studentCode,
+                    full_name: slipModal.studentName,
+                    paymentSlip: slipModal.imageUrl
+                  };
+                  handleExportReceipts([s]);
+                }}
+                startIcon={<PrinterIcon style={{ width: 16, height: 16 }} />}
+                sx={{ borderColor: '#166534', color: '#166534', '&:hover': { bgcolor: '#f0fdf4' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+              >
+                พิมพ์ใบสำคัญรับเงิน (PDF)
+              </Button>
+            </Box>
             <div style={{ display: 'flex', gap: '8px' }}>
               {slipModal.paymentId && slipModal.paymentStatus !== 'approved' && (
                 <>
-                  <Button variant="contained" color="success" onClick={() => handleUpdatePaymentStatus('approve')} disableElevation>อนุมัติ</Button>
-                  <Button variant="contained" color="error" onClick={() => handleUpdatePaymentStatus('reject')} disableElevation>ไม่อนุมัติ</Button>
+                  <Button variant="contained" color="success" onClick={() => handleUpdatePaymentStatus('approve')} sx={{ borderRadius: 2, fontWeight: 700 }}>อนุมัติ</Button>
+                  <Button variant="contained" color="error" onClick={() => handleUpdatePaymentStatus('reject')} sx={{ borderRadius: 2, fontWeight: 700 }}>ไม่อนุมัติ</Button>
                 </>
               )}
-              <Button onClick={() => setSlipModal({ open: false, imageUrl: '', paymentId: null, studentCode: null, paymentStatus: null })} color="inherit">ปิด</Button>
             </div>
           </DialogActions>
         </Dialog>
@@ -784,6 +1049,11 @@ const StudentListPage = () => {
             {toast.message}
           </Alert>
         </Snackbar>
+
+        {/* Hidden Printable Receipts Container for react-to-print */}
+        <div style={{ display: 'none' }}>
+          <PrintablePaymentReceipt ref={printReceiptRef} students={receiptStudents} />
+        </div>
       </main>
     </div>
   );

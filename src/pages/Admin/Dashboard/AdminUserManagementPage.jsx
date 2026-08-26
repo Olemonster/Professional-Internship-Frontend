@@ -28,6 +28,7 @@ import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
 import './AdminDashboardPage.css';
 import './AdminUserManagementPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 
 const AdminUserManagementPage = () => {
   const navigate = useNavigate();
@@ -468,7 +469,10 @@ const AdminUserManagementPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <AdminSidebar
         isMenuOpen={isMenuOpen}

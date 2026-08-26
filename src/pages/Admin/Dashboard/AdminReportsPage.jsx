@@ -28,6 +28,7 @@ import {
 import './AdminDashboardPage.css';
 import './AdminReportsPage.css';
 import AdminSidebar from '../../../components/AdminSidebar';
+import UserProfileMenu from '../../../components/UserProfileMenu';
 import StatCard from '../../../components/StatCard';
 import { STAT_EMOJI } from '../../../utils/statEmojis';
 
@@ -342,7 +343,10 @@ const AdminReportsPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
 
       <AdminSidebar

@@ -30,6 +30,7 @@ import { STAT_EMOJI } from '../../utils/statEmojis';
 import '../Admin/Dashboard/AdminDashboardPage.css'; // Reuse Admin styles
 import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import AdvisorSidebar from '../../components/AdvisorSidebar';
+import UserProfileMenu from '../../components/UserProfileMenu';
 import StatusBadge from '../../components/StatusBadge';
 import ModernButton from '../../components/ModernButton';
 import StatCard from '../../components/StatCard';
@@ -267,7 +268,10 @@ const AdvisorDashboardPage = () => {
         <Link to="/" className="mobile-top-logo" aria-label="LASC Home">
           <img src={lascLogo} alt="LASC Logo" />
         </Link>
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '8px' }}>
+          <UserProfileMenu />
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>☰</button>
+        </div>
       </div>
       <AdvisorSidebar
         isMenuOpen={isMenuOpen}

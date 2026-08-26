@@ -1,9 +1,49 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent } from '@mui/material';
-import { ChartBarIcon } from '@heroicons/react/24/outline';
+import { Dialog, DialogContent, DialogTitle, DialogActions, Button, Typography, Box } from '@mui/material';
+import { ChartBarIcon, DocumentTextIcon, EyeIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import api from '../../../api/axios';
 import './RequestDetailsPage.css';
+
+const dataUrlToBlobUrl = (dataUrl) => {
+  if (!dataUrl) return '';
+  try {
+    const arr = dataUrl.split(',');
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    const blob = new Blob([u8arr], { type: mime });
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error('Failed to convert dataUrl to blob:', err);
+    return dataUrl;
+  }
+};
+
+const handleDownloadFile = (dataUrl, fileName = 'หนังสือส่งตัวฝึกงาน.pdf') => {
+  if (!dataUrl) return;
+  try {
+    const blobUrl = dataUrlToBlobUrl(dataUrl);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (err) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+};
 
 const StudentDetailsPage = () => {
   const { id } = useParams();
@@ -14,6 +54,7 @@ const StudentDetailsPage = () => {
   const [advisorEvaluation, setAdvisorEvaluation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [imageModal, setImageModal] = useState(false);
+  const [docModal, setDocModal] = useState({ open: false, dataUrl: '', fileName: '', blobUrl: '' });
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -343,6 +384,61 @@ const StudentDetailsPage = () => {
           </section>
         )}
 
+        {request.dispatchLetter && (
+          <section className="detail-section" style={{ backgroundColor: '#fff1f2', border: '1.5px solid #fecdd3', borderRadius: '12px', padding: '20px' }}>
+            <h3 style={{ color: '#be185d', borderLeftColor: '#be185d', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <DocumentTextIcon style={{ width: 22, height: 22 }} /> หนังสือส่งตัวฝึกงาน (Dispatch Letter)
+            </h3>
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span className="detail-label">ชื่อเอกสาร</span>
+                <span className="detail-value" style={{ fontWeight: 'bold', color: '#881337' }}>{request.dispatchLetter.fileName || 'หนังสือส่งตัวฝึกงาน'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">เอกสารแนบ</span>
+                <span className="detail-value">
+                  {request.dispatchLetter.dataUrl ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<EyeIcon style={{ width: 16, height: 16 }} />}
+                        sx={{ bgcolor: '#be185d', '&:hover': { bgcolor: '#9d174d' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+                        onClick={() => {
+                          const letter = request.dispatchLetter;
+                          const blobUrl = dataUrlToBlobUrl(letter.dataUrl);
+                          setDocModal({
+                            open: true,
+                            dataUrl: letter.dataUrl,
+                            fileName: letter.fileName || 'หนังสือส่งตัวฝึกงาน.pdf',
+                            blobUrl,
+                          });
+                        }}
+                      >
+                        ดูเอกสาร
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<ArrowDownTrayIcon style={{ width: 16, height: 16 }} />}
+                        sx={{ borderColor: '#be185d', color: '#be185d', '&:hover': { borderColor: '#9d174d', bgcolor: '#fff1f2' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+                        onClick={() => {
+                          const letter = request.dispatchLetter;
+                          handleDownloadFile(letter.dataUrl, letter.fileName || 'หนังสือส่งตัวฝึกงาน.pdf');
+                        }}
+                      >
+                        ดาวน์โหลด
+                      </Button>
+                    </Box>
+                  ) : (
+                    <span style={{ color: '#64748b' }}>มีหนังสือส่งตัวแนบในระบบ</span>
+                  )}
+                </span>
+              </div>
+            </div>
+          </section>
+        )}
+
         {evaluation && (userRole === 'admin' || userRole === 'advisor') && (
           <section className="detail-section" style={{ marginTop: '30px', padding: '24px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -456,7 +552,7 @@ const StudentDetailsPage = () => {
 
             <div className="detail-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
               {advisorEvaluation.companyComments && (
-                <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
+              <div className="detail-item" style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
                   <span className="detail-label" style={{ color: '#166534', fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>ความคิดเห็นต่อสถานประกอบการ</span>
                   <span className="detail-value" style={{ display: 'block', lineHeight: 1.5 }}>{advisorEvaluation.companyComments}</span>
                 </div>
@@ -510,6 +606,71 @@ const StudentDetailsPage = () => {
               />
             )}
           </DialogContent>
+        </Dialog>
+
+        {/* Document Preview Modal */}
+        <Dialog
+          open={docModal.open}
+          onClose={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })}
+          maxWidth="md"
+          fullWidth
+          disableScrollLock={true}
+          PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
+        >
+          <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: '1px solid #f1f5f9' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '8px',
+                  bgcolor: '#ffe4e6',
+                  color: '#be185d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <DocumentTextIcon style={{ width: 18, height: 18 }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+                {docModal.fileName || 'หนังสือส่งตัวฝึกงาน'}
+              </Typography>
+            </Box>
+            <Button size="small" onClick={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })} sx={{ color: '#64748b', fontWeight: 700 }}>
+              ปิด
+            </Button>
+          </DialogTitle>
+          <DialogContent sx={{ p: 2, bgcolor: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '65vh' }}>
+            {docModal.open && (docModal.blobUrl || docModal.dataUrl) && (
+              docModal.dataUrl?.startsWith('data:image/') ? (
+                <img
+                  src={docModal.dataUrl}
+                  alt={docModal.fileName}
+                  style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
+                />
+              ) : (
+                <iframe
+                  src={docModal.blobUrl || docModal.dataUrl}
+                  title={docModal.fileName}
+                  style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '8px', backgroundColor: '#fff' }}
+                />
+              )
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 1.5, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}>
+            <Button
+              variant="contained"
+              startIcon={<ArrowDownTrayIcon style={{ width: 18, height: 18 }} />}
+              onClick={() => handleDownloadFile(docModal.dataUrl, docModal.fileName)}
+              sx={{ bgcolor: '#be185d', '&:hover': { bgcolor: '#9d174d' }, fontWeight: 700, borderRadius: 2, textTransform: 'none', px: 2.5 }}
+            >
+              ดาวน์โหลดไฟล์
+            </Button>
+            <Button variant="outlined" onClick={() => setDocModal({ open: false, dataUrl: '', fileName: '', blobUrl: '' })} sx={{ borderRadius: 2, textTransform: 'none', color: '#64748b', borderColor: '#cbd5e1' }}>
+              ปิดหน้าต่าง
+            </Button>
+          </DialogActions>
         </Dialog>
 
         <footer className="actions-footer">
