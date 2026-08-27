@@ -33,19 +33,19 @@ const ProfilePage = () => {
     'สาขาวิชาเทคโนโลยีการเกษตร',
     'สาขาวิชาเทคโนโลยีและนวัตกรรมอาหาร',
     'สาขาวิชาอาชีวอนามัยและความปลอดภัย',
-    'สาขาวิชาวิศวกรรมซอฟต์แวร์',
+    'สาขาวิชาวิศวกรรมซอฟต์แวร์และปัญญาประดิษฐ์',
     'สาขาวิชาวิศวกรรมโลจิสติกส์',
-    'สาขาวิศวกรรมการจัดการอุตสาหกรรมและสิ่งแวดล้อม',
+    'สาขาวิชาวิศวกรรมการจัดการอุตสาหกรรมและสิ่งแวดล้อม',
     'สาขาวิชาการออกแบบผลิตภัณฑ์และนวัตกรรมวัสดุ',
     'สาขาวิชาเทคโนโลยีโยธาและสถาปัตยกรรม'
   ];
   const [user, setUser] = useState(null);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ 
-    name: '', 
-    email: '', 
-    username: '', 
-    phone: '', 
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    username: '',
+    phone: '',
     studentId: '',
     major: ''
   });
@@ -71,9 +71,9 @@ const ProfilePage = () => {
         try {
           const u = JSON.parse(raw);
           setUser(u);
-          setForm({ 
-            name: u.full_name || u.name || '', 
-            email: u.email || '', 
+          setForm({
+            name: u.full_name || u.name || '',
+            email: u.email || '',
             username: u.username || '',
             phone: u.phone || '',
             studentId: u.studentId || '',
@@ -84,7 +84,7 @@ const ProfilePage = () => {
           setUser(null);
         }
       } else {
-          navigate('/login');
+        navigate('/login');
       }
     });
     return () => (mounted = false);
@@ -100,7 +100,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleAvatarClick = () => {};
+  const handleAvatarClick = () => { };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -155,7 +155,7 @@ const ProfilePage = () => {
           for (const reqItem of requests) {
             let details = reqItem.details || {};
             if (typeof details === 'string') {
-              try { details = JSON.parse(details); } catch(e) {}
+              try { details = JSON.parse(details); } catch (e) { }
             }
             details.studentPhone = form.phone;
             if (!details.student_info) details.student_info = {};
@@ -266,7 +266,7 @@ const ProfilePage = () => {
             <p>จัดการข้อมูลโปรไฟล์และรูปภาพของคุณ</p>
           </div>
           <div className="user-info">
-             <span>{user.name || user.username}</span>
+            <span>{user.name || user.username}</span>
           </div>
         </header>
 
@@ -274,161 +274,161 @@ const ProfilePage = () => {
           <div className="profile-layout">
             {/* Left Column: Avatar */}
             <div className="profile-avatar-section">
-                <div className="avatar-wrapper" onClick={handleAvatarClick}>
-                    {avatarPreview ? (
-                        <img src={avatarPreview} alt="Profile" className="avatar-img" />
-                    ) : (
-                        <div className="avatar-placeholder">
-                            <span>{user.username ? user.username.charAt(0).toUpperCase() : 'U'}</span>
-                        </div>
-                    )}
-                    
-                </div>
-                <Input
-                  type="file"
-                  inputRef={fileInputRef}
-                  onChange={handleFileChange}
-                  sx={{ display: 'none' }}
-                  inputProps={{ accept: 'image/*' }}
-                />
-                <h3 className="profile-name-display">{user.full_name || user.name || user.username}</h3>
-                <span className="profile-role-badge">นักศึกษา</span>
+              <div className="avatar-wrapper" onClick={handleAvatarClick}>
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Profile" className="avatar-img" />
+                ) : (
+                  <div className="avatar-placeholder">
+                    <span>{user.username ? user.username.charAt(0).toUpperCase() : 'U'}</span>
+                  </div>
+                )}
+
+              </div>
+              <Input
+                type="file"
+                inputRef={fileInputRef}
+                onChange={handleFileChange}
+                sx={{ display: 'none' }}
+                inputProps={{ accept: 'image/*' }}
+              />
+              <h3 className="profile-name-display">{user.full_name || user.name || user.username}</h3>
+              <span className="profile-role-badge">นักศึกษา</span>
             </div>
 
             {/* Right Column: Details */}
             <div className="profile-details-section">
-                <div className="section-header-row">
-                    <h3>รายละเอียดบัญชี</h3>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <Button
-                        variant="outlined"
-                        onClick={() => setPassModal({ open: true, newPassword: '', confirmPassword: '', showPass: false, submitting: false, error: '' })}
-                        startIcon={<KeyIcon style={{ width: 16, height: 16 }} />}
-                        sx={{ borderRadius: '8px', fontWeight: 600, color: '#475569', borderColor: '#cbd5e1' }}
-                      >
-                        เปลี่ยนรหัสผ่าน
-                      </Button>
-                      {!editing ? (
-                        <Button variant="outlined" onClick={() => setEditing(true)} sx={{ borderRadius: '8px', fontWeight: 600 }}>
-                          แก้ไขข้อมูล
-                        </Button>
-                      ) : (
-                          <div className="edit-actions">
-                          <Button variant="text" color="inherit" onClick={() => {
-                                  setEditing(false);
-                                  setForm({ 
-                                      name: user.full_name || user.name || '', 
-                                      email: user.email || '', 
-                                      username: user.username || '',
-                                      phone: user.phone || '',
-                                      studentId: user.studentId || '',
-                                      major: user.major || ''
-                                  });
-                                  setAvatarPreview(user.avatar || null);
-                                  }}>ยกเลิก</Button>
-                                  <Button variant="contained" onClick={handleSave} sx={{ borderRadius: '8px', fontWeight: 700 }}>บันทึกการเปลี่ยนแปลง</Button>
-                          </div>
-                      )}
+              <div className="section-header-row">
+                <h3>รายละเอียดบัญชี</h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setPassModal({ open: true, newPassword: '', confirmPassword: '', showPass: false, submitting: false, error: '' })}
+                    startIcon={<KeyIcon style={{ width: 16, height: 16 }} />}
+                    sx={{ borderRadius: '8px', fontWeight: 600, color: '#475569', borderColor: '#cbd5e1' }}
+                  >
+                    เปลี่ยนรหัสผ่าน
+                  </Button>
+                  {!editing ? (
+                    <Button variant="outlined" onClick={() => setEditing(true)} sx={{ borderRadius: '8px', fontWeight: 600 }}>
+                      แก้ไขข้อมูล
+                    </Button>
+                  ) : (
+                    <div className="edit-actions">
+                      <Button variant="text" color="inherit" onClick={() => {
+                        setEditing(false);
+                        setForm({
+                          name: user.full_name || user.name || '',
+                          email: user.email || '',
+                          username: user.username || '',
+                          phone: user.phone || '',
+                          studentId: user.studentId || '',
+                          major: user.major || ''
+                        });
+                        setAvatarPreview(user.avatar || null);
+                      }}>ยกเลิก</Button>
+                      <Button variant="contained" onClick={handleSave} sx={{ borderRadius: '8px', fontWeight: 700 }}>บันทึกการเปลี่ยนแปลง</Button>
                     </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="profile-fields-grid">
+                <div className="form-group-profile">
+                  <TextField
+                    fullWidth
+                    label="รหัสนักศึกษา"
+                    name="studentId"
+                    value={form.studentId}
+                    onChange={handleChange}
+                    disabled={true}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                  />
                 </div>
 
-                <div className="profile-fields-grid">
-                    <div className="form-group-profile">
-                      <TextField
-                        fullWidth
-                        label="รหัสนักศึกษา"
-                        name="studentId" 
-                        value={form.studentId} 
-                        onChange={handleChange} 
-                        disabled={true}
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
-                      />
-                    </div>
-
-                    <div className="form-group-profile">
-                      <TextField
-                        fullWidth
-                        label="ชื่อ-นามสกุล"
-                        name="name" 
-                        value={form.name} 
-                        onChange={handleChange} 
-                        disabled={true}
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
-                      />
-                    </div>
-                    
-                    <div className="form-group-profile">
-                      <TextField
-                        fullWidth
-                        select
-                        label="สาขาวิชา"
-                        name="major"
-                        value={form.major}
-                        onChange={handleChange}
-                        disabled={true}
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
-                      >
-                        <MenuItem value="">เลือกสาขา</MenuItem>
-                        {departmentOptions.map((dept) => (
-                          <MenuItem key={dept} value={dept}>{dept}</MenuItem>
-                        ))}
-                      </TextField>
-                    </div>
-
-                    <div className="form-group-profile">
-                      <TextField
-                        fullWidth
-                        label="ชื่อผู้ใช้ (Username)"
-                        name="username" 
-                        value={form.username} 
-                        onChange={handleChange} 
-                        disabled={true}
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
-                      />
-                    </div>
-
-                    <div className="form-group-profile">
-                      <TextField
-                        fullWidth
-                        label="อีเมล"
-                        name="email" 
-                        value={form.email} 
-                        onChange={handleChange} 
-                        disabled={!editing}
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: editing ? '#1e293b' : '#475569' } }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '12px',
-                            bgcolor: editing ? '#ffffff' : '#f8fafc'
-                          }
-                        }}
-                      />
-                    </div>
-
-                    <div className="form-group-profile">
-                      <TextField
-                        fullWidth
-                        label="เบอร์โทรศัพท์"
-                        name="phone" 
-                        value={form.phone} 
-                        onChange={handleChange} 
-                        disabled={!editing}
-                        placeholder="09xxxxxxxx (สูงสุด 10 หลัก)"
-                        inputProps={{ maxLength: 10, inputMode: 'numeric', pattern: '[0-9]*' }}
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: editing ? '#1e293b' : '#475569' } }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '12px',
-                            bgcolor: editing ? '#ffffff' : '#f8fafc'
-                          }
-                        }}
-                      />
-                    </div>
+                <div className="form-group-profile">
+                  <TextField
+                    fullWidth
+                    label="ชื่อ-นามสกุล"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    disabled={true}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                  />
                 </div>
+
+                <div className="form-group-profile">
+                  <TextField
+                    fullWidth
+                    select
+                    label="สาขาวิชา"
+                    name="major"
+                    value={form.major}
+                    onChange={handleChange}
+                    disabled={true}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                  >
+                    <MenuItem value="">เลือกสาขา</MenuItem>
+                    {departmentOptions.map((dept) => (
+                      <MenuItem key={dept} value={dept}>{dept}</MenuItem>
+                    ))}
+                  </TextField>
+                </div>
+
+                <div className="form-group-profile">
+                  <TextField
+                    fullWidth
+                    label="ชื่อผู้ใช้ (Username)"
+                    name="username"
+                    value={form.username}
+                    onChange={handleChange}
+                    disabled={true}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: '#475569' } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                  />
+                </div>
+
+                <div className="form-group-profile">
+                  <TextField
+                    fullWidth
+                    label="อีเมล"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: editing ? '#1e293b' : '#475569' } }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        bgcolor: editing ? '#ffffff' : '#f8fafc'
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="form-group-profile">
+                  <TextField
+                    fullWidth
+                    label="เบอร์โทรศัพท์"
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    placeholder="09xxxxxxxx (สูงสุด 10 หลัก)"
+                    inputProps={{ maxLength: 10, inputMode: 'numeric', pattern: '[0-9]*' }}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 700, color: editing ? '#1e293b' : '#475569' } }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        bgcolor: editing ? '#ffffff' : '#f8fafc'
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
