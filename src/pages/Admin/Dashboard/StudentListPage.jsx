@@ -78,6 +78,8 @@ const StudentListPage = () => {
   const [exportingSlips, setExportingSlips] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedYear, setSelectedYear] = useState('66');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudentCodes, setSelectedStudentCodes] = useState([]);
   const [slipModal, setSlipModal] = useState({ open: false, imageUrl: '', paymentId: null, studentCode: null, studentName: null, paymentStatus: null });
   
@@ -215,13 +217,50 @@ const StudentListPage = () => {
     navigate('/');
   };
 
+  const availableYears = useMemo(() => {
+    const years = new Set(['66']);
+    students.forEach(s => {
+      const code = String(s.student_code || s.studentId || s.username || '').trim();
+      const match = code.match(/^(\d{2})/);
+      if (match) {
+        years.add(match[1]);
+      }
+    });
+    return Array.from(years).sort();
+  }, [students]);
+
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
-      if (selectedDepartment === 'all') return true;
-      const dept = student.major || student.department || '';
-      return dept === selectedDepartment;
+      const code = String(student.student_code || student.studentId || student.username || '').trim();
+
+      // Filter Year
+      if (selectedYear !== 'all') {
+        if (!code.startsWith(selectedYear)) return false;
+      }
+
+      // Filter Department
+      if (selectedDepartment !== 'all') {
+        const dept = student.major || student.department || '';
+        if (dept !== selectedDepartment) return false;
+      }
+
+      // Filter Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const fullName = String(student.full_name || student.name || '').toLowerCase();
+        const email = String(student.email || '').toLowerCase();
+        if (!code.toLowerCase().includes(q) && !fullName.includes(q) && !email.includes(q)) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }, [students, selectedDepartment]);
+  }, [students, selectedDepartment, selectedYear, searchQuery]);
+
+  useEffect(() => {
+    setSelectedStudentCodes([]);
+  }, [selectedDepartment, selectedYear, searchQuery]);
 
   const isAllSelected = useMemo(() => {
     if (filteredStudents.length === 0) return false;
@@ -468,20 +507,43 @@ const StudentListPage = () => {
 
           {/* Filters & Bulk Actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-            <div className="filter-group">
+            <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <TextField
+                select
+                size="small"
+                label="คัดกรองรหัสปี"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                sx={{ minWidth: 150 }}
+              >
+                <MenuItem value="all">ทุกชั้นปี (ทั้งหมด)</MenuItem>
+                {availableYears.map((yr) => (
+                  <MenuItem key={yr} value={yr}>รหัส {yr} (ปี {yr})</MenuItem>
+                ))}
+              </TextField>
+
               <TextField
                 select
                 size="small"
                 label="คัดกรองสาขา"
                 value={selectedDepartment}
                 onChange={(e) => setSelectedDepartment(e.target.value)}
-                sx={{ minWidth: 280 }}
+                sx={{ minWidth: 260 }}
               >
-                <MenuItem value="all">ทั้งหมด</MenuItem>
+                <MenuItem value="all">ทั้งหมดทุกสาขา</MenuItem>
                 {departmentOptions.map((dept) => (
                   <MenuItem key={dept} value={dept}>{dept}</MenuItem>
                 ))}
               </TextField>
+
+              <TextField
+                size="small"
+                label="ค้นหา รหัส / ชื่อ-สกุล"
+                placeholder="พิมพ์เพื่อค้นหา..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{ minWidth: 220 }}
+              />
             </div>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
