@@ -224,10 +224,12 @@ const StudentDetailsPage = () => {
   const studentAddress = formatAddress(details.student_info?.address);
   const companyAddress = formatAddress(details.companyAddress || details.address);
   const internshipTermLabel = details.internshipTerm === 'term1'
-    ? 'เทอม 1 (7–15 ส.ค.)'
+    ? 'ภาคการศึกษาที่ 1'
     : details.internshipTerm === 'term2'
-      ? 'เทอม 2 (3–10 ม.ค.)'
-      : '';
+      ? 'ภาคการศึกษาที่ 2'
+      : details.internshipTerm === 'summer'
+        ? 'ภาคฤดูร้อน'
+        : (details.internshipTerm || '');
 
   const statusInfo = getStatusBadge(request.status);
 
@@ -331,24 +333,33 @@ const StudentDetailsPage = () => {
         </section>
 
         <section className="detail-section">
-          <h3>ความประสงค์ในการฝึกงาน</h3>
+          <h3>ความประสงค์และกำหนดวันฝึกงาน</h3>
           <div className="detail-grid">
-            {internshipTermLabel ? (
-              <div className="detail-item">
-                <span className="detail-label">ขอให้ออกหนังสือฝึกงานประจำ</span>
-                <span className="detail-value">{internshipTermLabel}</span>
+            <div className="detail-item">
+              <span className="detail-label">ภาคการศึกษา / ช่วงฝึกงาน</span>
+              <span className="detail-value">{internshipTermLabel || '-'}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">วันที่เริ่มต้นฝึกงาน</span>
+              <span className="detail-value">
+                {(request.internship_start_date || details.startDate) 
+                  ? new Date(request.internship_start_date || details.startDate).toLocaleDateString('th-TH') 
+                  : <span style={{ color: '#94a3b8' }}>รอผู้ดูแลระบบกำหนด</span>}
+              </span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">วันที่สิ้นสุดการฝึกงาน</span>
+              <span className="detail-value">
+                {(request.internship_end_date || details.endDate) 
+                  ? new Date(request.internship_end_date || details.endDate).toLocaleDateString('th-TH') 
+                  : <span style={{ color: '#94a3b8' }}>รอผู้ดูแลระบบกำหนด</span>}
+              </span>
+            </div>
+            {details.internshipDateNote && (
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">หมายเหตุวันฝึกงาน</span>
+                <span className="detail-value">{details.internshipDateNote}</span>
               </div>
-            ) : (
-              <>
-                <div className="detail-item">
-                  <span className="detail-label">วันที่ต้องการฝึกงานตั้งแต่วันที่</span>
-                  <span className="detail-value">{details.startDate ? new Date(details.startDate).toLocaleDateString('th-TH') : '-'}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">ถึงวันที่</span>
-                  <span className="detail-value">{details.endDate ? new Date(details.endDate).toLocaleDateString('th-TH') : '-'}</span>
-                </div>
-              </>
             )}
           </div>
         </section>

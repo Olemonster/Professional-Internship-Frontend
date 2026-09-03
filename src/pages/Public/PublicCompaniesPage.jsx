@@ -29,13 +29,45 @@ import {
   GlobeAltIcon,
   XMarkIcon,
   ArrowLeftIcon,
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
+
+const ALL_DEPARTMENTS = [
+  'สาขาวิชาวิทยาการคอมพิวเตอร์',
+  'สาขาวิชาเทคโนโลยีคอมพิวเตอร์และดิจิทัล',
+  'สาขาวิชาวิศวกรรมซอฟต์แวร์และปัญญาประดิษฐ์',
+  'สาขาวิชาสาธารณสุขชุมชน',
+  'สาขาวิชาอาชีวอนามัยและความปลอดภัย',
+  'สาขาวิชาวิทยาศาสตร์การกีฬา',
+  'สาขาวิชาเทคโนโลยีการเกษตร',
+  'สาขาวิชาเทคโนโลยีและนวัตกรรมอาหาร',
+  'สาขาวิชาวิศวกรรมโลจิสติกส์',
+  'สาขาวิชาวิศวกรรมการจัดการอุตสาหกรรมและสิ่งแวดล้อม',
+  'สาขาวิชาการออกแบบผลิตภัณฑ์และนวัตกรรมวัสดุ',
+  'สาขาวิชาเทคโนโลยีโยธาและสถาปัตยกรรม',
+];
+
+const SHORT_DEPT_LABELS = {
+  'สาขาวิชาวิทยาการคอมพิวเตอร์': 'วิทยาการคอมพิวเตอร์',
+  'สาขาวิชาเทคโนโลยีคอมพิวเตอร์และดิจิทัล': 'เทคโนโลยีคอมฯ',
+  'สาขาวิชาวิศวกรรมซอฟต์แวร์และปัญญาประดิษฐ์': 'วิศวกรรมซอฟต์แวร์ / AI',
+  'สาขาวิชาสาธารณสุขชุมชน': 'สาธารณสุขชุมชน',
+  'สาขาวิชาอาชีวอนามัยและความปลอดภัย': 'อาชีวอนามัยฯ',
+  'สาขาวิชาวิทยาศาสตร์การกีฬา': 'วิทย์การกีฬา',
+  'สาขาวิชาเทคโนโลยีการเกษตร': 'เทคโนโลยีการเกษตร',
+  'สาขาวิชาเทคโนโลยีและนวัตกรรมอาหาร': 'นวัตกรรมอาหาร',
+  'สาขาวิชาวิศวกรรมโลจิสติกส์': 'วิศวกรรมโลจิสติกส์',
+  'สาขาวิชาวิศวกรรมการจัดการอุตสาหกรรมและสิ่งแวดล้อม': 'วิศวกรรมอุตสาหการฯ',
+  'สาขาวิชาการออกแบบผลิตภัณฑ์และนวัตกรรมวัสดุ': 'การออกแบบผลิตภัณฑ์ฯ',
+  'สาขาวิชาเทคโนโลยีโยธาและสถาปัตยกรรม': 'เทคโนโลยีโยธาฯ',
+};
 
 const PublicCompaniesPage = () => {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedProvince, setSelectedProvince] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedCompanyModal, setSelectedCompanyModal] = useState(null);
@@ -53,6 +85,22 @@ const PublicCompaniesPage = () => {
   }, []);
 
   // Unique lists for filters
+  const departmentsList = useMemo(() => {
+    const set = new Set(ALL_DEPARTMENTS);
+    companies.forEach((c) => {
+      if (Array.isArray(c.departments)) {
+        c.departments.forEach((d) => {
+          if (d && d.trim()) set.add(d.trim());
+        });
+      } else if (c.department && c.department.trim()) {
+        c.department.split(',').forEach((d) => {
+          if (d.trim()) set.add(d.trim());
+        });
+      }
+    });
+    return Array.from(set);
+  }, [companies]);
+
   const provincesList = useMemo(() => {
     const set = new Set();
     companies.forEach((c) => {
@@ -78,17 +126,28 @@ const PublicCompaniesPage = () => {
         c.businessType?.toLowerCase().includes(s) ||
         c.positions?.toLowerCase().includes(s) ||
         c.address?.toLowerCase().includes(s) ||
-        c.province?.toLowerCase().includes(s);
+        c.province?.toLowerCase().includes(s) ||
+        c.department?.toLowerCase().includes(s);
 
-      const matchProvince = selectedProvince === 'all' || 
+      const matchProvince =
+        selectedProvince === 'all' ||
         (c.province && c.province.includes(selectedProvince)) ||
         (c.address && c.address.includes(selectedProvince));
 
       const matchType = selectedType === 'all' || c.businessType === selectedType;
 
-      return matchSearch && matchProvince && matchType;
+      let matchDept = selectedDepartment === 'all';
+      if (!matchDept) {
+        if (Array.isArray(c.departments) && c.departments.includes(selectedDepartment)) {
+          matchDept = true;
+        } else if (c.department && c.department.includes(selectedDepartment)) {
+          matchDept = true;
+        }
+      }
+
+      return matchSearch && matchProvince && matchType && matchDept;
     });
-  }, [companies, searchTerm, selectedProvince, selectedType]);
+  }, [companies, searchTerm, selectedProvince, selectedType, selectedDepartment]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
@@ -129,7 +188,7 @@ const PublicCompaniesPage = () => {
             สถานประกอบการแนะนำ<span style={{ color: '#fbbf24' }}>จากรุ่นพี่</span>
           </Typography>
           <Typography variant="body1" sx={{ color: '#d1d5db', maxWidth: 680, mx: 'auto', fontSize: { xs: '0.95rem', md: '1.05rem' }, lineHeight: 1.6 }}>
-            รวบรวมข้อมูลสถานประกอบการและสถานที่ฝึกงานจริงจากรุ่นพี่ที่สำเร็จการฝึกประสบการณ์วิชาชีพ เพื่อให้นักศึกษาใช้เป็นข้อมูลประกอบการตัดสินใจและติดต่อขอฝึกงาน
+            รวบรวมข้อมูลสถานประกอบการและสถานที่ฝึกงานจริงจากรุ่นพี่ที่สำเร็จการฝึกประสบการณ์วิชาชีพ แยกตามสาขาวิชา เพื่อให้นักศึกษาใช้เป็นข้อมูลประกอบการตัดสินใจและติดต่อขอฝึกงาน
           </Typography>
         </Box>
       </Box>
@@ -138,7 +197,8 @@ const PublicCompaniesPage = () => {
       <main style={{ flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
         {/* Filter Bar */}
         <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, border: '1px solid #e2e8f0', bgcolor: '#ffffff', mb: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Top Filter Controls */}
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             <TextField
               size="small"
               placeholder="ค้นหาชื่อบริษัท, ตำแหน่งงาน, หรือที่อยู่..."
@@ -147,16 +207,34 @@ const PublicCompaniesPage = () => {
               InputProps={{
                 startAdornment: <MagnifyingGlassIcon style={{ width: 18, height: 18, color: '#94a3b8', marginRight: 8 }} />,
               }}
-              sx={{ flex: 1, minWidth: { xs: '100%', sm: 280 } }}
+              sx={{ flex: '1 1 240px', minWidth: { xs: '100%', sm: 220 } }}
             />
 
+            {/* Department / Major Filter */}
+            <TextField
+              select
+              size="small"
+              label="สาขาวิชา"
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              sx={{ flex: '1 1 240px', minWidth: { xs: '100%', sm: 220 } }}
+            >
+              <MenuItem value="all">ทุกสาขาวิชา ({departmentsList.length} สาขา)</MenuItem>
+              {departmentsList.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {/* Province Filter */}
             <TextField
               select
               size="small"
               label="จังหวัด"
               value={selectedProvince}
               onChange={(e) => setSelectedProvince(e.target.value)}
-              sx={{ minWidth: { xs: '100%', sm: 180 } }}
+              sx={{ flex: '0 1 180px', minWidth: { xs: '100%', sm: 160 } }}
             >
               <MenuItem value="all">ทุกจังหวัด ({provincesList.length})</MenuItem>
               {provincesList.map((prov) => (
@@ -164,13 +242,14 @@ const PublicCompaniesPage = () => {
               ))}
             </TextField>
 
+            {/* Business Type Filter */}
             <TextField
               select
               size="small"
               label="ประเภทธุรกิจ"
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              sx={{ minWidth: { xs: '100%', sm: 200 } }}
+              sx={{ flex: '0 1 180px', minWidth: { xs: '100%', sm: 160 } }}
             >
               <MenuItem value="all">ทุกประเภท ({businessTypesList.length})</MenuItem>
               {businessTypesList.map((t) => (
@@ -179,10 +258,55 @@ const PublicCompaniesPage = () => {
             </TextField>
           </Box>
 
-          {/* Quick province chips */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', pt: 1, borderTop: '1px solid #f1f5f9' }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', mr: 0.5 }}>
-              จังหวัดยอดนิยม:
+          {/* Quick Department Chips */}
+          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', alignItems: 'center', pt: 1.5, borderTop: '1px solid #f1f5f9' }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mr: 0.5, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+              <AcademicCapIcon style={{ width: 15, height: 15, color: '#d97706' }} /> สาขาวิชา:
+            </Typography>
+            <Chip
+              label="ทั้งหมด"
+              clickable
+              onClick={() => setSelectedDepartment('all')}
+              size="small"
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                bgcolor: selectedDepartment === 'all' ? '#111111' : '#f8fafc',
+                color: selectedDepartment === 'all' ? '#fbbf24' : '#64748b',
+                border: selectedDepartment === 'all' ? '1px solid #111111' : '1px solid #e2e8f0',
+                '&:hover': { bgcolor: selectedDepartment === 'all' ? '#1c1917' : '#e2e8f0' },
+              }}
+            />
+            {ALL_DEPARTMENTS.map((dept) => {
+              const isActive = selectedDepartment === dept;
+              const shortName = SHORT_DEPT_LABELS[dept] || dept.replace('สาขาวิชา', '');
+              return (
+                <Chip
+                  key={dept}
+                  label={shortName}
+                  clickable
+                  onClick={() => setSelectedDepartment(dept)}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    bgcolor: isActive ? '#f59e0b' : '#f8fafc',
+                    color: isActive ? '#111111' : '#475569',
+                    border: isActive ? '1px solid #d97706' : '1px solid #e2e8f0',
+                    '&:hover': {
+                      bgcolor: isActive ? '#d97706' : '#e2e8f0',
+                      color: isActive ? '#ffffff' : '#1e293b',
+                    },
+                  }}
+                />
+              );
+            })}
+          </Box>
+
+          {/* Quick Province Chips */}
+          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', alignItems: 'center', pt: 1, borderTop: '1px dashed #f1f5f9' }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', mr: 0.5, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+              <MapPinIcon style={{ width: 14, height: 14, color: '#ef4444' }} /> จังหวัดยอดนิยม:
             </Typography>
             {['all', 'ศรีสะเกษ', 'อุบลราชธานี', 'กรุงเทพมหานคร', 'สุรินทร์', 'ขอนแก่น'].map((prov) => {
               const isActive = selectedProvince === prov;
@@ -195,12 +319,12 @@ const PublicCompaniesPage = () => {
                   size="small"
                   sx={{
                     fontWeight: 700,
-                    fontSize: '0.78rem',
-                    bgcolor: isActive ? '#111111' : '#f1f5f9',
-                    color: isActive ? '#fbbf24' : '#475569',
-                    border: isActive ? '1px solid #111111' : '1px solid #e2e8f0',
+                    fontSize: '0.75rem',
+                    bgcolor: isActive ? '#1e293b' : '#f8fafc',
+                    color: isActive ? '#ffffff' : '#64748b',
+                    border: isActive ? '1px solid #0f172a' : '1px solid #e2e8f0',
                     '&:hover': {
-                      bgcolor: isActive ? '#1c1917' : '#e2e8f0',
+                      bgcolor: isActive ? '#0f172a' : '#e2e8f0',
                     },
                   }}
                 />
@@ -331,6 +455,40 @@ const PublicCompaniesPage = () => {
                     </span>
                   </div>
 
+                  {/* Associated Department(s) */}
+                  {((Array.isArray(comp.departments) && comp.departments.length > 0) || comp.department) && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                      <AcademicCapIcon style={{ width: 16, height: 16, color: '#0284c7', flexShrink: 0, marginTop: 2 }} />
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, overflow: 'hidden' }}>
+                        {(Array.isArray(comp.departments) && comp.departments.length > 0
+                          ? comp.departments
+                          : comp.department.split(',').map(s => s.trim())
+                        ).slice(0, 2).map((dept, dIdx) => (
+                          <span
+                            key={dIdx}
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              background: '#f0f9ff',
+                              color: '#0369a1',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              border: '1px solid #bae6fd',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {SHORT_DEPT_LABELS[dept] || dept.replace('สาขาวิชา', '')}
+                          </span>
+                        ))}
+                        {(Array.isArray(comp.departments) ? comp.departments.length : comp.department.split(',').length) > 2 && (
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0284c7', alignSelf: 'center' }}>
+                            +{(Array.isArray(comp.departments) ? comp.departments.length : comp.department.split(',').length) - 2} สาขา
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {comp.positions && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <BriefcaseIcon style={{ width: 16, height: 16, color: '#d97706', flexShrink: 0 }} />
@@ -380,7 +538,7 @@ const PublicCompaniesPage = () => {
               ไม่พบสถานประกอบการที่ตรงกับเงื่อนไขการค้นหา
             </Typography>
             <Typography variant="body2" sx={{ color: '#64748b' }}>
-              ลองเปลี่ยนคำค้นหา หรือเลือกตัวกรองจังหวัดอื่นๆ
+              ลองเปลี่ยนคำค้นหา หรือเลือกตัวกรองสาขาวิชาและจังหวัดอื่นๆ
             </Typography>
           </Box>
         )}
@@ -423,6 +581,34 @@ const PublicCompaniesPage = () => {
             </DialogTitle>
 
             <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Associated Department(s) in Modal */}
+              {((Array.isArray(selectedCompanyModal.departments) && selectedCompanyModal.departments.length > 0) || selectedCompanyModal.department) && (
+                <Box sx={{ bgcolor: '#f0f9ff', border: '1px solid #bae6fd', p: 1.5, borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ color: '#0369a1', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.75 }}>
+                    <AcademicCapIcon style={{ width: 16, height: 16 }} /> สาขาวิชาที่เกี่ยวข้อง / รุ่นพี่ที่เคยฝึกงาน
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                    {(Array.isArray(selectedCompanyModal.departments) && selectedCompanyModal.departments.length > 0
+                      ? selectedCompanyModal.departments
+                      : selectedCompanyModal.department.split(',').map(s => s.trim())
+                    ).map((dept, dIdx) => (
+                      <Chip
+                        key={dIdx}
+                        label={dept}
+                        size="small"
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          bgcolor: '#ffffff',
+                          color: '#0284c7',
+                          border: '1px solid #7dd3fc',
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
               {selectedCompanyModal.businessType && (
                 <Box sx={{ bgcolor: '#f8fafc', p: 1.5, borderRadius: 2 }}>
                   <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, display: 'block' }}>

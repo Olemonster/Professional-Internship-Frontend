@@ -60,7 +60,16 @@ const RequestDetailsPage = () => {
   const [rejectModal, setRejectModal] = useState({ open: false, reason: '' });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
   const [qrModal, setQrModal] = useState({ open: false, link: '' });
-  const [dispatchModal, setDispatchModal] = useState({ open: false, file: null, comment: '', submitting: false, error: '' });
+  const [dispatchModal, setDispatchModal] = useState({ open: false, file: null, comment: '', startDate: '', endDate: '', submitting: false, error: '' });
+  const [scheduleModal, setScheduleModal] = useState({
+    open: false,
+    startDate: '',
+    endDate: '',
+    internshipTerm: '',
+    note: '',
+    submitting: false,
+    error: ''
+  });
   const [imageModal, setImageModal] = useState(false);
   const [docModal, setDocModal] = useState({ open: false, dataUrl: '', fileName: '', blobUrl: '' });
   const dispatchFileInputRef = useRef(null);
@@ -130,18 +139,94 @@ const RequestDetailsPage = () => {
     }
   };
 
+  const handleOpenScheduleModal = () => {
+    const currentStart = request?.internship_start_date || request?.details?.startDate || '';
+    const currentEnd = request?.internship_end_date || request?.details?.endDate || '';
+    const currentTerm = request?.details?.internshipTerm === 'term1' 
+      ? 'ภาคการศึกษาที่ 1' 
+      : request?.details?.internshipTerm === 'term2' 
+        ? 'ภาคการศึกษาที่ 2' 
+        : (request?.details?.internshipTerm || '');
+    const currentNote = request?.details?.internshipDateNote || '';
+
+    setScheduleModal({
+      open: true,
+      startDate: currentStart ? String(currentStart).slice(0, 10) : '',
+      endDate: currentEnd ? String(currentEnd).slice(0, 10) : '',
+      internshipTerm: currentTerm,
+      note: currentNote,
+      submitting: false,
+      error: ''
+    });
+  };
+
+  const handleScheduleSubmit = async () => {
+    if (!scheduleModal.startDate || !scheduleModal.endDate) {
+      setScheduleModal((prev) => ({ ...prev, error: 'กรุณาระบุทั้งวันเริ่มต้นและวันสิ้นสุดการฝึกงาน' }));
+      return;
+    }
+    if (new Date(scheduleModal.endDate) < new Date(scheduleModal.startDate)) {
+      setScheduleModal((prev) => ({ ...prev, error: 'วันสิ้นสุดต้องอยู่หลังวันเริ่มต้นฝึกงาน' }));
+      return;
+    }
+
+    setScheduleModal((prev) => ({ ...prev, submitting: true, error: '' }));
+    try {
+      const payload = {
+        startDate: scheduleModal.startDate,
+        endDate: scheduleModal.endDate,
+        internshipTerm: scheduleModal.internshipTerm,
+        note: scheduleModal.note
+      };
+
+      await api.patch(`/requests/${id}/internship-period`, payload);
+
+      setRequest((prev) => ({
+        ...prev,
+        internship_start_date: scheduleModal.startDate,
+        internship_end_date: scheduleModal.endDate,
+        details: {
+          ...(prev?.details || {}),
+          startDate: scheduleModal.startDate,
+          endDate: scheduleModal.endDate,
+          internshipTerm: scheduleModal.internshipTerm,
+          internshipDateNote: scheduleModal.note
+        }
+      }));
+
+      setScheduleModal((prev) => ({ ...prev, open: false, submitting: false }));
+      setToast({ open: true, message: 'บันทึกกำหนดวันฝึกงานเรียบร้อยแล้ว', severity: 'success' });
+    } catch (err) {
+      setScheduleModal((prev) => ({
+        ...prev,
+        submitting: false,
+        error: err.response?.data?.message || err.message || 'บันทึกวันฝึกงานล้มเหลว'
+      }));
+    }
+  };
+
   const handleOpenDispatchModal = () => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
     }
-    setDispatchModal({ open: true, file: null, comment: '', submitting: false, error: '' });
+    const currentStart = request?.internship_start_date || request?.details?.startDate || '';
+    const currentEnd = request?.internship_end_date || request?.details?.endDate || '';
+    setDispatchModal({
+      open: true,
+      file: null,
+      comment: '',
+      startDate: currentStart ? String(currentStart).slice(0, 10) : '',
+      endDate: currentEnd ? String(currentEnd).slice(0, 10) : '',
+      submitting: false,
+      error: ''
+    });
   };
 
   const handleDispatchModalClose = () => {
     if (dispatchFileInputRef.current) {
       dispatchFileInputRef.current.value = '';
     }
-    setDispatchModal({ open: false, file: null, comment: '', submitting: false, error: '' });
+    setDispatchModal({ open: false, file: null, comment: '', startDate: '', endDate: '', submitting: false, error: '' });
   };
 
   const handleDispatchFileChange = (event) => {
@@ -163,7 +248,7 @@ const RequestDetailsPage = () => {
 
   const handleDispatchSubmit = async () => {
     if (!dispatchModal.file) {
-      setDispatchModal((prev) => ({ ...prev, error: 'กรุณาเลือกไฟล์หนังสือส่งตัวก่อนอนุมัติ' }));
+      setDispatchModal((prev) => ({ ...prev, error: 'กรุณาเลือกไฟล์หนังสือขอแหล่งฝึกงานก่อนอนุมัติ' }));
       return;
     }
     setDispatchModal((prev) => ({ ...prev, submitting: true, error: '' }));
@@ -181,12 +266,23 @@ const RequestDetailsPage = () => {
           dataUrl,
         },
       };
+
+      if (dispatchModal.startDate) payload.startDate = dispatchModal.startDate;
+      if (dispatchModal.endDate) payload.endDate = dispatchModal.endDate;
+
       await api.patch(`/requests/${id}/status`, payload);
       const updated = {
         ...request,
         status: newStatus,
         admin_comment: dispatchModal.comment?.trim() || null,
-        dispatchLetter: { fileName: dispatchModal.file.name, dataUrl }
+        dispatchLetter: { fileName: dispatchModal.file.name, dataUrl },
+        internship_start_date: dispatchModal.startDate || request.internship_start_date,
+        internship_end_date: dispatchModal.endDate || request.internship_end_date,
+        details: {
+          ...(request.details || {}),
+          startDate: dispatchModal.startDate || request.details?.startDate,
+          endDate: dispatchModal.endDate || request.details?.endDate,
+        }
       };
       setRequest(updated);
       setToast({
@@ -409,24 +505,54 @@ const RequestDetailsPage = () => {
         </section>
 
         <section className="detail-section">
-          <h3>ความประสงค์ในการฝึกงาน</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <h3 style={{ margin: 0 }}>ความประสงค์และกำหนดวันฝึกงาน</h3>
+            {userRole === 'admin' && (
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleOpenScheduleModal}
+                sx={{
+                  bgcolor: '#4f46e5',
+                  '&:hover': { bgcolor: '#4338ca' },
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                📅 กำหนด / แก้ไขวันฝึกงาน
+              </Button>
+            )}
+          </div>
           <div className="detail-grid">
-            {internshipTermLabel ? (
-              <div className="detail-item">
-                <span className="detail-label">ขอให้ออกหนังสือฝึกงานประจำ</span>
-                <span className="detail-value">{internshipTermLabel}</span>
+            <div className="detail-item">
+              <span className="detail-label">ภาคการศึกษา / ช่วงฝึกงาน</span>
+              <span className="detail-value">{internshipTermLabel || '-'}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">วันที่เริ่มต้นฝึกงาน</span>
+              <span className="detail-value">
+                {(request.internship_start_date || details.startDate) 
+                  ? new Date(request.internship_start_date || details.startDate).toLocaleDateString('th-TH') 
+                  : <span style={{ color: '#94a3b8' }}>รอผู้ดูแลระบบกำหนด</span>}
+              </span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">วันที่สิ้นสุดการฝึกงาน</span>
+              <span className="detail-value">
+                {(request.internship_end_date || details.endDate) 
+                  ? new Date(request.internship_end_date || details.endDate).toLocaleDateString('th-TH') 
+                  : <span style={{ color: '#94a3b8' }}>รอผู้ดูแลระบบกำหนด</span>}
+              </span>
+            </div>
+            {details.internshipDateNote && (
+              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="detail-label">หมายเหตุวันฝึกงาน</span>
+                <span className="detail-value">{details.internshipDateNote}</span>
               </div>
-            ) : (
-              <>
-                <div className="detail-item">
-                  <span className="detail-label">วันที่ต้องการฝึกงานตั้งแต่วันที่</span>
-                  <span className="detail-value">{details.startDate ? new Date(details.startDate).toLocaleDateString('th-TH') : '-'}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">ถึงวันที่</span>
-                  <span className="detail-value">{details.endDate ? new Date(details.endDate).toLocaleDateString('th-TH') : '-'}</span>
-                </div>
-              </>
             )}
           </div>
         </section>
@@ -692,10 +818,14 @@ const RequestDetailsPage = () => {
       </Snackbar>
 
       <Dialog open={dispatchModal.open} onClose={handleDispatchModalClose} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 700 }}>แนบไฟล์หนังสือส่งตัวก่อนอนุมัติ</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {['รออาจารย์อนุมัติเริ่มฝึกงาน', 'รอแอดมินอนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(request?.status)
+            ? 'แนบไฟล์หนังสือส่งตัว / หนังสือขอแหล่งฝึกงานก่อนอนุมัติ'
+            : 'แนบไฟล์หนังสือขอแหล่งฝึกงานก่อนอนุมัติ'}
+        </DialogTitle>
         <DialogContent sx={{ py: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            กรุณาอัปโหลดไฟล์หนังสือส่งตัว (PDF, JPG หรือ PNG) และสามารถระบุข้อความ/หมายเหตุเพิ่มเติมถึงนักศึกษาได้
+            กรุณาอัปโหลดไฟล์หนังสือขอแหล่งฝึกงาน (PDF, JPG หรือ PNG) และสามารถระบุข้อความ/หมายเหตุเพิ่มเติมถึงนักศึกษาได้
           </Typography>
 
           <TextField
@@ -709,9 +839,37 @@ const RequestDetailsPage = () => {
             sx={{ mb: 2.5 }}
           />
 
+          {['รออาจารย์อนุมัติเริ่มฝึกงาน', 'รอแอดมินอนุมัติเริ่มฝึกงาน', 'อนุมัติแล้ว'].includes(request?.status) && (
+            <Box sx={{ mb: 2, p: 2, bgcolor: '#f0fdf4', borderRadius: 2, border: '1px solid #bbf7d0' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#166534', mb: 1 }}>
+                📅 ตรวจสอบ / กำหนดวันฝึกงานจริง
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="date"
+                  label="วันเริ่มต้นฝึกงาน"
+                  value={dispatchModal.startDate || ''}
+                  onChange={(e) => setDispatchModal(prev => ({ ...prev, startDate: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="date"
+                  label="วันสิ้นสุดฝึกงาน"
+                  value={dispatchModal.endDate || ''}
+                  onChange={(e) => setDispatchModal(prev => ({ ...prev, endDate: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+            </Box>
+          )}
+
           <Box sx={{ mb: 1.5 }}>
             <Button variant="outlined" component="label">
-              เลือกไฟล์หนังสือส่งตัว
+              เลือกไฟล์หนังสือขอแหล่งฝึกงาน
               <input
                 ref={dispatchFileInputRef}
                 type="file"
@@ -741,6 +899,150 @@ const RequestDetailsPage = () => {
             sx={{ bgcolor: '#111', '&:hover': { bgcolor: '#000' } }}
           >
             {dispatchModal.submitting ? 'กำลังอัปโหลด...' : 'แนบไฟล์และอนุมัติ'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Schedule Internship Dates Modal */}
+      <Dialog 
+        open={scheduleModal.open} 
+        onClose={() => !scheduleModal.submitting && setScheduleModal(prev => ({ ...prev, open: false }))} 
+        maxWidth="sm" 
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span>📅</span> กำหนดวันฝึกงาน (สำหรับ Admin)
+        </DialogTitle>
+        <DialogContent sx={{ py: 2 }}>
+          <Box sx={{ mb: 2.5, p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+              นักศึกษา: {request?.studentName} ({request?.studentId})
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
+              สถานประกอบการ: {request?.company}
+            </Typography>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" sx={{ color: '#64748b', mb: 1, display: 'block', fontWeight: 600 }}>
+              ปุ่มลัดเลือกช่วงเวลา (Presets):
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const y = new Date().getFullYear();
+                  setScheduleModal(prev => ({
+                    ...prev,
+                    internshipTerm: 'ภาคการศึกษาที่ 1',
+                    startDate: `${y}-06-01`,
+                    endDate: `${y}-10-31`
+                  }));
+                }}
+                sx={{ textTransform: 'none', fontSize: '0.8rem' }}
+              >
+                เทอม 1 (1 มิ.ย. - 31 ต.ค.)
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const y = new Date().getFullYear();
+                  setScheduleModal(prev => ({
+                    ...prev,
+                    internshipTerm: 'ภาคการศึกษาที่ 2',
+                    startDate: `${y}-11-01`,
+                    endDate: `${y + 1}-03-31`
+                  }));
+                }}
+                sx={{ textTransform: 'none', fontSize: '0.8rem' }}
+              >
+                เทอม 2 (1 พ.ย. - 31 มี.ค.)
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const y = new Date().getFullYear();
+                  setScheduleModal(prev => ({
+                    ...prev,
+                    internshipTerm: 'ภาคฤดูร้อน',
+                    startDate: `${y}-04-01`,
+                    endDate: `${y}-05-31`
+                  }));
+                }}
+                sx={{ textTransform: 'none', fontSize: '0.8rem' }}
+              >
+                ภาคฤดูร้อน (1 เม.ย. - 31 พ.ค.)
+              </Button>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}>
+            <TextField
+              fullWidth
+              size="small"
+              type="date"
+              label="วันเริ่มต้นฝึกงาน *"
+              value={scheduleModal.startDate || ''}
+              onChange={(e) => setScheduleModal(prev => ({ ...prev, startDate: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+            <TextField
+              fullWidth
+              size="small"
+              type="date"
+              label="วันสิ้นสุดการฝึกงาน *"
+              value={scheduleModal.endDate || ''}
+              onChange={(e) => setScheduleModal(prev => ({ ...prev, endDate: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+          </Box>
+
+          <TextField
+            fullWidth
+            size="small"
+            label="ภาคการศึกษา / ช่วงฝึกงาน"
+            placeholder="เช่น ภาคการศึกษาที่ 1/2569 หรือ เทอม 1"
+            value={scheduleModal.internshipTerm || ''}
+            onChange={(e) => setScheduleModal(prev => ({ ...prev, internshipTerm: e.target.value }))}
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            size="small"
+            label="หมายเหตุเพิ่มเติม (ถ้ามี)"
+            placeholder="เช่น เงื่อนไขการนับชั่วโมงฝึกงาน หรือหมายเหตุเกี่ยวกับวันฝึก"
+            value={scheduleModal.note || ''}
+            onChange={(e) => setScheduleModal(prev => ({ ...prev, note: e.target.value }))}
+          />
+
+          {scheduleModal.error && (
+            <Typography variant="body2" color="error" sx={{ mt: 1.5 }}>
+              {scheduleModal.error}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={() => setScheduleModal(prev => ({ ...prev, open: false }))} 
+            disabled={scheduleModal.submitting}
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleScheduleSubmit}
+            disabled={scheduleModal.submitting}
+            sx={{ bgcolor: '#4f46e5', '&:hover': { bgcolor: '#4338ca' } }}
+          >
+            {scheduleModal.submitting ? 'กำลังบันทึก...' : 'บันทึกวันฝึกงาน'}
           </Button>
         </DialogActions>
       </Dialog>

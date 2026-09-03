@@ -1198,7 +1198,7 @@ const NewRequestPage = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="internshipTerm">ช่วงฝึกงาน *</label>
+                <label htmlFor="internshipTerm">ภาคการศึกษาที่ประสงค์ฝึกงาน</label>
                 <TextField
                   fullWidth
                   size="small"
@@ -1207,13 +1207,16 @@ const NewRequestPage = () => {
                   name="internshipTerm"
                   value={formData.internshipTerm}
                   onChange={handleChange}
-                  required
                 >
-                  <MenuItem value="">-- เลือกเทอม --</MenuItem>
-                  <MenuItem value="term1">เทอม 1 (7–15 ส.ค.)</MenuItem>
-                  <MenuItem value="term2">เทอม 2 (3–10 ม.ค.)</MenuItem>
+                  <MenuItem value="">-- เลือกภาคการศึกษา (ถ้ามี) --</MenuItem>
+                  <MenuItem value="term1">ภาคการศึกษาที่ 1</MenuItem>
+                  <MenuItem value="term2">ภาคการศึกษาที่ 2</MenuItem>
+                  <MenuItem value="summer">ภาคฤดูร้อน</MenuItem>
                 </TextField>
-                <p className="field-hint">เลือกได้เฉพาะเทอม 1 หรือเทอม 2</p>
+                <div style={{ marginTop: '6px', padding: '8px 12px', background: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe', fontSize: '0.82rem', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>📌</span>
+                  <span><strong>ช่วงฝึกงาน:</strong> ผู้ดูแลระบบ (Admin) จะเป็นผู้กดกำหนดวันฝึกงานจริง (วันเริ่ม - วันสิ้นสุด) หลังตรวจสอบคำร้อง</span>
+                </div>
               </div>
 
               <h3>ข้อมูลหัวหน้าหน่วยงาน/ผู้ดูแล</h3>

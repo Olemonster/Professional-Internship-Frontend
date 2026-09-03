@@ -18,6 +18,7 @@ import {
   EnvelopeIcon,
   BriefcaseIcon,
   SparklesIcon,
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import {
   Box,
@@ -44,6 +45,21 @@ import {
   Chip,
 } from '@mui/material';
 import './AdminDashboardPage.css';
+
+const ALL_DEPARTMENTS = [
+  'สาขาวิชาวิทยาการคอมพิวเตอร์',
+  'สาขาวิชาเทคโนโลยีคอมพิวเตอร์และดิจิทัล',
+  'สาขาวิชาวิศวกรรมซอฟต์แวร์และปัญญาประดิษฐ์',
+  'สาขาวิชาสาธารณสุขชุมชน',
+  'สาขาวิชาอาชีวอนามัยและความปลอดภัย',
+  'สาขาวิชาวิทยาศาสตร์การกีฬา',
+  'สาขาวิชาเทคโนโลยีการเกษตร',
+  'สาขาวิชาเทคโนโลยีและนวัตกรรมอาหาร',
+  'สาขาวิชาวิศวกรรมโลจิสติกส์',
+  'สาขาวิชาวิศวกรรมการจัดการอุตสาหกรรมและสิ่งแวดล้อม',
+  'สาขาวิชาการออกแบบผลิตภัณฑ์และนวัตกรรมวัสดุ',
+  'สาขาวิชาเทคโนโลยีโยธาและสถาปัตยกรรม',
+];
 
 // Function to parse CSV text into array of objects
 const parseCSV = (text) => {
@@ -90,13 +106,14 @@ const parseCSV = (text) => {
         businessType: rowObj['ประเภทธุรกิจ'] || rowObj['ลักษณะงาน'] || rowObj['businessType'] || rowObj['Type'] || values[1] || '',
         address: rowObj['ที่อยู่'] || rowObj['address'] || rowObj['Address'] || values[2] || '',
         province: rowObj['จังหวัด'] || rowObj['province'] || rowObj['Province'] || values[3] || '',
-        contactPerson: rowObj['ผู้ติดต่อ'] || rowObj['ผู้ประสานงาน'] || rowObj['contactPerson'] || rowObj['Contact'] || values[4] || '',
-        phone: rowObj['เบอร์โทร'] || rowObj['เบอร์โทรศัพท์'] || rowObj['phone'] || rowObj['Phone'] || values[5] || '',
-        email: rowObj['อีเมล'] || rowObj['email'] || rowObj['Email'] || values[6] || '',
-        website: rowObj['เว็บไซต์'] || rowObj['website'] || rowObj['Website'] || values[7] || '',
-        positions: rowObj['ตำแหน่งที่รับ'] || rowObj['ตำแหน่งที่เปิดรับ'] || rowObj['ตำแหน่งงาน'] || rowObj['positions'] || values[8] || '',
-        benefits: rowObj['สวัสดิการ'] || rowObj['benefits'] || values[9] || '',
-        note: rowObj['หมายเหตุ'] || rowObj['note'] || values[10] || '',
+        department: rowObj['สาขาวิชา'] || rowObj['สาขา'] || rowObj['department'] || rowObj['departments'] || values[4] || '',
+        contactPerson: rowObj['ผู้ติดต่อ'] || rowObj['ผู้ประสานงาน'] || rowObj['contactPerson'] || rowObj['Contact'] || values[5] || '',
+        phone: rowObj['เบอร์โทร'] || rowObj['เบอร์โทรศัพท์'] || rowObj['phone'] || rowObj['Phone'] || values[6] || '',
+        email: rowObj['อีเมล'] || rowObj['email'] || rowObj['Email'] || values[7] || '',
+        website: rowObj['เว็บไซต์'] || rowObj['website'] || rowObj['Website'] || values[8] || '',
+        positions: rowObj['ตำแหน่งที่รับ'] || rowObj['ตำแหน่งที่เปิดรับ'] || rowObj['ตำแหน่งงาน'] || rowObj['positions'] || values[9] || '',
+        benefits: rowObj['สวัสดิการ'] || rowObj['benefits'] || values[10] || '',
+        note: rowObj['หมายเหตุ'] || rowObj['note'] || values[11] || '',
       });
     }
   }
@@ -110,6 +127,7 @@ const AdminCompanyManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedProvince, setSelectedProvince] = useState('all');
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -131,6 +149,7 @@ const AdminCompanyManagementPage = () => {
       businessType: '',
       address: '',
       province: '',
+      department: '',
       contactPerson: '',
       phone: '',
       email: '',
@@ -187,6 +206,18 @@ const AdminCompanyManagementPage = () => {
   };
 
   // Filtered companies
+  const departmentsList = useMemo(() => {
+    const set = new Set(ALL_DEPARTMENTS);
+    companies.forEach(c => {
+      if (Array.isArray(c.departments)) {
+        c.departments.forEach(d => { if (d && d.trim()) set.add(d.trim()); });
+      } else if (c.department && c.department.trim()) {
+        c.department.split(',').forEach(d => { if (d.trim()) set.add(d.trim()); });
+      }
+    });
+    return Array.from(set);
+  }, [companies]);
+
   const provincesList = useMemo(() => {
     const set = new Set();
     companies.forEach(c => {
@@ -203,12 +234,23 @@ const AdminCompanyManagementPage = () => {
         c.businessType?.toLowerCase().includes(s) || 
         c.positions?.toLowerCase().includes(s) || 
         c.address?.toLowerCase().includes(s) || 
-        c.province?.toLowerCase().includes(s);
+        c.province?.toLowerCase().includes(s) ||
+        c.department?.toLowerCase().includes(s);
       
       const matchProvince = selectedProvince === 'all' || c.province === selectedProvince;
-      return matchSearch && matchProvince;
+
+      let matchDept = selectedDepartment === 'all';
+      if (!matchDept) {
+        if (Array.isArray(c.departments) && c.departments.includes(selectedDepartment)) {
+          matchDept = true;
+        } else if (c.department && c.department.includes(selectedDepartment)) {
+          matchDept = true;
+        }
+      }
+
+      return matchSearch && matchProvince && matchDept;
     });
-  }, [companies, searchTerm, selectedProvince]);
+  }, [companies, searchTerm, selectedProvince, selectedDepartment]);
 
   // Checkbox selection
   const isAllSelected = useMemo(() => {
@@ -233,9 +275,9 @@ const AdminCompanyManagementPage = () => {
   // CSV Template Download
   const handleDownloadSampleCSV = () => {
     const csvContent = "\uFEFF" + 
-      "ชื่อสถานประกอบการ,ประเภทธุรกิจ,ที่อยู่,จังหวัด,ผู้ติดต่อ,เบอร์โทร,อีเมล,เว็บไซต์,ตำแหน่งที่รับฝึกงาน,สวัสดิการ,หมายเหตุ\n" +
-      "บริษัท ไอที โซลูชั่นส์ จำกัด,พัฒนาซอฟต์แวร์และไอที,123/45 ถ.วิภาวดีรังสิต,กรุงเทพมหานคร,คุณสมชาย ใจดี,02-123-4567,hr@itsolutions.co.th,https://itsolutions.co.th,Software Engineer / Web Developer,มีเบี้ยเลี้ยงรายวัน / มีโน้ตบุ๊กให้,เปิดรับตลอดทั้งปี\n" +
-      "ศูนย์เทคโนโลยีศรีสะเกษ,บริการดิจิทัลและเน็ตเวิร์ก,99 หมู่ 2 ต.หนองครก,ศรีสะเกษ,คุณวิภาดา มั่นคง,045-678-901,contact@ssktech.go.th,,Network Admin / Graphic Design,มีอาหารกลางวัน,รับสมัครเทอม 2";
+      "ชื่อสถานประกอบการ,ประเภทธุรกิจ,ที่อยู่,จังหวัด,สาขาวิชา,ผู้ติดต่อ,เบอร์โทร,อีเมล,เว็บไซต์,ตำแหน่งที่รับฝึกงาน,สวัสดิการ,หมายเหตุ\n" +
+      "บริษัท ไอที โซลูชั่นส์ จำกัด,พัฒนาซอฟต์แวร์และไอที,123/45 ถ.วิภาวดีรังสิต,กรุงเทพมหานคร,สาขาวิชาวิทยาการคอมพิวเตอร์,คุณสมชาย ใจดี,02-123-4567,hr@itsolutions.co.th,https://itsolutions.co.th,Software Engineer / Web Developer,มีเบี้ยเลี้ยงรายวัน / มีโน้ตบุ๊กให้,เปิดรับตลอดทั้งปี\n" +
+      "ศูนย์เทคโนโลยีศรีสะเกษ,บริการดิจิทัลและเน็ตเวิร์ก,99 หมู่ 2 ต.หนองครก,ศรีสะเกษ,สาขาวิชาเทคโนโลยีคอมพิวเตอร์และดิจิทัล,คุณวิภาดา มั่นคง,045-678-901,contact@ssktech.go.th,,Network Admin / Graphic Design,มีอาหารกลางวัน,รับสมัครเทอม 2";
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -299,6 +341,7 @@ const AdminCompanyManagementPage = () => {
         businessType: '',
         address: '',
         province: '',
+        department: '',
         contactPerson: '',
         phone: '',
         email: '',
@@ -321,6 +364,7 @@ const AdminCompanyManagementPage = () => {
         businessType: comp.businessType || '',
         address: comp.address || '',
         province: comp.province || '',
+        department: comp.department || (Array.isArray(comp.departments) ? comp.departments.join(', ') : ''),
         contactPerson: comp.contactPerson || '',
         phone: comp.phone || '',
         email: comp.email || '',
@@ -500,8 +544,22 @@ const AdminCompanyManagementPage = () => {
               InputProps={{
                 startAdornment: <MagnifyingGlassIcon style={{ width: 18, height: 18, color: '#94a3b8', marginRight: 8 }} />
               }}
-              sx={{ minWidth: { xs: '100%', sm: 320 }, flex: 1, bgcolor: '#ffffff' }}
+              sx={{ minWidth: { xs: '100%', sm: 260 }, flex: 1, bgcolor: '#ffffff' }}
             />
+
+            <TextField
+              select
+              size="small"
+              label="สาขาวิชา"
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              sx={{ minWidth: 200, bgcolor: '#ffffff' }}
+            >
+              <MenuItem value="all">ทุกสาขาวิชา ({departmentsList.length} สาขา)</MenuItem>
+              {departmentsList.map(dept => (
+                <MenuItem key={dept} value={dept}>{dept}</MenuItem>
+              ))}
+            </TextField>
 
             <TextField
               select
@@ -509,7 +567,7 @@ const AdminCompanyManagementPage = () => {
               label="จังหวัด"
               value={selectedProvince}
               onChange={(e) => setSelectedProvince(e.target.value)}
-              sx={{ minWidth: 180, bgcolor: '#ffffff' }}
+              sx={{ minWidth: 160, bgcolor: '#ffffff' }}
             >
               <MenuItem value="all">ทุกจังหวัด ({provincesList.length})</MenuItem>
               {provincesList.map(prov => (
@@ -534,6 +592,7 @@ const AdminCompanyManagementPage = () => {
                       />
                     </TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>ชื่อสถานประกอบการ / บริษัท</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>สาขาวิชาที่เกี่ยวข้อง</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>ประเภทธุรกิจ</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>ที่ตั้ง / จังหวัด</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>ตำแหน่งที่เปิดรับ</TableCell>
@@ -574,6 +633,25 @@ const AdminCompanyManagementPage = () => {
                                 </a>
                               )}
                             </Box>
+                          </TableCell>
+                          <TableCell>
+                            {((Array.isArray(comp.departments) && comp.departments.length > 0) || comp.department) ? (
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 220 }}>
+                                {(Array.isArray(comp.departments) && comp.departments.length > 0
+                                  ? comp.departments
+                                  : comp.department.split(',').map(s => s.trim())
+                                ).map((d, dIdx) => (
+                                  <Chip
+                                    key={dIdx}
+                                    label={d.replace('สาขาวิชา', '')}
+                                    size="small"
+                                    sx={{ fontSize: '0.7rem', bgcolor: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: 600 }}
+                                  />
+                                ))}
+                              </Box>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: '#94a3b8' }}>ทุกสาขาวิชา</Typography>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Chip 
@@ -729,6 +807,7 @@ const AdminCompanyManagementPage = () => {
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>ชื่อสถานประกอบการ</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>สาขาวิชา</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>ประเภทธุรกิจ</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>จังหวัด</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>ตำแหน่งที่รับ</TableCell>
@@ -740,6 +819,7 @@ const AdminCompanyManagementPage = () => {
                         <TableRow key={i}>
                           <TableCell>{i + 1}</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
+                          <TableCell sx={{ color: '#0284c7' }}>{row.department || '-'}</TableCell>
                           <TableCell>{row.businessType || '-'}</TableCell>
                           <TableCell>{row.province || '-'}</TableCell>
                           <TableCell>{row.positions || '-'}</TableCell>
@@ -787,6 +867,22 @@ const AdminCompanyManagementPage = () => {
               value={formModal.form.name}
               onChange={(e) => setFormModal(prev => ({ ...prev, form: { ...prev.form, name: e.target.value } }))}
             />
+            
+            <TextField
+              select
+              label="สาขาวิชาที่เกี่ยวข้อง / รองรับ"
+              size="small"
+              fullWidth
+              value={formModal.form.department || ''}
+              onChange={(e) => setFormModal(prev => ({ ...prev, form: { ...prev.form, department: e.target.value } }))}
+              helperText="เลือกสาขาวิชาที่ตรงกับสายงานของสถานประกอบการ หรือปล่อยว่างสำหรับทุกสาขา"
+            >
+              <MenuItem value="">ทุกสาขาวิชา (เปิดกว้างสำหรับทุกสาขา)</MenuItem>
+              {ALL_DEPARTMENTS.map(dept => (
+                <MenuItem key={dept} value={dept}>{dept}</MenuItem>
+              ))}
+            </TextField>
+
             <TextField
               label="ประเภทธุรกิจ / ลักษณะงาน"
               size="small"
